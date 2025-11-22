@@ -41,7 +41,7 @@ const appId = 'doghotel-production';
 
 // --- COMPONENTES AUXILIARES ---
 
-const StarRating = ({ rating, setRating, readonly = false, size = 24 }) => {
+const StarRating = ({ rating, setRating, readonly = false, color = "text-yellow-400", size = 24 }) => {
   return (
     <div className="flex space-x-1">
       {[1, 2, 3, 4, 5].map((star) => (
@@ -55,9 +55,7 @@ const StarRating = ({ rating, setRating, readonly = false, size = 24 }) => {
         >
           <Star
             size={readonly ? (size > 16 ? 16 : size) : size}
-            className={`${star <= rating ? 'fill-current text-[#FFD700]' : 'text-gray-300'}`} // Amarelo RGB vivo
-            strokeWidth={star <= rating ? 0 : 2}
-            stroke={star <= rating ? 'none' : '#9CA3AF'}
+            className={`${star <= rating ? `fill-current ${color}` : 'text-gray-300'}`}
           />
         </button>
       ))}
@@ -66,13 +64,12 @@ const StarRating = ({ rating, setRating, readonly = false, size = 24 }) => {
 };
 
 const FaceRating = ({ rating, setRating, readonly = false, size = 24 }) => {
-  // Cores baseadas na imagem de referência (RGB aproximado para Tailwind/Hex)
   const faces = [
-    { val: 1, icon: Angry, color: 'text-[#FF0000]', label: 'Raiva' }, // Vermelho RGB {1,0,0}
-    { val: 2, icon: Frown, color: 'text-[#FF7F00]', label: 'Triste' }, // Laranja RGB {255,127,0}
-    { val: 3, icon: Meh, color: 'text-[#FFD700]', label: 'Neutro' }, // Amarelo (similar ao warning)
-    { val: 4, icon: Smile, color: 'text-[#00FF00]', label: 'Bom' }, // Verde RGB {0,1,0} (Lime)
-    { val: 5, icon: Laugh, color: 'text-[#00AA00]', label: 'Excelente' }, // Verde mais escuro para contraste em fundo branco
+    { val: 1, icon: Angry, color: 'text-red-600', label: 'Raiva' },
+    { val: 2, icon: Frown, color: 'text-orange-500', label: 'Triste' },
+    { val: 3, icon: Meh, color: 'text-gray-400', label: 'Neutro' },
+    { val: 4, icon: Smile, color: 'text-sky-500', label: 'Bom' },
+    { val: 5, icon: Laugh, color: 'text-green-500', label: 'Excelente' },
   ];
 
   const safeRating = Number(rating) || 3;
@@ -97,16 +94,15 @@ const FaceRating = ({ rating, setRating, readonly = false, size = 24 }) => {
           >
             <Icon
               size={size}
-              // Se selecionado, usa a cor viva. Se não, um cinza claro mas visível
               className={`
                 ${isSelected ? face.color : 'text-gray-300'} 
-                ${isSelected && !readonly ? 'fill-current opacity-100 stroke-[2.5px]' : 'group-hover:text-gray-400'}
+                ${isSelected && !readonly ? 'fill-current opacity-20 stroke-2' : 'group-hover:text-gray-400'}
                 transition-all duration-200
               `}
-              strokeWidth={isSelected ? 2.5 : 2}
+              strokeWidth={isSelected ? 2.5 : 1.5}
             />
             {!readonly && size > 20 && (
-                <span className={`text-[10px] font-bold mt-1 ${isSelected ? 'text-gray-800' : 'text-gray-400'}`}> 
+                <span className={`text-[10px] font-bold mt-1 ${isSelected ? 'text-gray-700' : 'text-gray-400'}`}>
                     {face.label}
                 </span>
             )}
@@ -207,37 +203,37 @@ const LoginScreen = ({ onLogin, db, appId, isDbReady }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0000FF] to-[#0000AA] flex items-center justify-center p-4"> {/* Azul RGB {0,0,1} como base */}
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 to-blue-800 flex items-center justify-center p-4">
       <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
         <div className="bg-indigo-50 p-8 text-center">
            <div className="inline-flex bg-white p-4 rounded-full shadow-md mb-4">
-             <Dog size={48} className="text-[#FF7F00]" /> {/* Laranja2 */}
+             <Dog size={48} className="text-indigo-600" />
            </div>
-           <h1 className="text-2xl font-bold text-[#0000FF]">DogHotel Manager</h1> {/* Azul */}
-           <p className="text-[#FF7F00]">Gestão Compartilhada</p> {/* Laranja2 */}
+           <h1 className="text-2xl font-bold text-indigo-900">DogHotel Manager</h1>
+           <p className="text-indigo-500">Gestão Compartilhada</p>
         </div>
         <div className="p-8">
             <form onSubmit={handleLoginSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 text-[#0000FF]" size={20} />
-                  <input type="email" required name='email' value={email} onChange={(e) => setEmail(e.target.value)} className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0000FF] outline-none" placeholder="seu@email.com" />
+                  <Mail className="absolute left-3 top-3 text-gray-400" size={20} />
+                  <input type="email" required name='email' value={email} onChange={(e) => setEmail(e.target.value)} className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="seu@email.com" />
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Senha</label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 text-[#0000FF]" size={20} />
-                  <input type="password" required name='password' value={password} onChange={(e) => setPassword(e.target.value)} className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0000FF] outline-none" placeholder="••••••••" />
+                  <Lock className="absolute left-3 top-3 text-gray-400" size={20} />
+                  <input type="password" required name='password' value={password} onChange={(e) => setPassword(e.target.value)} className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="••••••••" />
                 </div>
               </div>
-              <button type="submit" disabled={isLoading || !isDbReady} className="w-full bg-[#0000FF] text-white py-3 rounded-lg font-bold hover:bg-[#0000AA] transition shadow-lg flex items-center justify-center gap-2 disabled:opacity-70">
+              <button type="submit" disabled={isLoading || !isDbReady} className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition shadow-lg flex items-center justify-center gap-2 disabled:opacity-70">
                 {isLoading ? 'Verificando...' : 'Acessar Sistema'}
               </button>
             </form>
             <p className="text-xs text-center text-gray-400 mt-4">
-                Status do Banco de Dados: {isDbReady ? <span className="text-[#00FF00] font-bold">Conectado</span> : <span className="text-[#FF0000]">Conectando...</span>}
+                Status do Banco de Dados: {isDbReady ? <span className="text-green-500 font-bold">Conectado</span> : <span className="text-red-400">Conectando...</span>}
             </p>
         </div>
       </div>
@@ -267,13 +263,13 @@ function BookingCard({ booking, onEdit, onDelete }) {
             <div className="min-w-0">
               <h4 className="font-bold text-lg text-gray-800 truncate">{booking.dogName}</h4>
               <div className="flex items-center gap-2">
-                 <p className="text-sm text-gray-500 flex items-center gap-1 truncate"><User size={12} className="text-[#FF7F00]"/> {booking.ownerName}</p>
+                 <p className="text-sm text-gray-500 flex items-center gap-1 truncate"><User size={12}/> {booking.ownerName}</p>
                  {waLink && (
                    <a 
                     href={waLink} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="bg-[#00FF00]/10 text-[#00AA00] p-1 rounded-full hover:bg-[#00FF00]/20 transition"
+                    className="bg-green-100 text-green-600 p-1 rounded-full hover:bg-green-200 transition"
                     title="Abrir WhatsApp"
                     onClick={(e) => e.stopPropagation()}
                    >
@@ -283,16 +279,16 @@ function BookingCard({ booking, onEdit, onDelete }) {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-1 bg-indigo-50 px-2 py-1 rounded text-[#0000FF] flex-shrink-0"><FaceRating rating={booking.dogBehaviorRating || 3} readonly size={16} /></div>
+          <div className="flex items-center gap-1 bg-indigo-50 px-2 py-1 rounded text-indigo-700 flex-shrink-0"><FaceRating rating={booking.dogBehaviorRating || 3} readonly size={16} /></div>
         </div>
         <div className="grid grid-cols-2 gap-2 text-sm mt-2">
-          <div className="bg-[#00FF00]/10 p-2 rounded text-[#00AA00] flex flex-col"><span className="text-xs uppercase font-bold">Entrada</span><span className="font-medium">{new Date(booking.checkIn).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', hour:'2-digit', minute:'2-digit'})}</span></div>
-          <div className="bg-[#FF0000]/10 p-2 rounded text-[#FF0000] flex flex-col"><span className="text-xs uppercase font-bold">Saída</span><span className="font-medium">{new Date(booking.checkOut).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', hour:'2-digit', minute:'2-digit'})}</span></div>
+          <div className="bg-green-50/70 p-2 rounded text-green-800 flex flex-col"><span className="text-xs text-green-700 uppercase font-bold">Entrada</span><span className="font-medium">{new Date(booking.checkIn).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', hour:'2-digit', minute:'2-digit'})}</span></div>
+          <div className="bg-red-50/70 p-2 rounded text-red-800 flex flex-col"><span className="text-xs text-red-700 uppercase font-bold">Saída</span><span className="font-medium">{new Date(booking.checkOut).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', hour:'2-digit', minute:'2-digit'})}</span></div>
         </div>
-        {booking.damageValue > 0 && ( <div className="flex items-center gap-2 text-xs text-[#FF0000] bg-[#FF0000]/10 p-2 rounded font-bold border border-[#FF0000]/20"><AlertTriangle size={14} /> Prejuízo Registrado: R$ {booking.damageValue}</div> )}
+        {booking.damageValue > 0 && ( <div className="flex items-center gap-2 text-xs text-red-700 bg-red-100 p-2 rounded font-bold border border-red-200"><AlertTriangle size={14} /> Prejuízo Registrado: R$ {booking.damageValue}</div> )}
         <div className="mt-auto pt-3 border-t border-gray-100 flex justify-between items-center">
-           <span className="font-bold text-[#0000FF]">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((booking.totalValue || 0) - (booking.damageValue || 0))}</span>
-           <div className="flex gap-2"><button onClick={onEdit} className="p-2 text-gray-400 hover:text-[#0000FF] hover:bg-indigo-50 rounded-full transition"><Edit size={18} /></button><button onClick={onDelete} className="p-2 text-gray-400 hover:text-[#FF0000] hover:bg-red-50 rounded-full transition"><Trash2 size={18} /></button></div>
+           <span className="font-bold text-indigo-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((booking.totalValue || 0) - (booking.damageValue || 0))}</span>
+           <div className="flex gap-2"><button onClick={onEdit} className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition"><Edit size={18} /></button><button onClick={onDelete} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition"><Trash2 size={18} /></button></div>
         </div>
       </div>
     );
@@ -494,15 +490,15 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
       )}
 
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[95vh] overflow-y-auto flex flex-col">
-        <div className="bg-[#0000FF] px-6 py-4 flex justify-between items-center sticky top-0 z-10"><h2 className="text-lg md:text-xl font-bold text-white flex items-center gap-2"><FileText /> {getTitle()}</h2><button onClick={onClose} className="text-white hover:bg-[#0000AA] rounded-full p-1"><X size={24} /></button></div>
+        <div className="bg-indigo-600 px-6 py-4 flex justify-between items-center sticky top-0 z-10"><h2 className="text-lg md:text-xl font-bold text-white flex items-center gap-2"><FileText /> {getTitle()}</h2><button onClick={onClose} className="text-white hover:bg-indigo-700 rounded-full p-1"><X size={24} /></button></div>
         {isBookingMode && !data && (
-            <div className="bg-indigo-50 px-6 py-3 border-b border-indigo-100"><label className="block text-sm font-bold text-indigo-800 mb-1">Já é cliente?</label><div className="relative"><div className="flex gap-2"><div className="relative flex-1"><input type="text" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setShowSearchResults(true); }} placeholder="Buscar cliente..." className="w-full pl-9 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0000FF]"/><Search className="absolute left-3 top-2.5 text-[#0000FF]" size={18} /></div></div>{showSearchResults && searchQuery && (<div className="absolute top-full left-0 right-0 bg-white shadow-xl rounded-lg mt-1 border z-20 max-h-60 overflow-y-auto">{searchResults.length > 0 ? ( searchResults.map(client => ( <button key={client.id} type="button" onClick={() => selectClient(client)} className="w-full text-left px-4 py-2 hover:bg-indigo-50 border-b last:border-0 flex justify-between items-center"><div><span className="font-bold text-gray-800">{client.dogName}</span><span className="text-sm text-gray-500 ml-2">- {client.ownerName}</span></div><span className="text-xs text-[#0000FF] bg-indigo-100 px-2 py-1 rounded-full">Selecionar</span></button> )) ) : ( <div className="p-3 text-gray-500 text-sm flex items-center gap-2"><AlertCircle size={16} /> Nenhum cliente encontrado.</div> )}</div>)}</div></div>
+            <div className="bg-indigo-50 px-6 py-3 border-b border-indigo-100"><label className="block text-sm font-bold text-indigo-800 mb-1">Já é cliente?</label><div className="relative"><div className="flex gap-2"><div className="relative flex-1"><input type="text" value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setShowSearchResults(true); }} placeholder="Buscar cliente..." className="w-full pl-9 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"/><Search className="absolute left-3 top-2.5 text-gray-400" size={18} /></div></div>{showSearchResults && searchQuery && (<div className="absolute top-full left-0 right-0 bg-white shadow-xl rounded-lg mt-1 border z-20 max-h-60 overflow-y-auto">{searchResults.length > 0 ? ( searchResults.map(client => ( <button key={client.id} type="button" onClick={() => selectClient(client)} className="w-full text-left px-4 py-2 hover:bg-indigo-50 border-b last:border-0 flex justify-between items-center"><div><span className="font-bold text-gray-800">{client.dogName}</span><span className="text-sm text-gray-500 ml-2">- {client.ownerName}</span></div><span className="text-xs text-indigo-600 bg-indigo-100 px-2 py-1 rounded-full">Selecionar</span></button> )) ) : ( <div className="p-3 text-gray-500 text-sm flex items-center gap-2"><AlertCircle size={16} /> Nenhum cliente encontrado.</div> )}</div>)}</div></div>
         )}
         <form onSubmit={handleSubmit} className="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-6 flex-1 overflow-y-auto">
           <div className="space-y-4">
-            <h3 className="text-[#0000FF] font-bold border-b pb-2 flex items-center gap-2"><Dog size={18}/> Dados do Pet</h3>
+            <h3 className="text-indigo-600 font-bold border-b pb-2 flex items-center gap-2"><Dog size={18}/> Dados do Pet</h3>
             <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm font-medium text-gray-700">Nome</label><input required name="dogName" value={formData.dogName} onChange={handleChange} className="mt-1 w-full p-2 border rounded-lg focus:ring-2 focus:ring-[#0000FF] outline-none" /></div>
+                <div><label className="block text-sm font-medium text-gray-700">Nome</label><input required name="dogName" value={formData.dogName} onChange={handleChange} className="mt-1 w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" /></div>
                 <div>
                     <label className="block text-sm font-medium text-gray-700">Porte</label>
                     <select name="dogSize" value={formData.dogSize} onChange={handleChange} className="mt-1 w-full p-2 border rounded-lg outline-none bg-white">
@@ -515,26 +511,26 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
             <div className='grid grid-cols-3 gap-4'>
                 <div><label className="block text-sm font-medium text-gray-700">Nascimento</label><input type="date" name="birthDate" value={formData.birthDate} onChange={handleChange} className="mt-1 w-full p-2 border rounded-lg outline-none" /></div>
                 <div><label className="block text-sm font-medium text-gray-500">Idade (Real)</label><input type="text" readOnly value={realAge > 0 ? `${realAge} anos` : '-'} className="mt-1 w-full p-2 border rounded-lg bg-gray-100 text-gray-600 font-bold outline-none" /></div>
-                <div><label className="block text-sm font-medium text-gray-500">Idade (Humana)</label><input type="text" readOnly value={humanAge > 0 ? `${humanAge} anos` : '-'} className="mt-1 w-full p-2 border rounded-lg bg-[#FF7F00]/10 text-[#FF7F00] font-bold outline-none border-[#FF7F00]/30" /></div>
+                <div><label className="block text-sm font-medium text-gray-500">Idade (Humana)</label><input type="text" readOnly value={humanAge > 0 ? `${humanAge} anos` : '-'} className="mt-1 w-full p-2 border rounded-lg bg-orange-50 text-orange-700 font-bold outline-none border-orange-200" /></div>
             </div>
             <div><label className="block text-sm font-medium text-gray-700 mb-1">Comportamento / Obs</label><textarea name="history" value={formData.history} onChange={handleChange} rows={2} className="mt-1 w-full p-2 border rounded-lg outline-none text-sm" placeholder="Histórico do cão..."></textarea></div>
             
             <div className="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
-                <label className="block text-sm font-bold text-[#0000FF] mb-2">Avaliação Geral do Cão</label>
+                <label className="block text-sm font-bold text-indigo-800 mb-2">Avaliação Geral do Cão</label>
                 <FaceRating rating={formData.dogBehaviorRating} setRating={(r) => setFormData({...formData, dogBehaviorRating: r})} />
             </div>
 
-            <div><label className="block text-sm font-medium text-gray-700 flex items-center gap-2"><Heart size={14} className="text-[#E91E63]"/> Socialização</label><div className="flex gap-2 mb-2 mt-1"><select value={socialDogInput} onChange={(e) => setSocialDogInput(e.target.value)} className="flex-1 p-2 border rounded-lg text-sm"><option value="">+ Amigo</option>{availableDogs.map(d => <option key={d} value={d}>{d}</option>)}</select><button type="button" onClick={handleAddSocialDog} disabled={(formData.socialization || []).length >= 5 || !socialDogInput} className="bg-pink-100 text-[#E91E63] px-3 rounded-lg hover:bg-pink-200 disabled:opacity-50 font-bold">+</button></div><div className="flex flex-wrap gap-2">{(formData.socialization || []).map(dog => ( <span key={dog} className="bg-pink-50 text-[#E91E63] px-2 py-1 rounded-full text-xs flex items-center gap-1 border border-pink-100">{dog} <button type="button" onClick={() => removeSocialDog(dog)} className="hover:text-[#FF0000]"><X size={12}/></button></span> ))}</div></div>
-            <div><label className="block text-sm font-medium text-gray-700">Restrições</label><input name="restrictions" value={formData.restrictions} onChange={handleChange} className="mt-1 w-full p-2 border rounded-lg border-[#FF0000]/30 bg-[#FF0000]/5 outline-none" placeholder="Ex: Alergias..." /></div>
-            <div className="mt-4 bg-[#00FF00]/10 p-3 rounded-lg border border-[#00FF00]/30">
-                <h4 className="text-sm font-bold text-[#00AA00] flex items-center gap-1"><DollarSign size={16} /> Total Pago por {formData.dogName}</h4>
-                <p className="text-2xl font-extrabold text-[#00AA00] mt-1">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalPaidValue)}</p>
-                <p className="text-xs text-[#00AA00] mt-1">Total acumulado (Valor Real Debitado) em {formData.pastBookings.length} hospedagens.</p>
+            <div><label className="block text-sm font-medium text-gray-700 flex items-center gap-2"><Heart size={14} className="text-pink-500"/> Socialização</label><div className="flex gap-2 mb-2 mt-1"><select value={socialDogInput} onChange={(e) => setSocialDogInput(e.target.value)} className="flex-1 p-2 border rounded-lg text-sm"><option value="">+ Amigo</option>{availableDogs.map(d => <option key={d} value={d}>{d}</option>)}</select><button type="button" onClick={handleAddSocialDog} disabled={(formData.socialization || []).length >= 5 || !socialDogInput} className="bg-pink-100 text-pink-700 px-3 rounded-lg hover:bg-pink-200 disabled:opacity-50 font-bold">+</button></div><div className="flex flex-wrap gap-2">{(formData.socialization || []).map(dog => ( <span key={dog} className="bg-pink-50 text-pink-700 px-2 py-1 rounded-full text-xs flex items-center gap-1 border border-pink-100">{dog} <button type="button" onClick={() => removeSocialDog(dog)} className="hover:text-red-600"><X size={12}/></button></span> ))}</div></div>
+            <div><label className="block text-sm font-medium text-gray-700">Restrições</label><input name="restrictions" value={formData.restrictions} onChange={handleChange} className="mt-1 w-full p-2 border rounded-lg border-red-200 bg-red-50 outline-none" placeholder="Ex: Alergias..." /></div>
+            <div className="mt-4 bg-green-50 p-3 rounded-lg border border-green-200">
+                <h4 className="text-sm font-bold text-green-800 flex items-center gap-1"><DollarSign size={16} /> Total Pago por {formData.dogName}</h4>
+                <p className="text-2xl font-extrabold text-green-700 mt-1">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalPaidValue)}</p>
+                <p className="text-xs text-green-600 mt-1">Total acumulado (Valor Real Debitado) em {formData.pastBookings.length} hospedagens.</p>
             </div>
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-[#0000FF] font-bold border-b pb-2 flex items-center gap-2"><User size={18}/> Dados do Tutor</h3>
+            <h3 className="text-indigo-600 font-bold border-b pb-2 flex items-center gap-2"><User size={18}/> Dados do Tutor</h3>
             <div className="bg-gray-50 p-3 rounded-lg border space-y-3">
               <div><label className="block text-sm font-medium text-gray-700">Nome Completo</label><input required name="ownerName" value={formData.ownerName} onChange={handleChange} className="mt-1 w-full p-2 border rounded-lg outline-none" /></div>
               <div className="grid grid-cols-2 gap-4">
@@ -543,7 +539,7 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
               </div>
               <div><label className="block text-sm font-medium text-gray-700">Endereço</label><input name="address" value={formData.address} onChange={handleChange} className="mt-1 w-full p-2 border rounded-lg outline-none" /></div>
               <div>
-                 <label className="block text-sm font-medium text-gray-700 flex items-center gap-1"><MessageCircle size={16} className="text-[#00AA00]"/> WhatsApp</label>
+                 <label className="block text-sm font-medium text-gray-700 flex items-center gap-1"><MessageCircle size={16} className="text-green-600"/> WhatsApp</label>
                  <div className="flex gap-2 mt-1">
                     <input 
                         name="whatsapp" 
@@ -556,7 +552,7 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
                         type="button"
                         onClick={openWhatsApp}
                         disabled={!formData.whatsapp}
-                        className={`p-2 rounded-lg text-white transition ${!formData.whatsapp ? 'bg-gray-300 cursor-not-allowed' : 'bg-[#00AA00] hover:bg-[#00FF00]'}`}
+                        className={`p-2 rounded-lg text-white transition ${!formData.whatsapp ? 'bg-gray-300 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'}`}
                         title="Abrir WhatsApp"
                     >
                         <MessageCircle size={20} />
@@ -574,19 +570,19 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
             </div>
             {isBookingMode && (
                 <div className="space-y-2 animate-fade-in">
-                    <h3 className="text-[#00AA00] font-bold border-b border-green-200 pb-2 flex items-center gap-2 mt-4"><DollarSign size={18}/> Dados da Hospedagem</h3>
+                    <h3 className="text-green-700 font-bold border-b border-green-200 pb-2 flex items-center gap-2 mt-4"><DollarSign size={18}/> Dados da Hospedagem</h3>
                     <div className="grid grid-cols-2 gap-4">
                         <div><label className="block text-xs text-gray-500">Check-in</label><input required type="datetime-local" name="checkIn" value={formData.checkIn} onChange={handleChange} className="w-full p-1.5 border rounded outline-none text-sm" /></div>
                         <div><label className="block text-xs text-gray-500">Check-out</label><input required type="datetime-local" name="checkOut" value={formData.checkOut} onChange={handleChange} className="w-full p-1.5 border rounded outline-none text-sm" /></div>
-                        <div><label className="block text-xs text-gray-500">Diária (R$)</label><input required type="number" name="dailyRate" value={formData.dailyRate} onChange={handleChange} className="w-full p-1.5 border rounded outline-none font-bold text-[#00AA00]" /></div>
-                        <div><label className="block text-xs text-gray-500">Total Estimado</label><div className="w-full p-1.5 bg-[#00FF00]/10 border border-[#00FF00]/30 rounded text-[#00AA00] font-bold text-sm">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(formData.totalValue)}</div></div>
+                        <div><label className="block text-xs text-gray-500">Diária (R$)</label><input required type="number" name="dailyRate" value={formData.dailyRate} onChange={handleChange} className="w-full p-1.5 border rounded outline-none font-bold text-green-700" /></div>
+                        <div><label className="block text-xs text-gray-500">Total Estimado</label><div className="w-full p-1.5 bg-green-50 border border-green-200 rounded text-green-700 font-bold text-sm">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(formData.totalValue)}</div></div>
                     </div>
                     <div className="mt-2 border-t pt-2">
-                        <label className="block text-sm font-bold text-[#FF0000] mb-1 flex items-center gap-1"><AlertTriangle size={14}/> Prejuízos / Danos (R$)</label>
-                        <div className="grid grid-cols-2 gap-4"><input type="number" name="damageValue" value={formData.damageValue} onChange={handleChange} placeholder="Valor do prejuízo" className="w-full p-1.5 border border-[#FF0000]/30 bg-[#FF0000]/5 rounded outline-none text-sm font-bold text-[#FF0000]" /><input type="text" name="damageDescription" value={formData.damageDescription} onChange={handleChange} placeholder="Motivo (ex: rasgou cama)" className="w-full p-1.5 border border-[#FF0000]/30 bg-[#FF0000]/5 rounded outline-none text-sm" /></div>
+                        <label className="block text-sm font-bold text-orange-700 mb-1 flex items-center gap-1"><AlertTriangle size={14}/> Prejuízos / Danos (R$)</label>
+                        <div className="grid grid-cols-2 gap-4"><input type="number" name="damageValue" value={formData.damageValue} onChange={handleChange} placeholder="Valor do prejuízo" className="w-full p-1.5 border border-orange-300 bg-orange-50 rounded outline-none text-sm font-bold text-orange-800" /><input type="text" name="damageDescription" value={formData.damageDescription} onChange={handleChange} placeholder="Motivo (ex: rasgou cama)" className="w-full p-1.5 border border-orange-300 bg-orange-50 rounded outline-none text-sm" /></div>
                     </div>
                     <div className="mt-2 bg-blue-50 p-3 rounded-lg border border-blue-100">
-                        <label className="block text-sm font-bold text-[#0000FF] mb-1 flex items-center gap-1"><Star size={14}/> Avaliação da Hospedagem</label>
+                        <label className="block text-sm font-bold text-blue-800 mb-1 flex items-center gap-1"><Star size={14}/> Avaliação da Hospedagem</label>
                         <StarRating rating={formData.rating} setRating={(r) => setFormData({...formData, rating: r})} />
                     </div>
                 </div>
@@ -611,7 +607,7 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
                                     <div className='flex-1'>
                                         <span className="font-bold block text-gray-700">{new Date(hosp.checkIn).toLocaleDateString('pt-BR')} até {new Date(hosp.checkOut).toLocaleDateString('pt-BR')}</span>
                                         <div className="text-gray-500 italic mt-1">{hosp.observation}</div>
-                                        {hasDamage && <div className="text-[#FF0000] font-bold mt-1 text-[11px] flex items-center gap-1"><AlertCircle size={12}/> Obs. Prejuízo: {hosp.damageDescription}</div>}
+                                        {hasDamage && <div className="text-red-600 font-bold mt-1 text-[11px] flex items-center gap-1"><AlertCircle size={12}/> Obs. Prejuízo: {hosp.damageDescription}</div>}
                                     </div>
                                     <div className="text-right flex-shrink-0 ml-4">
                                         <div className="flex items-center gap-1"><span className="font-bold text-gray-500">Hospedagem:</span> <StarRating rating={hosp.rating} readonly size={12} /></div>
@@ -622,15 +618,15 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
                                 
                                 <div className="flex justify-between items-center border-t pt-2 mt-1">
                                     <div className='text-sm font-medium text-gray-600'>
-                                        Valor da Hospedagem: <span className='font-bold text-[#0000FF]'>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalValue)}</span>
+                                        Valor da Hospedagem: <span className='font-bold text-indigo-600'>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalValue)}</span>
                                     </div>
                                     <div className='text-right'>
                                         {hasDamage && (
-                                            <div className="text-xs font-bold text-[#FF0000]">
+                                            <div className="text-xs font-bold text-red-600">
                                                 Prejuízo: - {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(damageValue)}
                                             </div>
                                         )}
-                                        <div className="text-sm font-bold text-[#00AA00]">
+                                        <div className="text-sm font-bold text-green-700">
                                             Valor Real Debitado: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(realDebitedValue)}
                                         </div>
                                     </div>
@@ -643,10 +639,10 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
             </div>
             
             {/* GALERIA DE FOTOS */}
-            <h3 className="text-[#0000FF] font-bold border-b pb-2 flex items-center gap-2"><Camera size={18}/> Galeria do Pet</h3>
+            <h3 className="text-indigo-600 font-bold border-b pb-2 flex items-center gap-2"><Camera size={18}/> Galeria do Pet</h3>
             <div className="flex gap-2 mb-2 items-center">
                <label className={`flex-1 cursor-pointer bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-300 rounded-lg p-2 flex items-center justify-center gap-2 transition ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                   {isUploading ? <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#0000FF]"></div><span className="text-sm font-medium">Enviando...</span></> : <><Upload size={20} /><span className="text-sm font-medium">Adicionar Foto</span></>}
+                   {isUploading ? <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600"></div><span className="text-sm font-medium">Enviando...</span></> : <><Upload size={20} /><span className="text-sm font-medium">Adicionar Foto</span></>}
                    <input 
                        type="file" 
                        accept="image/*" 
@@ -672,7 +668,7 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
                     <button 
                         type="button" 
                         onClick={() => removePhoto(idx, 'photos')} 
-                        className="absolute -top-2 -right-2 bg-[#FF0000] text-white rounded-full p-1 shadow opacity-0 group-hover:opacity-100 transition"
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow opacity-0 group-hover:opacity-100 transition"
                     >
                         <X size={10} />
                     </button>
@@ -680,14 +676,13 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
             ))}</div>
 
             {/* DOCUMENTOS DE VACINA - NOVA SEÇÃO */}
-            <h3 className="text-[#0000FF] font-bold border-b pb-2 flex items-center gap-2 mt-4"><FilePlus size={18}/> Documentos de Vacinas</h3>
+            <h3 className="text-indigo-600 font-bold border-b pb-2 flex items-center gap-2 mt-4"><FilePlus size={18}/> Documentos de Vacinas</h3>
             <div className="flex gap-2 mb-2 items-center">
-               <label className={`flex-1 cursor-pointer bg-[#0000FF]/10 hover:bg-[#0000FF]/20 text-[#0000FF] border border-[#0000FF]/30 rounded-lg p-2 flex items-center justify-center gap-2 transition ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                   {isUploading ? <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#0000FF]"></div><span className="text-sm font-medium">Enviando...</span></> : <><Upload size={20} /><span className="text-sm font-medium">Adicionar Vacina (Foto/PDF)</span></>}
-                   {/* ATUALIZADO PARA ACEITAR PDF */}
+               <label className={`flex-1 cursor-pointer bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg p-2 flex items-center justify-center gap-2 transition ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                   {isUploading ? <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div><span className="text-sm font-medium">Enviando...</span></> : <><Upload size={20} /><span className="text-sm font-medium">Adicionar Vacina (Foto)</span></>}
                    <input 
                        type="file" 
-                       accept="image/*,application/pdf" 
+                       accept="image/*" 
                        className="hidden" 
                        onChange={(e) => handleFileSelect(e, 'vaccines')}
                        disabled={(formData.vaccineDocs || []).length >= 3 || isUploading}
@@ -699,37 +694,28 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
             </div>
             <div className="flex gap-4 overflow-x-auto pb-2 min-h-[90px]">
                 {(formData.vaccineDocs || []).length === 0 && <p className="text-sm text-gray-400 italic p-2">Nenhum comprovante de vacina.</p>}
-                {(formData.vaccineDocs || []).map((url, idx) => {
-                    const isPdf = url.toLowerCase().includes('.pdf');
-                    return (
-                    <div key={idx} className="relative w-20 h-20 flex-shrink-0 group">
-                        {isPdf ? (
-                            <a href={url} target="_blank" rel="noopener noreferrer" className="w-full h-full flex flex-col items-center justify-center bg-[#FF0000]/5 border-2 border-[#FF0000]/20 rounded-lg shadow-md hover:bg-[#FF0000]/10 transition" title="Abrir PDF">
-                                <FileText className="text-[#FF0000]" size={32} />
-                                <span className="text-[8px] text-[#FF0000] font-bold mt-1">PDF</span>
-                            </a>
-                        ) : (
-                            <img 
-                                src={url} 
-                                alt="Vacina" 
-                                className="w-full h-full object-cover rounded-lg shadow-md cursor-zoom-in hover:opacity-90 transition border-2 border-[#0000FF]/20" 
-                                onClick={() => setVaccineLightboxIndex(idx)}
-                            />
-                        )}
-                        <button 
-                            type="button" 
-                            onClick={() => removePhoto(idx, 'vaccines')} 
-                            className="absolute -top-2 -right-2 bg-[#FF0000] text-white rounded-full p-1 shadow opacity-0 group-hover:opacity-100 transition"
-                        >
-                            <X size={10} />
-                        </button>
-                    </div> 
-                )})}</div>
+                {(formData.vaccineDocs || []).map((url, idx) => ( 
+                <div key={idx} className="relative w-20 h-20 flex-shrink-0 group">
+                    <img 
+                        src={url} 
+                        alt="Vacina" 
+                        className="w-full h-full object-cover rounded-lg shadow-md cursor-zoom-in hover:opacity-90 transition border-2 border-blue-200" 
+                        onClick={() => setVaccineLightboxIndex(idx)}
+                    />
+                    <button 
+                        type="button" 
+                        onClick={() => removePhoto(idx, 'vaccines')} 
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow opacity-0 group-hover:opacity-100 transition"
+                    >
+                        <X size={10} />
+                    </button>
+                </div> 
+            ))}</div>
           </div>
 
           <div className="md:col-span-2 flex justify-end gap-4 pt-4 border-t">
              <button type="button" onClick={onClose} className="px-6 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium">Cancelar</button>
-             <button type="submit" className="px-6 py-2 rounded-lg bg-[#0000FF] text-white hover:bg-[#0000AA] font-bold shadow-lg flex items-center gap-2" disabled={isSaving}>{isSaving ? 'Salvando...' : <><CheckCircle size={18} /> {isBookingMode ? 'Confirmar Reserva' : 'Salvar Cadastro'}</>}</button>
+             <button type="submit" className="px-6 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 font-bold shadow-lg flex items-center gap-2" disabled={isSaving}>{isSaving ? 'Salvando...' : <><CheckCircle size={18} /> {isBookingMode ? 'Confirmar Reserva' : 'Salvar Cadastro'}</>}</button>
           </div>
         </form>
       </div>
@@ -988,19 +974,19 @@ export default function DogHotelApp() {
     const renderFinancial = () => (
       <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 min-h-[500px] animate-fade-in">
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-          <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2"><PieChart className="text-[#0000FF]"/> Painel Financeiro</h2>
+          <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2"><PieChart /> Painel Financeiro</h2>
           <div className="flex bg-gray-100 p-1 rounded-lg w-full md:w-auto">
-            <button onClick={() => setFinancialView('monthly')} className={`flex-1 md:flex-none px-6 py-2 rounded-md text-sm font-medium transition ${financialView === 'monthly' ? 'bg-white shadow text-[#0000FF]' : 'text-gray-600'}`}>Mensal</button>
-            <button onClick={() => setFinancialView('annual')} className={`flex-1 md:flex-none px-6 py-2 rounded-md text-sm font-medium transition ${financialView === 'annual' ? 'bg-white shadow text-[#0000FF]' : 'text-gray-600'}`}>Anual</button>
+            <button onClick={() => setFinancialView('monthly')} className={`flex-1 md:flex-none px-6 py-2 rounded-md text-sm font-medium transition ${financialView === 'monthly' ? 'bg-white shadow text-indigo-600' : 'text-gray-500'}`}>Mensal</button>
+            <button onClick={() => setFinancialView('annual')} className={`flex-1 md:flex-none px-6 py-2 rounded-md text-sm font-medium transition ${financialView === 'annual' ? 'bg-white shadow text-indigo-600' : 'text-gray-500'}`}>Anual</button>
           </div>
         </div>
         {financialView === 'monthly' ? (
           <div className="space-y-6">
-            <div className="flex flex-wrap gap-4 items-center bg-[#0000FF]/5 p-4 rounded-xl border border-[#0000FF]/10">
-              <div className="flex items-center gap-2"><label className="font-bold text-[#0000FF]">Ano:</label><select value={finSelectedYear} onChange={(e) => setFinSelectedYear(parseInt(e.target.value))} className="p-2 border rounded-lg bg-white outline-none focus:ring-2 focus:ring-[#0000FF]">{[2023, 2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}</select></div>
-              <div className="flex items-center gap-2"><label className="font-bold text-[#0000FF]">Mês:</label><select value={finSelectedMonth} onChange={(e) => setFinSelectedMonth(parseInt(e.target.value))} className="p-2 border rounded-lg bg-white outline-none focus:ring-2 focus:ring-[#0000FF]">{monthNames.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}</select></div>
+            <div className="flex flex-wrap gap-4 items-center bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+              <div className="flex items-center gap-2"><label className="font-bold text-indigo-900">Ano:</label><select value={finSelectedYear} onChange={(e) => setFinSelectedYear(parseInt(e.target.value))} className="p-2 border rounded-lg bg-white outline-none focus:ring-2 focus:ring-indigo-500">{[2023, 2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}</select></div>
+              <div className="flex items-center gap-2"><label className="font-bold text-indigo-900">Mês:</label><select value={finSelectedMonth} onChange={(e) => setFinSelectedMonth(parseInt(e.target.value))} className="p-2 border rounded-lg bg-white outline-none focus:ring-2 focus:ring-indigo-500">{monthNames.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}</select></div>
             </div>
-            <div className="bg-gradient-to-r from-[#00AA00] to-[#00FF00] rounded-2xl p-6 text-white shadow-lg">
+            <div className="bg-gradient-to-r from-green-600 to-emerald-500 rounded-2xl p-6 text-white shadow-lg">
               <div className="flex justify-between items-center">
                 <div><p className="text-green-100 text-sm font-medium uppercase tracking-wider">Lucro Líquido (Valor Real) - {monthNames[finSelectedMonth]}/{finSelectedYear}</p><h3 className="text-4xl font-bold mt-2">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(calculateMonthlyNetTotal(finSelectedMonth, finSelectedYear))}</h3></div>
                 <div className="bg-white bg-opacity-20 p-3 rounded-full"><DollarSign size={32} className="text-white" /></div>
@@ -1009,9 +995,9 @@ export default function DogHotelApp() {
             <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-gray-50 border-b"><tr><th className="p-3 font-semibold text-gray-700">Data</th><th className="p-3 font-semibold text-gray-700">Cliente</th><th className="p-3 font-semibold text-gray-700 text-right">Bruto</th><th className="p-3 font-semibold text-[#FF0000] text-right">Prejuízos</th><th className="p-3 font-semibold text-[#00AA00] text-right">Valor Real</th></tr></thead>
+                  <thead className="bg-gray-50 border-b"><tr><th className="p-3 font-semibold text-gray-600">Data</th><th className="p-3 font-semibold text-gray-600">Cliente</th><th className="p-3 font-semibold text-gray-600 text-right">Bruto</th><th className="p-3 font-semibold text-red-600 text-right">Prejuízos</th><th className="p-3 font-semibold text-green-600 text-right">Valor Real</th></tr></thead>
                   <tbody className="divide-y">
-                    {getBookingsByMonth(finSelectedMonth, finSelectedYear).length > 0 ? ( getBookingsByMonth(finSelectedMonth, finSelectedYear).map(booking => { const damage = parseFloat(booking.damageValue) || 0; const realValue = (parseFloat(booking.totalValue) || 0) - damage; return ( <tr key={booking.id} className="hover:bg-gray-50"><td className="p-3 text-gray-800">{new Date(booking.checkIn).toLocaleDateString('pt-BR')}</td><td className="p-3"><div className="font-medium text-gray-900">{booking.dogName}</div><div className="text-gray-600 text-xs">{booking.ownerName}</div>{damage > 0 && <div className="text-xs text-[#FF0000] italic mt-1">Obs: {booking.damageDescription}</div>}</td><td className="p-3 text-right text-gray-700">R$ {booking.totalValue}</td><td className="p-3 text-right text-[#FF0000] font-medium">{damage > 0 ? `- R$ ${damage}` : '-'}</td><td className="p-3 text-right font-bold text-[#00AA00]">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(realValue)}</td></tr> )}) ) : ( <tr><td colSpan="5" className="p-8 text-center text-gray-500 italic">Nenhum faturamento registrado neste período.</td></tr> )}
+                    {getBookingsByMonth(finSelectedMonth, finSelectedYear).length > 0 ? ( getBookingsByMonth(finSelectedMonth, finSelectedYear).map(booking => { const damage = parseFloat(booking.damageValue) || 0; const realValue = (parseFloat(booking.totalValue) || 0) - damage; return ( <tr key={booking.id} className="hover:bg-gray-50"><td className="p-3 text-gray-700">{new Date(booking.checkIn).toLocaleDateString('pt-BR')}</td><td className="p-3"><div className="font-medium text-gray-900">{booking.dogName}</div><div className="text-gray-500 text-xs">{booking.ownerName}</div>{damage > 0 && <div className="text-xs text-red-500 italic mt-1">Obs: {booking.damageDescription}</div>}</td><td className="p-3 text-right text-gray-600">R$ {booking.totalValue}</td><td className="p-3 text-right text-red-500 font-medium">{damage > 0 ? `- R$ ${damage}` : '-'}</td><td className="p-3 text-right font-bold text-green-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(realValue)}</td></tr> )}) ) : ( <tr><td colSpan="5" className="p-8 text-center text-gray-400 italic">Nenhum faturamento registrado neste período.</td></tr> )}
                   </tbody>
                 </table>
               </div>
@@ -1019,10 +1005,10 @@ export default function DogHotelApp() {
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="flex items-center gap-2 bg-[#0000FF]/5 p-4 rounded-xl border border-[#0000FF]/10 w-fit"><label className="font-bold text-[#0000FF]">Selecione o Ano:</label><select value={finSelectedYear} onChange={(e) => setFinSelectedYear(parseInt(e.target.value))} className="p-2 border rounded-lg bg-white outline-none focus:ring-2 focus:ring-[#0000FF]">{[2023, 2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}</select></div>
+            <div className="flex items-center gap-2 bg-indigo-50 p-4 rounded-xl border border-indigo-100 w-fit"><label className="font-bold text-indigo-900">Selecione o Ano:</label><select value={finSelectedYear} onChange={(e) => setFinSelectedYear(parseInt(e.target.value))} className="p-2 border rounded-lg bg-white outline-none focus:ring-2 focus:ring-indigo-500">{[2023, 2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}</select></div>
             <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
-              <table className="w-full text-left"><thead className="bg-gray-100 border-b"><tr><th className="p-4 font-bold text-gray-800">Mês</th><th className="p-4 font-bold text-gray-800 text-center">Hospedagens</th><th className="p-4 font-bold text-gray-800 text-right">Lucro Líquido (Real)</th></tr></thead>
-                <tbody className="divide-y">{monthNames.map((month, idx) => { const netTotal = calculateMonthlyNetTotal(idx, finSelectedYear); const count = getBookingsByMonth(idx, finSelectedYear).length; return ( <tr key={month} className="hover:bg-gray-50"><td className="p-4 font-medium text-gray-800">{month}</td><td className="p-4 text-center text-gray-600">{count > 0 ? <span className="bg-[#0000FF]/10 text-[#0000FF] px-2 py-1 rounded-full text-xs font-bold">{count}</span> : '-'}</td><td className={`p-4 text-right font-bold ${netTotal > 0 ? 'text-[#00AA00]' : 'text-gray-500'}`}>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(netTotal)}</td></tr> ); })}</tbody>
+              <table className="w-full text-left"><thead className="bg-gray-100 border-b"><tr><th className="p-4 font-bold text-gray-700">Mês</th><th className="p-4 font-bold text-gray-700 text-center">Hospedagens</th><th className="p-4 font-bold text-gray-700 text-right">Lucro Líquido (Real)</th></tr></thead>
+                <tbody className="divide-y">{monthNames.map((month, idx) => { const netTotal = calculateMonthlyNetTotal(idx, finSelectedYear); const count = getBookingsByMonth(idx, finSelectedYear).length; return ( <tr key={month} className="hover:bg-gray-50"><td className="p-4 font-medium text-gray-800">{month}</td><td className="p-4 text-center text-gray-600">{count > 0 ? <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full text-xs font-bold">{count}</span> : '-'}</td><td className={`p-4 text-right font-bold ${netTotal > 0 ? 'text-green-600' : 'text-gray-400'}`}>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(netTotal)}</td></tr> ); })}</tbody>
               </table>
             </div>
           </div>
@@ -1033,9 +1019,9 @@ export default function DogHotelApp() {
     const renderAgenda = () => (
       <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 min-h-[500px]">
         <div className="flex flex-col lg:flex-row justify-between items-center mb-6 gap-4">
-          <div className="flex bg-gray-100 p-1 rounded-lg w-full lg:w-auto justify-center lg:justify-start">{['day', 'week', 'month'].map(v => (<button key={v} onClick={() => setView(v)} className={`flex-1 lg:flex-none px-4 py-2 rounded-md text-sm font-medium transition capitalize ${view === v ? 'bg-white shadow text-[#0000FF]' : 'text-gray-600'}`}>{v === 'day' ? 'Dia' : v === 'week' ? 'Semana' : 'Mês'}</button>))}</div>
-          <div className="flex items-center justify-between w-full lg:w-auto gap-2 bg-gray-50 lg:bg-transparent p-2 rounded-lg lg:p-0"><button onClick={() => navigateDate(-1)} className="p-2 hover:bg-gray-200 rounded-full bg-white lg:bg-transparent shadow-sm lg:shadow-none"><ChevronLeft size={24} className="text-gray-700"/></button><h2 className="text-lg font-semibold w-full text-center lg:w-64 truncate text-gray-800">{view === 'day' && formatDateBR(currentDate)}{view === 'month' && currentDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}{view === 'week' && `Semana de ${formatDateBR(startOfWeek(currentDate))}`}</h2><button onClick={() => navigateDate(1)} className="p-2 hover:bg-gray-200 rounded-full bg-white lg:bg-transparent shadow-sm lg:shadow-none"><ChevronRight size={24} className="text-gray-700"/></button></div>
-          <button onClick={() => handleOpenBookingModal()} className="w-full lg:w-auto bg-[#0000FF] text-white px-4 py-3 rounded-lg font-bold flex items-center justify-center gap-2 shadow hover:bg-[#0000AA] transition-transform active:scale-95"><Plus size={20} /> <span>Nova Reserva</span></button>
+          <div className="flex bg-gray-100 p-1 rounded-lg w-full lg:w-auto justify-center lg:justify-start">{['day', 'week', 'month'].map(v => (<button key={v} onClick={() => setView(v)} className={`flex-1 lg:flex-none px-4 py-2 rounded-md text-sm font-medium transition capitalize ${view === v ? 'bg-white shadow text-indigo-600' : 'text-gray-500'}`}>{v === 'day' ? 'Dia' : v === 'week' ? 'Semana' : 'Mês'}</button>))}</div>
+          <div className="flex items-center justify-between w-full lg:w-auto gap-2 bg-gray-50 lg:bg-transparent p-2 rounded-lg lg:p-0"><button onClick={() => navigateDate(-1)} className="p-2 hover:bg-gray-200 rounded-full bg-white lg:bg-transparent shadow-sm lg:shadow-none"><ChevronLeft size={24}/></button><h2 className="text-lg font-semibold w-full text-center lg:w-64 truncate">{view === 'day' && formatDateBR(currentDate)}{view === 'month' && currentDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}{view === 'week' && `Semana de ${formatDateBR(startOfWeek(currentDate))}`}</h2><button onClick={() => navigateDate(1)} className="p-2 hover:bg-gray-200 rounded-full bg-white lg:bg-transparent shadow-sm lg:shadow-none"><ChevronRight size={24}/></button></div>
+          <button onClick={() => handleOpenBookingModal()} className="w-full lg:w-auto bg-indigo-600 text-white px-4 py-3 rounded-lg font-bold flex items-center justify-center gap-2 shadow hover:bg-indigo-700 transition-transform active:scale-95"><Plus size={20} /> <span>Nova Reserva</span></button>
         </div>
         {view === 'day' && renderDayView()}{view === 'week' && renderWeekView()}{view === 'month' && renderMonthView()}
       </div>
@@ -1046,10 +1032,10 @@ export default function DogHotelApp() {
       return (
         <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 min-h-[500px]">
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
-                <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2"><Users className="text-[#0000FF]"/> Cadastros</h2>
+                <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2"><Users /> Cadastros</h2>
                 <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
-                    <div className="relative flex-1 w-full"><input type="text" value={clientSearchTerm} onChange={(e) => setClientSearchTerm(e.target.value)} placeholder="Buscar por cão ou tutor..." className="pl-10 pr-4 py-3 border rounded-lg w-full lg:w-64 focus:outline-none focus:ring-2 focus:ring-[#0000FF]" /><Search className="absolute left-3 top-3.5 text-[#0000FF]" size={18} /></div>
-                    <button onClick={() => handleOpenClientModal(null)} className="bg-[#00AA00] text-white px-6 py-3 rounded-lg font-bold flex items-center justify-center gap-2 shadow hover:bg-[#00FF00] whitespace-nowrap w-full sm:w-auto"><Plus size={20} /> Novo Cadastro</button>
+                    <div className="relative flex-1 w-full"><input type="text" value={clientSearchTerm} onChange={(e) => setClientSearchTerm(e.target.value)} placeholder="Buscar por cão ou tutor..." className="pl-10 pr-4 py-3 border rounded-lg w-full lg:w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500" /><Search className="absolute left-3 top-3.5 text-gray-400" size={18} /></div>
+                    <button onClick={() => handleOpenClientModal(null)} className="bg-green-600 text-white px-6 py-3 rounded-lg font-bold flex items-center justify-center gap-2 shadow hover:bg-green-700 whitespace-nowrap w-full sm:w-auto"><Plus size={20} /> Novo Cadastro</button>
                 </div>
             </div>
             {filteredClients.length === 0 ? ( <div className="text-center py-20 text-gray-500 border-2 border-dashed rounded-xl bg-gray-50">{clientSearchTerm ? 'Nenhum cliente encontrado para esta busca.' : 'Nenhum cliente cadastrado.'}</div> ) : (
@@ -1057,14 +1043,14 @@ export default function DogHotelApp() {
                   {filteredClients.map(client => (
                       <div key={client.id} className="border rounded-xl p-4 hover:shadow-md transition bg-gray-50 flex flex-col gap-3">
                           <div className="flex items-center gap-3">
-                              <div className="w-14 h-14 bg-white rounded-full overflow-hidden border">{client.photos && client.photos[0] ? <img src={client.photos[0]} alt="Dog" className="w-full h-full object-cover" /> : <Dog className="p-3 text-gray-400 w-full h-full"/>}</div>
+                              <div className="w-14 h-14 bg-white rounded-full overflow-hidden border">{client.photos && client.photos[0] ? <img src={client.photos[0]} alt="Dog" className="w-full h-full object-cover" /> : <Dog className="p-3 text-gray-300 w-full h-full"/>}</div>
                               <div><h3 className="font-bold text-lg truncate w-40">{client.dogName}</h3><p className="text-sm text-gray-600 truncate w-40">{client.ownerName}</p></div>
                           </div>
                           <div className="text-sm space-y-1 mt-1">
                               <div className="flex items-center gap-2 text-gray-600"><FaceRating rating={client.pastBookings?.[0]?.dogBehaviorRating || 3} readonly size={16} /> <span className="text-xs">(Último Comp.)</span></div>
-                              <div className="flex items-center gap-2 text-gray-600"><History size={14} className="text-[#0000FF]"/> {client.pastBookings?.length || 0} Hospedagens</div>
+                              <div className="flex items-center gap-2 text-gray-600"><History size={14} /> {client.pastBookings?.length || 0} Hospedagens</div>
                           </div>
-                          <div className="flex gap-2 mt-auto pt-3"><button onClick={() => handleOpenClientModal(client)} className="flex-1 bg-white border border-[#0000FF]/30 text-[#0000FF] py-2 rounded-lg font-medium hover:bg-[#0000FF]/5 flex items-center justify-center gap-2"><FileText size={16}/> Detalhes</button><button onClick={() => handleDeleteClient(client.id)} className="p-2 text-[#FF0000] hover:bg-[#FF0000]/10 rounded-lg"><Trash2 size={20}/></button></div>
+                          <div className="flex gap-2 mt-auto pt-3"><button onClick={() => handleOpenClientModal(client)} className="flex-1 bg-white border border-indigo-200 text-indigo-700 py-2 rounded-lg font-medium hover:bg-indigo-50 flex items-center justify-center gap-2"><FileText size={16}/> Detalhes</button><button onClick={() => handleDeleteClient(client.id)} className="p-2 text-red-400 hover:bg-red-50 rounded-lg"><Trash2 size={20}/></button></div>
                       </div>
                   ))}
               </div>
@@ -1093,16 +1079,16 @@ export default function DogHotelApp() {
              const dayBookings = getBookingsForDate(day); 
              const isToday = isSameDate(day, new Date()); 
              return ( 
-               <div key={idx} className={`border rounded-lg flex flex-col h-[500px] ${isToday ? 'bg-[#0000FF]/5 border-[#0000FF]/20' : 'bg-white'}`}>
-                 <div className={`p-2 text-center border-b font-medium ${isToday ? 'text-[#0000FF]' : 'text-gray-600'}`}>
+               <div key={idx} className={`border rounded-lg flex flex-col h-[500px] ${isToday ? 'bg-blue-50 border-blue-200' : 'bg-white'}`}>
+                 <div className={`p-2 text-center border-b font-medium ${isToday ? 'text-blue-600' : 'text-gray-600'}`}>
                     {day.toLocaleDateString('pt-BR', { weekday: 'short' })} <br/>
                     <span className="text-sm text-gray-500">{day.getDate()}/{day.getMonth()+1}</span>
                  </div>
                  <div className="flex-1 p-1 overflow-y-auto space-y-2 scrollbar-thin">
                     {dayBookings.map(b => ( 
-                      <div key={b.id} onClick={() => handleOpenBookingModal(b)} className="p-2 bg-white border border-l-4 border-l-[#0000FF] rounded shadow-sm text-xs cursor-pointer hover:bg-[#0000FF]/5 transition">
+                      <div key={b.id} onClick={() => handleOpenBookingModal(b)} className="p-2 bg-white border border-l-4 border-l-indigo-500 rounded shadow-sm text-xs cursor-pointer hover:bg-indigo-50 transition">
                         <div className="font-bold truncate">{b.dogName}</div>
-                        <div className="text-gray-600 truncate">{b.ownerName}</div>
+                        <div className="text-gray-500 truncate">{b.ownerName}</div>
                       </div>
                     ))}
                  </div>
@@ -1122,10 +1108,10 @@ export default function DogHotelApp() {
                 const dayBookings = getBookingsForDate(day); 
                 const isToday = isSameDate(day, new Date()); 
                 return ( 
-                    <div key={idx} className={`bg-white h-32 p-1 flex flex-col hover:bg-gray-50 transition ${isToday ? 'bg-[#0000FF]/5' : ''}`}>
-                        <span className={`text-sm font-medium mb-1 self-end px-1.5 rounded ${isToday ? 'bg-[#0000FF] text-white' : 'text-gray-700'}`}>{day.getDate()}</span>
+                    <div key={idx} className={`bg-white h-32 p-1 flex flex-col hover:bg-gray-50 transition ${isToday ? 'bg-blue-50' : ''}`}>
+                        <span className={`text-sm font-medium mb-1 self-end px-1.5 rounded ${isToday ? 'bg-blue-600 text-white' : 'text-gray-700'}`}>{day.getDate()}</span>
                         <div className="flex-1 overflow-y-auto space-y-1">
-                            {dayBookings.slice(0, 3).map(b => (<div key={b.id} onClick={() => handleOpenBookingModal(b)} className="text-xs truncate bg-[#0000FF]/10 text-[#0000FF] px-1 rounded cursor-pointer">{b.dogName}</div>))}
+                            {dayBookings.slice(0, 3).map(b => (<div key={b.id} onClick={() => handleOpenBookingModal(b)} className="text-xs truncate bg-indigo-100 text-indigo-800 px-1 rounded cursor-pointer">{b.dogName}</div>))}
                             {dayBookings.length > 3 && <div className="text-xs text-gray-400 text-center">+{dayBookings.length - 3} mais</div>}
                         </div>
                     </div> 
@@ -1137,22 +1123,22 @@ export default function DogHotelApp() {
   
     return (
       <div className="flex h-screen bg-gray-100 font-sans text-gray-800 overflow-hidden">
-        <aside className="hidden md:flex w-64 bg-[#000099] text-white flex-col shadow-xl z-20"> {/* Azul escuro */}
-          <div className="p-6 flex items-center gap-3 border-b border-[#0000CC]"><div className="bg-white p-1.5 rounded-full text-[#000099]"><Dog size={24} /></div><h1 className="font-bold text-lg tracking-wide">DogManager</h1></div>
+        <aside className="hidden md:flex w-64 bg-indigo-900 text-white flex-col shadow-xl z-20">
+          <div className="p-6 flex items-center gap-3 border-b border-indigo-800"><div className="bg-white p-1.5 rounded-full text-indigo-900"><Dog size={24} /></div><h1 className="font-bold text-lg tracking-wide">DogManager</h1></div>
           <nav className="flex-1 py-6 space-y-2 px-3">
-              <button onClick={() => setActiveTab('agenda')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'agenda' ? 'bg-[#0000CC] text-white shadow' : 'text-[#AAAACC] hover:bg-[#0000CC] hover:text-white'}`}><Calendar size={20} /> Agenda</button>
-              <button onClick={() => setActiveTab('clients')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'clients' ? 'bg-[#0000CC] text-white shadow' : 'text-[#AAAACC] hover:bg-[#0000CC] hover:text-white'}`}><Users size={20} /> Cadastros</button>
-              <button onClick={() => setActiveTab('financial')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'financial' ? 'bg-[#0000CC] text-white shadow' : 'text-[#AAAACC] hover:bg-[#0000CC] hover:text-white'}`}><PieChart size={20} /> Financeiro</button>
+              <button onClick={() => setActiveTab('agenda')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'agenda' ? 'bg-indigo-700 text-white shadow' : 'text-indigo-200 hover:bg-indigo-800 hover:text-white'}`}><Calendar size={20} /> Agenda</button>
+              <button onClick={() => setActiveTab('clients')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'clients' ? 'bg-indigo-700 text-white shadow' : 'text-indigo-200 hover:bg-indigo-800 hover:text-white'}`}><Users size={20} /> Cadastros</button>
+              <button onClick={() => setActiveTab('financial')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'financial' ? 'bg-indigo-700 text-white shadow' : 'text-indigo-200 hover:bg-indigo-800 hover:text-white'}`}><PieChart size={20} /> Financeiro</button>
           </nav>
-          <div className="p-4 border-t border-[#0000CC]"><button onClick={handleLogout} className="w-full flex items-center gap-2 text-[#AAAACC] hover:text-white transition text-sm"><LogOut size={16}/> Sair do sistema</button></div>
+          <div className="p-4 border-t border-indigo-800"><button onClick={handleLogout} className="w-full flex items-center gap-2 text-indigo-300 hover:text-white transition text-sm"><LogOut size={16}/> Sair do sistema</button></div>
         </aside>
         <div className="flex-1 flex flex-col overflow-hidden">
           <header className="bg-white shadow-sm h-16 flex items-center px-4 md:px-6 justify-between z-10">
-               <div className="flex items-center gap-2 md:hidden"><Dog size={24} className="text-[#0000FF]"/><h2 className="font-bold text-[#000099]">DogManager</h2></div>
+               <div className="flex items-center gap-2 md:hidden"><Dog size={24} className="text-indigo-600"/><h2 className="font-bold text-indigo-900">DogManager</h2></div>
                <h2 className="hidden md:block text-xl font-semibold text-gray-700 capitalize">{activeTab === 'agenda' && 'Agenda de Hospedagem'} {activeTab === 'clients' && 'Gerenciamento de Clientes'} {activeTab === 'financial' && 'Relatórios Financeiros'}</h2>
                <div className="flex items-center gap-3">
-                  <div className="flex md:hidden gap-2 mr-2"><button onClick={() => setActiveTab('agenda')} className={`p-2 rounded ${activeTab === 'agenda' ? 'bg-[#0000FF]/10 text-[#0000FF]' : 'text-gray-500'}`}><Calendar size={20}/></button><button onClick={() => setActiveTab('clients')} className={`p-2 rounded ${activeTab === 'clients' ? 'bg-[#0000FF]/10 text-[#0000FF]' : 'text-gray-500'}`}><Users size={20}/></button><button onClick={() => setActiveTab('financial')} className={`p-2 rounded ${activeTab === 'financial' ? 'bg-[#0000FF]/10 text-[#0000FF]' : 'text-gray-500'}`}><PieChart size={20}/></button></div>
-                  <span className="text-sm text-gray-500 hidden sm:block">Olá, Recepcionista</span><div className="w-8 h-8 bg-[#0000FF]/10 rounded-full flex items-center justify-center text-[#0000FF] font-bold cursor-pointer" onClick={handleLogout}>R</div>
+                  <div className="flex md:hidden gap-2 mr-2"><button onClick={() => setActiveTab('agenda')} className={`p-2 rounded ${activeTab === 'agenda' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-500'}`}><Calendar size={20}/></button><button onClick={() => setActiveTab('clients')} className={`p-2 rounded ${activeTab === 'clients' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-500'}`}><Users size={20}/></button><button onClick={() => setActiveTab('financial')} className={`p-2 rounded ${activeTab === 'financial' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-500'}`}><PieChart size={20}/></button></div>
+                  <span className="text-sm text-gray-500 hidden sm:block">Olá, Recepcionista</span><div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold cursor-pointer" onClick={handleLogout}>R</div>
                </div>
           </header>
           <main className="flex-1 overflow-y-auto p-2 md:p-6">{activeTab === 'agenda' && renderAgenda()}{activeTab === 'clients' && renderClientList()}{activeTab === 'financial' && renderFinancial()}</main>
