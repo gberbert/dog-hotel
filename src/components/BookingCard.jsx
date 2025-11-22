@@ -22,12 +22,14 @@ export default function BookingCard({ booking, onEdit, onDelete }) {
 
   return (
     <div className={`bg-white rounded-xl p-0 shadow-sm hover:shadow-lg transition-all duration-300 border ${status.border} relative overflow-hidden group`}>
+      {/* Barra lateral colorida de status */}
       <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${status.color.split(' ')[0].replace('bg-', 'bg-opacity-100 bg-')}`}></div>
 
       <div className="p-4 pl-6">
-        {/* Cabeçalho */}
-        <div className="flex justify-between items-start mb-3">
-          <div className="flex items-center gap-3">
+        {/* --- CABEÇALHO CORRIGIDO --- */}
+        <div className="flex justify-between items-start mb-3 gap-2">
+          {/* Lado Esquerdo: Foto + Textos (Flexível com min-w-0 para truncar) */}
+          <div className="flex items-center gap-3 min-w-0 flex-1">
             <div className="w-12 h-12 rounded-full bg-gray-100 overflow-hidden border border-gray-100 flex-shrink-0">
                {booking.clientPhoto ? (
                   <img src={booking.clientPhoto} alt={booking.dogName} className="w-full h-full object-cover" />
@@ -35,17 +37,23 @@ export default function BookingCard({ booking, onEdit, onDelete }) {
                   <Dog className="w-full h-full p-2 text-gray-300" />
                )}
             </div>
-            <div>
-              <h3 className="font-bold text-gray-800 text-lg leading-tight truncate max-w-[120px]">{booking.dogName}</h3>
-              <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5 truncate max-w-[120px]">
-                <User size={12} /> {booking.ownerName}
+            <div className="min-w-0 flex-1">
+              <h3 className="font-bold text-gray-800 text-lg leading-tight truncate" title={booking.dogName}>
+                {booking.dogName}
+              </h3>
+              <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5 truncate">
+                <User size={12} className="flex-shrink-0" /> 
+                <span className="truncate">{booking.ownerName}</span>
               </p>
             </div>
           </div>
-          <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${status.color}`}>
+
+          {/* Lado Direito: Badge (Fixo, não encolhe) */}
+          <span className={`flex-shrink-0 whitespace-nowrap text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${status.color}`}>
             {status.label}
           </span>
         </div>
+        {/* --------------------------- */}
 
         {/* Datas */}
         <div className="flex items-center justify-between bg-gray-50 rounded-lg p-2 mb-3 border border-gray-100 text-xs">
@@ -77,19 +85,19 @@ export default function BookingCard({ booking, onEdit, onDelete }) {
 
         {/* Rodapé */}
         <div className="flex items-end justify-between border-t pt-2 border-gray-100">
-           <div>
-             <span className="text-xl font-bold text-indigo-600">{formatCurrency(totalNetValue)}</span>
+           <div className="min-w-0 pr-2">
+             <span className="text-xl font-bold text-indigo-600 truncate block">{formatCurrency(totalNetValue)}</span>
            </div>
-           <div className="flex items-center gap-1">
+           <div className="flex items-center gap-1 flex-shrink-0">
               {waLink && (
-                <a href={waLink} target="_blank" rel="noopener noreferrer" className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition">
+                <a href={waLink} target="_blank" rel="noopener noreferrer" className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition" title="Whatsapp">
                   <MessageCircle size={18} />
                 </a>
               )}
-              <button onClick={onEdit} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition">
+              <button onClick={onEdit} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition" title="Editar">
                 <Edit size={18} />
               </button>
-              <button onClick={onDelete} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
+              <button onClick={onDelete} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Excluir">
                 <Trash2 size={18} />
               </button>
            </div>
