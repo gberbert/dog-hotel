@@ -328,15 +328,17 @@ function BookingCard({ booking, onEdit, onDelete }) {
 
     return (
       <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-3 relative group">
+        
+        {/* BLOCO PRINCIPAL: FOTO + NOME + TUTOR */}
         <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3 overflow-hidden">
-            <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden border-2 border-white shadow-sm flex-shrink-0">
-              {booking.photos && booking.photos.length > 0 ? ( <img src={booking.photos[0]} alt={booking.dogName} className="w-full h-full object-cover" /> ) : <Dog className="w-full h-full p-2 text-gray-400" />}
+          <div className="flex items-center gap-4 overflow-hidden"> {/* AUMENTADO O ESPAÇAMENTO DO GAP */}
+            <div className="w-16 h-16 rounded-full bg-gray-200 overflow-hidden border-2 border-white shadow-sm flex-shrink-0"> {/* AUMENTADO PARA W-16 H-16 */}
+              {booking.clientPhoto ? ( <img src={booking.clientPhoto} alt={booking.dogName} className="w-full h-full object-cover" /> ) : <Dog className="w-full h-full p-2 text-gray-400" />} {/* AJUSTADO O PADDING DO ÍCONE */}
             </div>
             <div className="min-w-0">
-              <h4 className="font-bold text-lg text-gray-800 truncate">{booking.dogName}</h4>
-              <div className="flex items-center gap-2">
-                 <p className="text-sm text-gray-500 flex items-center gap-1 truncate"><User size={12} className="text-[#FF7F00]"/> {booking.ownerName}</p>
+              <h4 className="font-bold text-xl text-gray-800 truncate">{booking.dogName}</h4> {/* AUMENTADO O TAMANHO DO TEXTO */}
+              <div className="flex items-center gap-2 mt-0.5">
+                 <p className="text-sm text-gray-500 flex items-center gap-1 truncate"><User size={14} className="text-[#FF7F00]"/> {booking.ownerName}</p>
                  {waLink && (
                    <a 
                     href={waLink} 
@@ -352,13 +354,29 @@ function BookingCard({ booking, onEdit, onDelete }) {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-1 bg-indigo-50 px-2 py-1 rounded text-[#0000FF] flex-shrink-0"><FaceRating rating={booking.dogBehaviorRating || 3} readonly size={16} /></div>
+          {/* REMOVIDO: Avaliação de comportamento do topo (item removido) */}
+          {/* <div className="flex items-center gap-2 bg-indigo-50 px-2 py-1 rounded text-[#0000FF] flex-shrink-0">
+            <FaceRating rating={booking.dogBehaviorRating || 3} readonly size={16} />
+          </div> */}
         </div>
+        
+        {/* DATAS DE AGENDAMENTO */}
         <div className="grid grid-cols-2 gap-2 text-sm mt-2">
           <div className="bg-[#00FF00]/10 p-2 rounded text-[#00AA00] flex flex-col"><span className="text-xs uppercase font-bold">Entrada</span><span className="font-medium">{new Date(booking.checkIn).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', hour:'2-digit', minute:'2-digit'})}</span></div>
           <div className="bg-[#FF0000]/10 p-2 rounded text-[#FF0000] flex flex-col"><span className="text-xs uppercase font-bold">Saída</span><span className="font-medium">{new Date(booking.checkOut).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', hour:'2-digit', minute:'2-digit'})}</span></div>
         </div>
+        
+        {/* POSICIONAMENTO CARINHAS ABAIXO DAS DATAS */}
+        <div className="w-full flex justify-end">
+            <div className="flex items-center justify-end">
+                <span className="text-xs font-medium text-gray-500 mr-2">Comp. Geral:</span>
+                <FaceRating rating={booking.dogBehaviorRating || 3} readonly size={18} />
+            </div>
+        </div>
+        
         {booking.damageValue > 0 && ( <div className="flex items-center gap-2 text-xs text-[#FF0000] bg-[#FF0000]/10 p-2 rounded font-bold border border-[#FF0000]/20"><AlertTriangle size={14} /> Prejuízo Registrado: R$ {booking.damageValue}</div> )}
+        
+        {/* PREÇO E AÇÕES */}
         <div className="mt-auto pt-3 border-t border-gray-100 flex justify-between items-center">
            <span className="font-bold text-[#0000FF]">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((booking.totalValue || 0) - (booking.damageValue || 0))}</span>
            <div className="flex gap-2"><button onClick={onEdit} className="p-2 text-gray-400 hover:text-[#0000FF] hover:bg-indigo-50 rounded-full transition"><Edit size={18} /></button><button onClick={onDelete} className="p-2 text-gray-400 hover:text-[#FF0000] hover:bg-red-50 rounded-full transition"><Trash2 size={18} /></button></div>
@@ -1177,6 +1195,19 @@ export default function DogHotelApp() {
         const racesRef = collection(db, 'artifacts', appId, 'public', 'data', 'races');
         await addDoc(racesRef, { name: newRaceName });
     };
+    
+    // NOVO HELPER: Combina Bookings com Client Data (para injetar a foto)
+    const getBookingsWithClientData = (bookings, clients) => {
+        return bookings.map(booking => {
+            const client = clients.find(c => c.id === booking.clientId);
+            const clientPhoto = client?.photos?.[0] || null; // Pega a primeira foto do cliente
+            return {
+                ...booking,
+                clientPhoto: clientPhoto, // Injeta a URL da foto no objeto booking
+            };
+        });
+    };
+
 
     if (!isAuthenticated) return <LoginScreen onLogin={() => setIsAuthenticated(true)} db={db} appId={appId} isDbReady={!!user} />;
   
@@ -1263,14 +1294,13 @@ export default function DogHotelApp() {
           });
 
           if (isDuplicate) {
-              // MENSAGEM DE ERRO ESPECÍFICA SOLICITADA
+              // MENSAGEM DE ERRO ESPECÍFICA SOLICITADA E RETORNO
               alert(`Erro de Duplicidade no Cadastro:
 Não é possível salvar um novo registro com o nome de pet "${formData.dogName}".
 
 Um pet com esse mesmo nome já está cadastrado e vinculado a um dos números de WhatsApp fornecidos (Tutor 1 ou Tutor 2).
 
 Verifique o cadastro existente.`);
-              // CORRIGIDO: Retorna imediatamente após o alerta
               return; 
           }
       }
@@ -1349,13 +1379,19 @@ Verifique o cadastro existente.`);
     };
   
     // --- Filtros e Calculos ---
-    const getBookingsForDate = (date) => bookings.filter(b => {
-        if (!b.checkIn || !b.checkOut) return false;
-        const start = new Date(b.checkIn).setHours(0,0,0,0);
-        const end = new Date(b.checkOut).setHours(23,59,59,999);
-        const current = new Date(date).setHours(12,0,0,0);
-        return current >= start && current <= end;
-    });
+    const getBookingsForDate = (date) => {
+        // Usa a função de mapeamento antes de filtrar
+        const allBookingsWithData = getBookingsWithClientData(bookings, clientDatabase); 
+        
+        return allBookingsWithData.filter(b => {
+            if (!b.checkIn || !b.checkOut) return false;
+            const start = new Date(b.checkIn).setHours(0,0,0,0);
+            const end = new Date(b.checkOut).setHours(23,59,59,999);
+            const current = new Date(date).setHours(12,0,0,0);
+            return current >= start && current <= end;
+        });
+    }
+
     const getFilteredClients = () => {
       if (!clientSearchTerm) return clientDatabase;
       const term = clientSearchTerm.toLowerCase();
@@ -1365,7 +1401,9 @@ Verifique o cadastro existente.`);
       );
     };
     const calculateMonthlyNetTotal = (month, year) => {
-      return bookings.filter(b => {
+        const allBookingsWithData = getBookingsWithClientData(bookings, clientDatabase);
+        
+        return allBookingsWithData.filter(b => {
           if (!b.checkIn) return false;
           const d = new Date(b.checkIn);
           return d.getMonth() === month && d.getFullYear() === year;
@@ -1375,11 +1413,15 @@ Verifique o cadastro existente.`);
           return acc + (revenue - damage);
       }, 0);
     };
-    const getBookingsByMonth = (month, year) => bookings.filter(b => {
+    const getBookingsByMonth = (month, year) => {
+        const allBookingsWithData = getBookingsWithClientData(bookings, clientDatabase);
+
+        return allBookingsWithData.filter(b => {
           if (!b.checkIn) return false;
           const d = new Date(b.checkIn);
           return d.getMonth() === month && d.getFullYear() === year;
       }).sort((a, b) => new Date(a.checkIn) - new Date(b.checkIn));
+    }
     const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
   
     // --- Renders ---
