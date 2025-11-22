@@ -1611,19 +1611,6 @@ Verifique o cadastro existente.`);
     const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
     const renderFinancial = () => {
-        
-        // CÁLCULO DO SUBTOTAL ANUAL
-        let annualNetTotal = 0;
-        let annualBookingsCount = 0;
-
-        const monthlyData = monthNames.map((month, idx) => {
-            const netTotal = calculateMonthlyNetTotal(idx, finSelectedYear);
-            const count = getBookingsByMonth(idx, finSelectedYear).length;
-            annualNetTotal += netTotal;
-            annualBookingsCount += count;
-            return { month, idx, netTotal, count };
-        });
-
         return (
             <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 min-h-[500px] animate-fade-in">
                 <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
@@ -1660,29 +1647,8 @@ Verifique o cadastro existente.`);
                   <div className="space-y-6">
                     <div className="flex items-center gap-2 bg-[#0000FF]/5 p-4 rounded-xl border border-[#0000FF]/10 w-fit"><label className="font-bold text-[#0000FF]">Selecione o Ano:</label><select value={finSelectedYear} onChange={(e) => setFinSelectedYear(parseInt(e.target.value))} className="p-2 border rounded-lg bg-white outline-none focus:ring-2 focus:ring-[#0000FF]">{[2023, 2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}</select></div>
                     <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
-                      <table className="w-full text-left">
-                        <thead className="bg-gray-100 border-b"><tr><th className="p-4 font-bold text-gray-800">Mês</th><th className="p-4 font-bold text-gray-800 text-center">Hospedagens</th><th className="p-4 font-bold text-gray-800 text-right">Lucro Líquido (Real)</th></tr></thead>
-                        <tbody className="divide-y">
-                          {monthlyData.map(({ month, idx, netTotal, count }) => (
-                            <tr key={month} className="hover:bg-gray-50">
-                              <td className="p-4 font-medium text-gray-800">{month}</td>
-                              <td className="p-4 text-center text-gray-600">{count > 0 ? <span className="bg-[#0000FF]/10 text-[#0000FF] px-2 py-1 rounded-full text-xs font-bold">{count}</span> : '-'}</td>
-                              <td className={`p-4 text-right font-bold ${netTotal > 0 ? 'text-[#00AA00]' : 'text-gray-500'}`}>
-                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(netTotal)}
-                              </td>
-                            </tr>
-                          ))}
-                          {/* LINHA DE SUBTOTAL ANUAL */}
-                           <tr className="bg-gray-200 border-t-2 border-gray-400 font-extrabold text-sm">
-                            <td className="p-4">TOTAL ANUAL ({finSelectedYear})</td>
-                            <td className="p-4 text-center text-gray-800">
-                                <span className="bg-[#0000FF] text-white px-2 py-1 rounded-full text-xs">{annualBookingsCount}</span>
-                            </td>
-                            <td className={`p-4 text-right ${annualNetTotal > 0 ? 'text-[#00AA00]' : 'text-gray-500'}`}>
-                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(annualNetTotal)}
-                            </td>
-                           </tr>
-                        </tbody>
+                      <table className="w-full text-left"><thead className="bg-gray-100 border-b"><tr><th className="p-4 font-bold text-gray-800">Mês</th><th className="p-4 font-bold text-gray-800 text-center">Hospedagens</th><th className="p-4 font-bold text-gray-800 text-right">Lucro Líquido (Real)</th></tr></thead>
+                        <tbody className="divide-y">{monthNames.map((month, idx) => { const netTotal = calculateMonthlyNetTotal(idx, finSelectedYear); const count = getBookingsByMonth(idx, finSelectedYear).length; return ( <tr key={month} className="hover:bg-gray-50"><td className="p-4 font-medium text-gray-800">{month}</td><td className="p-4 text-center text-gray-600">{count > 0 ? <span className="bg-[#0000FF]/10 text-[#0000FF] px-2 py-1 rounded-full text-xs font-bold">{count}</span> : '-'}</td><td className={`p-4 text-right font-bold ${netTotal > 0 ? 'text-[#00AA00]' : 'text-gray-500'}`}>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(netTotal)}</td></tr> ); })}</tbody>
                       </table>
                     </div>
                   </div>
