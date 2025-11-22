@@ -5,7 +5,7 @@ import {
   DollarSign, Trash2, Edit, CheckCircle, AlertCircle,
   Heart, History, Search, LayoutGrid, Users, Menu,
   LogOut, Lock, Mail, Send, PieChart, TrendingUp, CalendarRange, AlertTriangle,
-  Smile, Meh, Frown, Angry, Laugh, Upload, MessageCircle, FilePlus
+  Smile, Meh, Frown, Angry, Laugh, Upload, MessageCircle
 } from 'lucide-react';
 
 // --- IMPORTAÇÕES DO FIREBASE ---
@@ -185,8 +185,12 @@ const LoginScreen = ({ onLogin, db, appId, isDbReady }) => {
     setIsLoading(true);
     
     try {
+        // Referência à coleção pública de logins
+        // Caminho ajustado para evitar problemas de permissão: public/data/logins
         const loginsRef = collection(db, 'artifacts', appId, 'public', 'data', 'logins');
+        
         const q = query(loginsRef, where("email", "==", email), where("password", "==", password));
+        
         const querySnapshot = await getDocs(q);
         
         if (!querySnapshot.empty) {
@@ -299,37 +303,22 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [formData, setFormData] = useState({
     clientId: data?.clientId || (mode.startsWith('client') && data?.id ? data.id : '') || '',
-    dogName: data?.dogName || '', 
-    dogSize: data?.dogSize || 'pequeno', // Novo Campo: Porte
-    ownerName: data?.ownerName || '', 
-    ownerEmail: data?.ownerEmail || '', // Novo Campo: Email
-    ownerDoc: data?.ownerDoc || '',
+    dogName: data?.dogName || '', ownerName: data?.ownerName || '', ownerDoc: data?.ownerDoc || '',
     whatsapp: data?.whatsapp || '',
-    address: data?.address || '', 
-    birthDate: data?.birthDate || '', 
-    history: data?.history || '',
-    ownerHistory: data?.ownerHistory || '', 
-    ownerRating: data?.ownerRating || 3, 
-    restrictions: data?.restrictions || '', 
-    socialization: data?.socialization || [], 
-    checkIn: data?.checkIn || '', 
-    checkOut: data?.checkOut || '',
+    address: data?.address || '', birthDate: data?.birthDate || '', history: data?.history || '',
+    ownerHistory: data?.ownerHistory || '', ownerRating: data?.ownerRating || 3, 
+    restrictions: data?.restrictions || '', socialization: data?.socialization || [], 
+    checkIn: data?.checkIn || '', checkOut: data?.checkOut || '',
     rating: data?.rating || 5, 
     dogBehaviorRating: data?.dogBehaviorRating || 3, 
-    dailyRate: data?.dailyRate || 80, 
-    totalValue: data?.totalValue || 0,
-    damageValue: data?.damageValue || '', 
-    damageDescription: data?.damageDescription || '',
-    photos: data?.photos || [], 
-    vaccineDocs: data?.vaccineDocs || [], // Novo Campo: Vacinas
-    vaccines: data?.vaccines || '', 
-    pastBookings: data?.pastBookings || []
+    dailyRate: data?.dailyRate || 80, totalValue: data?.totalValue || 0,
+    damageValue: data?.damageValue || '', damageDescription: data?.damageDescription || '',
+    photos: data?.photos || [], vaccines: data?.vaccines || '', pastBookings: data?.pastBookings || []
   });
   const [socialDogInput, setSocialDogInput] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(-1);
-  const [vaccineLightboxIndex, setVaccineLightboxIndex] = useState(-1);
   
   const isBookingMode = mode === 'booking';
 
@@ -338,42 +327,6 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
     const damage = parseFloat(curr.damageValue) || 0;
     return acc + (total - damage); 
   }, 0);
-
-  // --- CÁLCULO DE IDADE REAL ---
-  const calculateAge = (birthDate) => {
-    if (!birthDate) return 0;
-    const today = new Date();
-    const birth = new Date(birthDate);
-    let age = today.getFullYear() - birth.getFullYear();
-    const m = today.getMonth() - birth.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
-        age--;
-    }
-    return age < 0 ? 0 : age;
-  };
-
-  const realAge = calculateAge(formData.birthDate);
-
-  // --- CÁLCULO DE IDADE HUMANA (Lógica da Tabela) ---
-  const calculateHumanAge = (age, size) => {
-    if (!age || age < 1) return 0;
-    const index = Math.min(age, 16) - 1; // Tabela vai até 16 anos
-    
-    const chart = {
-        pequeno: [15, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80],
-        medio:   [15, 24, 28, 32, 36, 42, 47, 51, 56, 60, 65, 69, 74, 78, 83, 87],
-        grande:  [15, 24, 28, 32, 36, 45, 50, 55, 61, 66, 72, 77, 82, 88, 93, 120]
-    };
-    
-    // Normalizar chave do tamanho
-    let sizeKey = 'pequeno';
-    if (size === 'Médio') sizeKey = 'medio';
-    if (size === 'Grande') sizeKey = 'grande';
-    
-    return chart[sizeKey][index] || chart[sizeKey][15]; 
-  };
-
-  const humanAge = calculateHumanAge(realAge, formData.dogSize);
 
   useEffect(() => {
     if (isBookingMode && formData.checkIn && formData.checkOut && formData.dailyRate) {
@@ -387,34 +340,26 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
 
   const handleChange = (e) => { const { name, value } = e.target; setFormData(prev => ({ ...prev, [name]: value })); };
 
-  // --- UPLOAD GENÉRICO (FOTOS OU VACINAS) ---
-  const handleFileSelect = async (e, type) => {
+  const handleFileSelect = async (e) => {
     if (e.target.files && e.target.files[0]) {
         const file = e.target.files[0];
         if (file.size > 3 * 1024 * 1024) { 
-            alert("O arquivo é muito grande! Máximo 3MB.");
+            alert("A imagem é muito grande! Máximo 3MB.");
             return;
         }
-        
-        // Validação de limites
-        if (type === 'photos' && (formData.photos || []).length >= 5) return;
-        if (type === 'vaccines' && (formData.vaccineDocs || []).length >= 3) return;
-
         setIsUploading(true); 
         try {
-            const uniqueName = `${type}-${Date.now()}-${file.name}`;
+            const uniqueName = `${Date.now()}-${file.name}`;
+            // Caminho público para imagens
             const storageRef = ref(storage, `images/public/${uniqueName}`);
             await uploadBytes(storageRef, file);
             const downloadURL = await getDownloadURL(storageRef);
-            
-            if (type === 'photos') {
+            if ((formData.photos || []).length < 5) {
                  setFormData(prev => ({ ...prev, photos: [...(prev.photos || []), downloadURL] }));
-            } else if (type === 'vaccines') {
-                 setFormData(prev => ({ ...prev, vaccineDocs: [...(prev.vaccineDocs || []), downloadURL] }));
             }
         } catch (error) {
             console.error("Erro no upload:", error);
-            alert("Falha ao enviar arquivo. Verifique sua conexão.");
+            alert("Falha ao enviar imagem. Verifique sua conexão.");
         } finally {
             setIsUploading(false);
         }
@@ -431,23 +376,15 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
   };
   const selectClient = (client) => {
     setFormData(prev => ({ ...prev, 
-      clientId: client.id, dogName: client.dogName, dogSize: client.dogSize || 'pequeno', 
-      ownerName: client.ownerName, ownerEmail: client.ownerEmail || '', ownerDoc: client.ownerDoc, 
+      clientId: client.id, dogName: client.dogName, ownerName: client.ownerName, ownerDoc: client.ownerDoc, 
       whatsapp: client.whatsapp,
       address: client.address, birthDate: client.birthDate, history: client.history, 
       ownerHistory: client.ownerHistory, ownerRating: client.ownerRating, restrictions: client.restrictions, 
-      socialization: client.socialization || [], photos: client.photos || [], vaccineDocs: client.vaccineDocs || [], vaccines: client.vaccines, pastBookings: client.pastBookings || [] 
+      socialization: client.socialization || [], photos: client.photos || [], vaccines: client.vaccines, pastBookings: client.pastBookings || [] 
     }));
     setSearchQuery(''); setShowSearchResults(false);
   };
-  
-  const removePhoto = (index, type) => {
-      if (type === 'photos') {
-        setFormData(prev => ({ ...prev, photos: prev.photos.filter((_, i) => i !== index) }));
-      } else {
-        setFormData(prev => ({ ...prev, vaccineDocs: prev.vaccineDocs.filter((_, i) => i !== index) }));
-      }
-  };
+  const removePhoto = (index) => setFormData(prev => ({ ...prev, photos: prev.photos.filter((_, i) => i !== index) }));
   const removeSocialDog = (name) => setFormData(prev => ({ ...prev, socialization: prev.socialization.filter(d => d !== name) }));
   
   const handleSubmit = async (e) => { 
@@ -470,22 +407,12 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-2 md:p-4 overflow-y-auto">
-      {/* Lightbox Fotos Cão */}
       {lightboxIndex >= 0 && (
           <ImageLightbox 
               images={formData.photos || []} 
               currentIndex={lightboxIndex} 
               setIndex={setLightboxIndex} 
               onClose={() => setLightboxIndex(-1)} 
-          />
-      )}
-      {/* Lightbox Vacinas */}
-      {vaccineLightboxIndex >= 0 && (
-          <ImageLightbox 
-              images={formData.vaccineDocs || []} 
-              currentIndex={vaccineLightboxIndex} 
-              setIndex={setVaccineLightboxIndex} 
-              onClose={() => setVaccineLightboxIndex(-1)} 
           />
       )}
 
@@ -497,22 +424,7 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
         <form onSubmit={handleSubmit} className="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-6 flex-1 overflow-y-auto">
           <div className="space-y-4">
             <h3 className="text-indigo-600 font-bold border-b pb-2 flex items-center gap-2"><Dog size={18}/> Dados do Pet</h3>
-            <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-sm font-medium text-gray-700">Nome</label><input required name="dogName" value={formData.dogName} onChange={handleChange} className="mt-1 w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" /></div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Porte</label>
-                    <select name="dogSize" value={formData.dogSize} onChange={handleChange} className="mt-1 w-full p-2 border rounded-lg outline-none bg-white">
-                        <option value="Pequeno">Pequeno (até 10kg)</option>
-                        <option value="Médio">Médio (10 a 25kg)</option>
-                        <option value="Grande">Grande (+25kg)</option>
-                    </select>
-                </div>
-            </div>
-            <div className='grid grid-cols-3 gap-4'>
-                <div><label className="block text-sm font-medium text-gray-700">Nascimento</label><input type="date" name="birthDate" value={formData.birthDate} onChange={handleChange} className="mt-1 w-full p-2 border rounded-lg outline-none" /></div>
-                <div><label className="block text-sm font-medium text-gray-500">Idade (Real)</label><input type="text" readOnly value={realAge > 0 ? `${realAge} anos` : '-'} className="mt-1 w-full p-2 border rounded-lg bg-gray-100 text-gray-600 font-bold outline-none" /></div>
-                <div><label className="block text-sm font-medium text-gray-500">Idade (Humana)</label><input type="text" readOnly value={humanAge > 0 ? `${humanAge} anos` : '-'} className="mt-1 w-full p-2 border rounded-lg bg-orange-50 text-orange-700 font-bold outline-none border-orange-200" /></div>
-            </div>
+            <div className="grid grid-cols-2 gap-4"><div><label className="block text-sm font-medium text-gray-700">Nome</label><input required name="dogName" value={formData.dogName} onChange={handleChange} className="mt-1 w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" /></div><div><label className="block text-sm font-medium text-gray-700">Nascimento</label><input type="date" name="birthDate" value={formData.birthDate} onChange={handleChange} className="mt-1 w-full p-2 border rounded-lg outline-none" /></div></div>
             <div><label className="block text-sm font-medium text-gray-700 mb-1">Comportamento / Obs</label><textarea name="history" value={formData.history} onChange={handleChange} rows={2} className="mt-1 w-full p-2 border rounded-lg outline-none text-sm" placeholder="Histórico do cão..."></textarea></div>
             
             <div className="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
@@ -534,10 +446,9 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
             <div className="bg-gray-50 p-3 rounded-lg border space-y-3">
               <div><label className="block text-sm font-medium text-gray-700">Nome Completo</label><input required name="ownerName" value={formData.ownerName} onChange={handleChange} className="mt-1 w-full p-2 border rounded-lg outline-none" /></div>
               <div className="grid grid-cols-2 gap-4">
-                 <div><label className="block text-sm font-medium text-gray-700">Email</label><input type="email" name="ownerEmail" value={formData.ownerEmail} onChange={handleChange} className="mt-1 w-full p-2 border rounded-lg outline-none" placeholder="email@exemplo.com" /></div>
                  <div><label className="block text-sm font-medium text-gray-700">CPF/RG</label><input required name="ownerDoc" value={formData.ownerDoc} onChange={handleChange} className="mt-1 w-full p-2 border rounded-lg outline-none" /></div>
+                 <div><label className="block text-sm font-medium text-gray-700">Endereço</label><input name="address" value={formData.address} onChange={handleChange} className="mt-1 w-full p-2 border rounded-lg outline-none" /></div>
               </div>
-              <div><label className="block text-sm font-medium text-gray-700">Endereço</label><input name="address" value={formData.address} onChange={handleChange} className="mt-1 w-full p-2 border rounded-lg outline-none" /></div>
               <div>
                  <label className="block text-sm font-medium text-gray-700 flex items-center gap-1"><MessageCircle size={16} className="text-green-600"/> WhatsApp</label>
                  <div className="flex gap-2 mt-1">
@@ -590,7 +501,6 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
           </div>
 
           <div className="md:col-span-2 space-y-4 border-t pt-4">
-            {/* HISTÓRICO (MANTIDO IGUAL) */}
             <div className="bg-gray-50 rounded-lg p-4 border">
                 <h3 className="text-gray-700 font-bold flex items-center gap-2 mb-2"><History size={18} /> Histórico de Hospedagens ({formData.pastBookings.length})</h3>
                 {formData.pastBookings.length === 0 ? ( <p className="text-gray-400 text-sm italic">Nenhum histórico registrado.</p> ) : (
@@ -637,17 +547,15 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
                     </div>
                 )}
             </div>
-            
-            {/* GALERIA DE FOTOS */}
-            <h3 className="text-indigo-600 font-bold border-b pb-2 flex items-center gap-2"><Camera size={18}/> Galeria do Pet</h3>
+            <h3 className="text-indigo-600 font-bold border-b pb-2 flex items-center gap-2"><Camera size={18}/> Galeria</h3>
             <div className="flex gap-2 mb-2 items-center">
                <label className={`flex-1 cursor-pointer bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-300 rounded-lg p-2 flex items-center justify-center gap-2 transition ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                   {isUploading ? <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600"></div><span className="text-sm font-medium">Enviando...</span></> : <><Upload size={20} /><span className="text-sm font-medium">Adicionar Foto</span></>}
+                   {isUploading ? <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600"></div><span className="text-sm font-medium">Enviando...</span></> : <><Upload size={20} /><span className="text-sm font-medium">Escolher foto do dispositivo</span></>}
                    <input 
                        type="file" 
                        accept="image/*" 
                        className="hidden" 
-                       onChange={(e) => handleFileSelect(e, 'photos')}
+                       onChange={handleFileSelect}
                        disabled={(formData.photos || []).length >= 5 || isUploading}
                    />
                </label>
@@ -655,9 +563,7 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
                    {(formData.photos || []).length}/5 fotos
                </div>
             </div>
-            <div className="flex gap-4 overflow-x-auto pb-2 min-h-[90px]">
-                {(formData.photos || []).length === 0 && <p className="text-sm text-gray-400 italic p-2">Nenhuma foto adicionada.</p>}
-                {(formData.photos || []).map((url, idx) => ( 
+            <div className="flex gap-4 overflow-x-auto pb-2">{(formData.photos || []).map((url, idx) => ( 
                 <div key={idx} className="relative w-20 h-20 flex-shrink-0 group">
                     <img 
                         src={url} 
@@ -667,44 +573,7 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
                     />
                     <button 
                         type="button" 
-                        onClick={() => removePhoto(idx, 'photos')} 
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow opacity-0 group-hover:opacity-100 transition"
-                    >
-                        <X size={10} />
-                    </button>
-                </div> 
-            ))}</div>
-
-            {/* DOCUMENTOS DE VACINA - NOVA SEÇÃO */}
-            <h3 className="text-indigo-600 font-bold border-b pb-2 flex items-center gap-2 mt-4"><FilePlus size={18}/> Documentos de Vacinas</h3>
-            <div className="flex gap-2 mb-2 items-center">
-               <label className={`flex-1 cursor-pointer bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg p-2 flex items-center justify-center gap-2 transition ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                   {isUploading ? <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div><span className="text-sm font-medium">Enviando...</span></> : <><Upload size={20} /><span className="text-sm font-medium">Adicionar Vacina (Foto)</span></>}
-                   <input 
-                       type="file" 
-                       accept="image/*" 
-                       className="hidden" 
-                       onChange={(e) => handleFileSelect(e, 'vaccines')}
-                       disabled={(formData.vaccineDocs || []).length >= 3 || isUploading}
-                   />
-               </label>
-               <div className="text-xs text-gray-400 w-24 text-center">
-                   {(formData.vaccineDocs || []).length}/3 docs
-               </div>
-            </div>
-            <div className="flex gap-4 overflow-x-auto pb-2 min-h-[90px]">
-                {(formData.vaccineDocs || []).length === 0 && <p className="text-sm text-gray-400 italic p-2">Nenhum comprovante de vacina.</p>}
-                {(formData.vaccineDocs || []).map((url, idx) => ( 
-                <div key={idx} className="relative w-20 h-20 flex-shrink-0 group">
-                    <img 
-                        src={url} 
-                        alt="Vacina" 
-                        className="w-full h-full object-cover rounded-lg shadow-md cursor-zoom-in hover:opacity-90 transition border-2 border-blue-200" 
-                        onClick={() => setVaccineLightboxIndex(idx)}
-                    />
-                    <button 
-                        type="button" 
-                        onClick={() => removePhoto(idx, 'vaccines')} 
+                        onClick={() => removePhoto(idx)} 
                         className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow opacity-0 group-hover:opacity-100 transition"
                     >
                         <X size={10} />
@@ -880,15 +749,11 @@ export default function DogHotelApp() {
           : clientDatabase.find(c => c.id === clientId);
   
           const clientDataToSave = {
-          dogName: formData.dogName, dogSize: formData.dogSize, // Salvar Porte
-          ownerName: formData.ownerName, ownerEmail: formData.ownerEmail, // Salvar Email
-          ownerDoc: formData.ownerDoc,
+          dogName: formData.dogName, ownerName: formData.ownerName, ownerDoc: formData.ownerDoc,
           whatsapp: formData.whatsapp,
           address: formData.address, birthDate: formData.birthDate, history: formData.history,
           ownerHistory: formData.ownerHistory, ownerRating: formData.ownerRating, restrictions: formData.restrictions,
-          socialization: formData.socialization || [], photos: formData.photos || [], 
-          vaccineDocs: formData.vaccineDocs || [], // Salvar Vacinas
-          vaccines: formData.vaccines,
+          socialization: formData.socialization || [], photos: formData.photos || [], vaccines: formData.vaccines,
           dogBehaviorRating: formData.dogBehaviorRating,
           };
   
