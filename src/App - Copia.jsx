@@ -39,10 +39,6 @@ const storage = getStorage(app);
 // Identificador do App
 const appId = 'doghotel-production';
 
-// --- CONSTANTE PARA ID COMPARTILHADO ---
-// Isso garante que todos os dispositivos vejam os mesmos dados
-const SHARED_DB_ID = 'unidade_principal_doghotel';
-
 // --- COMPONENTES AUXILIARES ---
 
 const StarRating = ({ rating, setRating, readonly = false, color = "text-yellow-400", size = 24 }) => {
@@ -119,6 +115,7 @@ const FaceRating = ({ rating, setRating, readonly = false, size = 24 }) => {
 
 // --- NOVO COMPONENTE: VISUALIZADOR DE IMAGEM (LIGHTBOX) ---
 const ImageLightbox = ({ images, currentIndex, onClose, setIndex }) => {
+    // Suporte a teclado (Setas e ESC)
     useEffect(() => {
       const handleKeyDown = (e) => {
         if (e.key === 'Escape') onClose();
@@ -133,6 +130,7 @@ const ImageLightbox = ({ images, currentIndex, onClose, setIndex }) => {
   
     return (
       <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center backdrop-blur-sm animate-fade-in">
+        {/* Botão Fechar */}
         <button 
             onClick={onClose} 
             className="absolute top-4 right-4 text-white hover:text-gray-300 p-2 rounded-full bg-black/20 hover:bg-white/10 transition"
@@ -141,6 +139,7 @@ const ImageLightbox = ({ images, currentIndex, onClose, setIndex }) => {
             <X size={32} />
         </button>
         
+        {/* Navegação Esquerda */}
         {images.length > 1 && (
           <button 
             onClick={(e) => { e.stopPropagation(); setIndex((currentIndex - 1 + images.length) % images.length); }} 
@@ -150,6 +149,7 @@ const ImageLightbox = ({ images, currentIndex, onClose, setIndex }) => {
           </button>
         )}
         
+        {/* Imagem Principal */}
         <div className="relative max-w-[90vw] max-h-[90vh]">
              <img 
                 src={images[currentIndex]} 
@@ -161,6 +161,7 @@ const ImageLightbox = ({ images, currentIndex, onClose, setIndex }) => {
              </div>
         </div>
         
+        {/* Navegação Direita */}
         {images.length > 1 && (
           <button 
             onClick={(e) => { e.stopPropagation(); setIndex((currentIndex + 1) % images.length); }} 
@@ -175,6 +176,7 @@ const ImageLightbox = ({ images, currentIndex, onClose, setIndex }) => {
 
 // --- COMPONENTE DE LOGIN ---
 const LoginScreen = ({ onLogin }) => {
+  const [view, setView] = useState('login');
   const [email, setEmail] = useState('admin@doghotel.com');
   const [password, setPassword] = useState('admin123');
   const [isLoading, setIsLoading] = useState(false);
@@ -200,7 +202,7 @@ const LoginScreen = ({ onLogin }) => {
              <Dog size={48} className="text-indigo-600" />
            </div>
            <h1 className="text-2xl font-bold text-indigo-900">DogHotel Manager</h1>
-           <p className="text-indigo-500">Gestão Compartilhada</p>
+           <p className="text-indigo-500">Gestão Profissional de Hospedagem</p>
         </div>
         <div className="p-8">
             <form onSubmit={handleLoginSubmit} className="space-y-4">
@@ -219,7 +221,7 @@ const LoginScreen = ({ onLogin }) => {
                 </div>
               </div>
               <button type="submit" disabled={isLoading} className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition shadow-lg flex items-center justify-center gap-2 disabled:opacity-70">
-                {isLoading ? 'Entrando...' : 'Acessar Sistema'}
+                {isLoading ? 'Entrando...' : 'Entrar no Sistema'}
               </button>
             </form>
         </div>
@@ -301,6 +303,7 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
   const [socialDogInput, setSocialDogInput] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  // State para controlar o Lightbox
   const [lightboxIndex, setLightboxIndex] = useState(-1);
   
   const isBookingMode = mode === 'booking';
@@ -333,8 +336,9 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
         setIsUploading(true); 
         try {
             const uniqueName = `${Date.now()}-${file.name}`;
-            // MODIFICADO: Usa SHARED_DB_ID ao invés de currentUser.uid para imagens compartilhadas
-            const storageRef = ref(storage, `images/${SHARED_DB_ID}/${uniqueName}`);
+            const currentUser = getAuth(app).currentUser;
+            if (!currentUser) throw new Error("Usuário não autenticado");
+            const storageRef = ref(storage, `images/${currentUser.uid}/${uniqueName}`);
             await uploadBytes(storageRef, file);
             const downloadURL = await getDownloadURL(storageRef);
             if ((formData.photos || []).length < 5) {
@@ -390,6 +394,7 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-2 md:p-4 overflow-y-auto">
+      {/* Renderiza o Lightbox se houver uma foto selecionada */}
       {lightboxIndex >= 0 && (
           <ImageLightbox 
               images={formData.photos || []} 
@@ -548,6 +553,7 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
             </div>
             <div className="flex gap-4 overflow-x-auto pb-2">{(formData.photos || []).map((url, idx) => ( 
                 <div key={idx} className="relative w-20 h-20 flex-shrink-0 group">
+                    {/* CLIQUE NA FOTO PARA ABRIR O LIGHTBOX */}
                     <img 
                         src={url} 
                         alt="Pet" 
@@ -575,7 +581,7 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
   );
 }
 
-// --- App Principal (Main Component) ---
+// --- App Principal (Main Component defined last to access previous components) ---
 export default function DogHotelApp() {
     const [isAuthenticated, setIsAuthenticated] = useState(false); 
     const [user, setUser] = useState(null);
@@ -608,12 +614,10 @@ export default function DogHotelApp() {
       return () => unsubscribe();
     }, []);
   
-    // MODIFICADO: UseEffect agora usa SHARED_DB_ID para ler os dados
     useEffect(() => {
       if (!user) return;
-      // Agora lemos de um caminho fixo 'unidade_principal_doghotel' em vez de user.uid
-      const clientsRef = collection(db, 'artifacts', appId, 'users', SHARED_DB_ID, 'clients');
-      const bookingsRef = collection(db, 'artifacts', appId, 'users', SHARED_DB_ID, 'bookings');
+      const clientsRef = collection(db, 'artifacts', appId, 'users', user.uid, 'clients');
+      const bookingsRef = collection(db, 'artifacts', appId, 'users', user.uid, 'bookings');
   
       const unsubscribeClients = onSnapshot(clientsRef, (snapshot) => {
         const clientsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -655,17 +659,15 @@ export default function DogHotelApp() {
     const handleOpenBookingModal = (booking = null) => { setEditingData(booking); setModalMode('booking'); setIsModalOpen(true); };
     const handleOpenClientModal = (client = null) => { setEditingData(client); setModalMode(client ? 'client_edit' : 'client_new'); setIsModalOpen(true); };
     
-    // MODIFICADO: Delete agora remove do caminho compartilhado SHARED_DB_ID
     const handleDeleteBooking = async (id) => { 
       if (window.prompt("Para confirmar a exclusão da reserva, digite 'DELETAR'") === 'DELETAR') {
-        if (user) await deleteDoc(doc(db, 'artifacts', appId, 'users', SHARED_DB_ID, 'bookings', id));
+        if (user) await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'bookings', id));
       }
     };
     
-    // MODIFICADO: Delete agora remove do caminho compartilhado SHARED_DB_ID
     const handleDeleteClient = async (id) => { 
       if (window.prompt("Para confirmar a exclusão do cliente, digite 'DELETAR'") === 'DELETAR') {
-        if (user) await deleteDoc(doc(db, 'artifacts', appId, 'users', SHARED_DB_ID, 'clients', id));
+        if (user) await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'clients', id));
       }
     };
     
@@ -674,7 +676,6 @@ export default function DogHotelApp() {
     };
   
     // --- CRUD Principal ---
-    // MODIFICADO: Save agora escreve no caminho compartilhado SHARED_DB_ID
     const handleSave = async (formData) => {
       if (!user) {
           alert("Erro Crítico: Você não está conectado ao banco de dados.");
@@ -683,7 +684,7 @@ export default function DogHotelApp() {
   
       try {
           let clientId = formData.clientId;
-          const clientsRef = collection(db, 'artifacts', appId, 'users', SHARED_DB_ID, 'clients');
+          const clientsRef = collection(db, 'artifacts', appId, 'users', user.uid, 'clients');
           
           const existingClient = !clientId 
           ? clientDatabase.find(c => (c.dogName || '').toLowerCase() === (formData.dogName || '').toLowerCase() && (c.ownerName || '').toLowerCase() === (formData.ownerName || '').toLowerCase())
@@ -691,7 +692,7 @@ export default function DogHotelApp() {
   
           const clientDataToSave = {
           dogName: formData.dogName, ownerName: formData.ownerName, ownerDoc: formData.ownerDoc,
-          whatsapp: formData.whatsapp,
+          whatsapp: formData.whatsapp, // Campo Whatsapp
           address: formData.address, birthDate: formData.birthDate, history: formData.history,
           ownerHistory: formData.ownerHistory, ownerRating: formData.ownerRating, restrictions: formData.restrictions,
           socialization: formData.socialization || [], photos: formData.photos || [], vaccines: formData.vaccines,
@@ -713,7 +714,7 @@ export default function DogHotelApp() {
   
           if (existingClient) {
           clientId = existingClient.id;
-          const clientDocRef = doc(db, 'artifacts', appId, 'users', SHARED_DB_ID, 'clients', clientId);
+          const clientDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'clients', clientId);
           const newPastBookings = modalMode === 'booking' 
               ? [bookingSummary, ...(existingClient.pastBookings || [])] 
               : (existingClient.pastBookings || []);
@@ -725,10 +726,10 @@ export default function DogHotelApp() {
           }
   
           if (modalMode === 'booking') {
-              const bookingsRef = collection(db, 'artifacts', appId, 'users', SHARED_DB_ID, 'bookings');
+              const bookingsRef = collection(db, 'artifacts', appId, 'users', user.uid, 'bookings');
               const bookingData = { ...formData, clientId: clientId };
               if (editingData && editingData.id) {
-              await updateDoc(doc(db, 'artifacts', appId, 'users', SHARED_DB_ID, 'bookings', editingData.id), bookingData);
+              await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'bookings', editingData.id), bookingData);
               } else {
               await addDoc(bookingsRef, bookingData);
               }
