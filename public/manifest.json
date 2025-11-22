@@ -1,0 +1,23 @@
+{
+  "name": "Uma Casa Boa Pra Cachorro",
+  "short_name": "Casa Boa",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000099",
+  "theme_color": "#000099",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
