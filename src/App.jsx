@@ -748,7 +748,7 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
                    <input 
                        type="file" 
                        accept="image/*" 
-                       capture="camera" // ADICIONADO: Ativa a câmera em dispositivos móveis
+                       // REMOVIDO: capture="camera" para permitir que o SO ofereça Galeria ou Câmera
                        className="hidden" 
                        onChange={(e) => handleFileSelect(e, 'photos')}
                        disabled={(formData.photos || []).length >= 5 || isUploading}
