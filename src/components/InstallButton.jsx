@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Share, PlusSquare, X } from 'lucide-react';
+import { Download, Share, PlusSquare, X, MoreVertical } from 'lucide-react';
 
 export default function InstallButton({ deferredPrompt }) {
   const [isIOS, setIsIOS] = useState(false);
   const [showIOSInstructions, setShowIOSInstructions] = useState(false);
+  const [showAndroidInstructions, setShowAndroidInstructions] = useState(false); // Novo estado para manual do Android
   const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
-    // Detecta se já está instalado (Standalone)
+    // Detecta se já está instalado (Standalone) para esconder o botão
     const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || 
                              window.navigator.standalone === true;
     setIsStandalone(isStandaloneMode);
@@ -23,30 +24,37 @@ export default function InstallButton({ deferredPrompt }) {
   const handleClick = async (e) => {
     e.preventDefault();
     
+    // --- Lógica iPhone ---
     if (isIOS) {
         setShowIOSInstructions(true);
         return;
     }
 
+    // --- Lógica Android ---
+    // Cenário 1: Temos o evento automático guardado
     if (deferredPrompt) {
         deferredPrompt.prompt();
         const { outcome } = await deferredPrompt.userChoice;
         if (outcome === 'accepted') {
-            console.log('Usuário aceitou a instalação');
+            console.log('Instalação aceita');
         }
-        // Não limpamos o prompt aqui para permitir tentar de novo se cancelar, 
-        // mas o navegador pode invalidá-lo.
+        // O deferredPrompt geralmente só pode ser usado uma vez.
+    } 
+    // Cenário 2: NÃO temos o evento (Plano B - Manual)
+    else {
+        setShowAndroidInstructions(true);
     }
   };
 
-  // Se já estiver instalado, não mostra nada
+  // Se já estiver rodando como app instalado, não mostra nada.
   if (isStandalone) return null;
 
-  // Se for iOS OU se tivermos o evento do Android guardado, mostramos o botão
-  if (!isIOS && !deferredPrompt) return null;
+  // --- REMOVEMOS A LINHA QUE ESCONDIA O BOTÃO SE NÃO TIVESSE O PROMPT ---
+  // O botão agora sempre tenta renderizar se não for standalone.
 
   return (
     <>
+      {/* O Botão do Menu */}
       <button 
         onClick={handleClick}
         className="flex items-center gap-3 p-4 rounded-lg font-bold text-[#0000FF] bg-blue-50 hover:bg-blue-100 w-full transition-colors border border-blue-100"
@@ -55,7 +63,36 @@ export default function InstallButton({ deferredPrompt }) {
         <span>Instalar App</span>
       </button>
 
-      {/* Modal iOS (Mantido igual) */}
+      {/* --- MODAL DE INSTRUÇÕES MANUAL ANDROID (NOVO) --- */}
+      {showAndroidInstructions && (
+        <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center animate-fade-in p-4" onClick={() => setShowAndroidInstructions(false)}>
+            <div className="bg-white w-full max-w-sm p-6 rounded-2xl shadow-2xl relative" onClick={(e) => e.stopPropagation()}>
+                <button onClick={() => setShowAndroidInstructions(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><X/></button>
+                
+                <div className="flex flex-col items-center text-center space-y-4">
+                    <div className="w-16 h-16 bg-gray-100 rounded-xl flex items-center justify-center mb-2">
+                        <img src="/logo.png" alt="Icon" className="w-12 h-12 object-contain" />
+                    </div>
+                    <h3 className="text-xl font-bold text-[#000099]">Instalação Manual</h3>
+                    <p className="text-sm text-gray-600">A instalação automática não está disponível agora. Faça manualmente:</p>
+                    
+                    <div className="w-full space-y-3 text-left bg-gray-50 p-4 rounded-xl border border-gray-100 text-sm">
+                        <div className="flex items-center gap-3">
+                            <MoreVertical size={20} className="text-gray-600" />
+                            <span>1. Toque nos <b>três pontinhos</b> no canto superior do navegador.</span>
+                        </div>
+                        <div className="h-px bg-gray-200 w-full"></div>
+                        <div className="flex items-center gap-3">
+                            <Download size={20} className="text-blue-600" />
+                            <span>2. Selecione <b>"Instalar aplicativo"</b> ou <b>"Adicionar à tela inicial"</b>.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+      )}
+
+      {/* --- MODAL DE INSTRUÇÕES IPHONE (MANTIDO IGUAL) --- */}
       {showIOSInstructions && (
         <div className="fixed inset-0 z-[60] bg-black/60 flex items-end justify-center animate-fade-in" onClick={() => setShowIOSInstructions(false)}>
             <div className="bg-white w-full max-w-md p-6 rounded-t-2xl shadow-2xl relative" onClick={(e) => e.stopPropagation()}>
