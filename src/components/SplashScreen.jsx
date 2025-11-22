@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { PawPrint } from 'lucide-react';
-// Removemos o import do AppIcon
 
 export default function SplashScreen({ onFinish }) {
   const [step, setStep] = useState(0);
@@ -35,15 +34,20 @@ export default function SplashScreen({ onFinish }) {
       {/* Container Central */}
       <div className="relative flex flex-col items-center mb-8">
         
-        {/* --- ÍCONE PRINCIPAL (IMAGEM PNG) --- */}
+        {/* --- ÍCONE PRINCIPAL (IMAGEM PNG COM CROP CIRCULAR) --- */}
         <div className={`transition-all duration-700 transform ${step >= 1 ? 'scale-100 translate-y-0 opacity-100' : 'scale-0 translate-y-10 opacity-0'}`}>
-          {/* Fundo branco circular para destacar a imagem */}
-          <div className="relative bg-white w-40 h-40 rounded-full shadow-2xl animate-bounce flex items-center justify-center p-2">
-             {/* Usando a tag img referenciando o arquivo na pasta public */}
+          {/* ALTERAÇÕES AQUI:
+             1. Adicionado 'overflow-hidden': Isso corta as pontas quadradas da imagem.
+             2. Removido 'p-2': Para a imagem encostar na borda do círculo.
+          */}
+          <div className="relative bg-white w-40 h-40 rounded-full shadow-2xl animate-bounce flex items-center justify-center overflow-hidden">
+             {/* ALTERAÇÕES NA IMAGEM:
+                 Mudado para 'w-full h-full' e 'object-cover' para preencher o círculo perfeitamente.
+             */}
              <img 
                 src="/logo.png" 
                 alt="Logo Uma Casa Boa Pra Cachorro" 
-                className="w-32 h-32 object-contain"
+                className="w-full h-full object-cover"
              />
           </div>
         </div>
