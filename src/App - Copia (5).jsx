@@ -39,80 +39,6 @@ const storage = getStorage(app);
 // Identificador do App
 const appId = 'doghotel-production';
 
-// --- FUNÇÃO DE COMPRESSÃO DE IMAGEM ---
-// Transforma o File em Blob comprimido
-const compressImage = (file) => {
-  return new Promise((resolve, reject) => {
-    if (!file || !file.type.startsWith('image/')) {
-      resolve(file); // Não processa PDF ou não-imagens
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const MAX_WIDTH = 1024; // Largura máxima para a imagem
-        const MAX_HEIGHT = 1024; // Altura máxima para a imagem
-        const MAX_SIZE_MB = 3; // Limite de 3MB
-        let width = img.width;
-        let height = img.height;
-
-        // Redimensionamento
-        if (width > height) {
-          if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width;
-            width = MAX_WIDTH;
-          }
-        } else {
-          if (height > MAX_HEIGHT) {
-            width *= MAX_HEIGHT / height;
-            height = MAX_HEIGHT;
-          }
-        }
-
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-
-        // Tentativa de compressão iterativa
-        let quality = 0.9;
-        let compressedBlob;
-
-        do {
-          compressedBlob = dataURItoBlob(canvas.toDataURL('image/jpeg', quality));
-          quality -= 0.1;
-          // Se a qualidade for muito baixa ou o arquivo ainda for muito grande, para para não travar.
-        } while (compressedBlob.size > MAX_SIZE_MB * 1024 * 1024 && quality > 0.3);
-
-        if (compressedBlob.size > MAX_SIZE_MB * 1024 * 1024) {
-          reject(new Error(`O arquivo ainda é maior que ${MAX_SIZE_MB}MB mesmo após compressão.`));
-        } else {
-          resolve(compressedBlob);
-        }
-      };
-      img.src = event.target.result;
-    };
-    reader.onerror = (error) => reject(error);
-    reader.readAsDataURL(file);
-  });
-};
-
-// Helper para converter Data URI em Blob
-const dataURItoBlob = (dataURI) => {
-  const byteString = atob(dataURI.split(',')[1]);
-  const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
-  const ab = new ArrayBuffer(byteString.length);
-  const ia = new Uint8Array(ab);
-  for (let i = 0; i < byteString.length; i++) {
-    ia[i] = byteString.charCodeAt(i);
-  }
-  return new Blob([ab], { type: mimeString });
-};
-
 // --- COMPONENTES AUXILIARES ---
 
 const StarRating = ({ rating, setRating, readonly = false, size = 24 }) => {
@@ -469,46 +395,22 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
   const handleFileSelect = async (e, type) => {
     if (e.target.files && e.target.files[0]) {
         const file = e.target.files[0];
-        const fileName = file.name;
-        const isImage = file.type.startsWith('image/');
-        const MAX_SIZE_MB = 3;
-
-        // 1. Verificação de tamanho original para arquivos não-imagens (como PDF)
-        if (!isImage && file.size > MAX_SIZE_MB * 1024 * 1024) {
-             alert(`Documentos (PDF) devem ter no máximo ${MAX_SIZE_MB}MB.`);
-             e.target.value = '';
-             return;
+        if (file.size > 3 * 1024 * 1024) { 
+            alert("O arquivo é muito grande! Máximo 3MB.");
+            return;
         }
-
-        // 2. Validação de limites (incluindo o que já está salvo)
+        
+        // Validação de limites
         if (type === 'photos' && (formData.photos || []).length >= 5) return;
         if (type === 'vaccines' && (formData.vaccineDocs || []).length >= 3) return;
 
         setIsUploading(true); 
-        
-        let fileToUpload = file; // Padrão: arquivo original
-        let mimeType = file.type;
-
         try {
-            // 3. Processar imagens para compressão e redimensionamento
-            if (isImage) {
-                const compressedBlob = await compressImage(file);
-                fileToUpload = compressedBlob;
-                mimeType = compressedBlob.type; // Deve ser image/jpeg
-                
-                if (fileToUpload.size > MAX_SIZE_MB * 1024 * 1024) {
-                    throw new Error(`O arquivo ainda é maior que ${MAX_SIZE_MB}MB mesmo após compressão. Por favor, escolha outra foto.`);
-                }
-            }
-
-            // 4. Upload para o Storage
-            const uniqueName = `${type}-${Date.now()}-${fileName}`;
+            const uniqueName = `${type}-${Date.now()}-${file.name}`;
             const storageRef = ref(storage, `images/public/${uniqueName}`);
-            
-            await uploadBytes(storageRef, fileToUpload, { contentType: mimeType });
+            await uploadBytes(storageRef, file);
             const downloadURL = await getDownloadURL(storageRef);
             
-            // 5. Atualiza o estado
             if (type === 'photos') {
                  setFormData(prev => ({ ...prev, photos: [...(prev.photos || []), downloadURL] }));
             } else if (type === 'vaccines') {
@@ -516,7 +418,7 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
             }
         } catch (error) {
             console.error("Erro no upload:", error);
-            alert(`Falha ao enviar arquivo: ${error.message}.`);
+            alert("Falha ao enviar arquivo. Verifique sua conexão.");
         } finally {
             setIsUploading(false);
         }
