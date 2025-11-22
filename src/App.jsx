@@ -220,7 +220,7 @@ const ImageLightbox = ({ images, currentIndex, onClose, setIndex }) => {
             onClick={(e) => { e.stopPropagation(); setIndex((currentIndex - 1 + images.length) % images.length); }} 
             className="absolute left-4 text-white hover:text-gray-300 p-3 rounded-full bg-black/20 hover:bg-white/10 transition"
           >
-            <ChevronLeft size={40} /> {/* CORRIGIDO: Fechamento correto */}
+            <ChevronLeft size={40} />
           </button>
         )}
         
@@ -240,7 +240,7 @@ const ImageLightbox = ({ images, currentIndex, onClose, setIndex }) => {
             onClick={(e) => { e.stopPropagation(); setIndex((currentIndex + 1) % images.length); }} 
             className="absolute right-4 text-white hover:text-gray-300 p-3 rounded-full bg-black/20 hover:bg-white/10 transition"
           >
-            <ChevronRight size={40} /> {/* CORRIGIDO: Fechamento correto */}
+            <ChevronRight size={40} />
           </button>
         )}
       </div>
@@ -748,7 +748,7 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
                    <input 
                        type="file" 
                        accept="image/*" 
-                       // REMOVIDO: capture="camera" para permitir que o SO ofereça Galeria ou Câmera
+                       // REMOVIDO: capture="camera" para permitir a escolha entre Câmera e Galeria
                        className="hidden" 
                        onChange={(e) => handleFileSelect(e, 'photos')}
                        disabled={(formData.photos || []).length >= 5 || isUploading}
