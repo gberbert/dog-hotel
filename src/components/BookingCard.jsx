@@ -1,0 +1,100 @@
+import React from 'react';
+import { 
+  Clock, User, MessageCircle, Trash2, Edit, AlertTriangle, Dog 
+} from 'lucide-react';
+import { formatCurrency, getBookingStatus } from '../utils/calculations';
+import { FaceRating } from './shared/RatingComponents';
+
+export default function BookingCard({ booking, onEdit, onDelete }) {
+  const status = getBookingStatus(booking.checkIn, booking.checkOut);
+  const totalNetValue = (parseFloat(booking.totalValue) || 0) - (parseFloat(booking.damageValue) || 0);
+
+  const formatDateShort = (dateStr) => {
+    return new Date(dateStr).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).toUpperCase();
+  };
+
+  const getWhatsAppLink = (number) => {
+    if (!number) return null;
+    const cleanNumber = number.replace(/\D/g, '');
+    return (cleanNumber.length >= 10) ? `https://wa.me/55${cleanNumber}` : null;
+  };
+  const waLink = getWhatsAppLink(booking.whatsapp);
+
+  return (
+    <div className={`bg-white rounded-xl p-0 shadow-sm hover:shadow-lg transition-all duration-300 border ${status.border} relative overflow-hidden group`}>
+      <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${status.color.split(' ')[0].replace('bg-', 'bg-opacity-100 bg-')}`}></div>
+
+      <div className="p-4 pl-6">
+        {/* Cabeçalho */}
+        <div className="flex justify-between items-start mb-3">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-gray-100 overflow-hidden border border-gray-100 flex-shrink-0">
+               {booking.clientPhoto ? (
+                  <img src={booking.clientPhoto} alt={booking.dogName} className="w-full h-full object-cover" />
+               ) : (
+                  <Dog className="w-full h-full p-2 text-gray-300" />
+               )}
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-800 text-lg leading-tight truncate max-w-[120px]">{booking.dogName}</h3>
+              <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5 truncate max-w-[120px]">
+                <User size={12} /> {booking.ownerName}
+              </p>
+            </div>
+          </div>
+          <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${status.color}`}>
+            {status.label}
+          </span>
+        </div>
+
+        {/* Datas */}
+        <div className="flex items-center justify-between bg-gray-50 rounded-lg p-2 mb-3 border border-gray-100 text-xs">
+          <div className="text-center">
+            <span className="block text-gray-400 font-bold">ENTRADA</span>
+            <span className="block font-bold text-gray-700 text-sm">{formatDateShort(booking.checkIn)}</span>
+            <span className="text-[10px] text-gray-400">{new Date(booking.checkIn).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</span>
+          </div>
+          <div className="flex-1 flex justify-center px-2 text-gray-300"><Clock size={14}/></div>
+          <div className="text-center">
+            <span className="block text-gray-400 font-bold">SAÍDA</span>
+            <span className="block font-bold text-gray-700 text-sm">{formatDateShort(booking.checkOut)}</span>
+             <span className="text-[10px] text-gray-400">{new Date(booking.checkOut).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</span>
+          </div>
+        </div>
+
+        {/* Comportamento e Prejuízo */}
+        <div className="flex justify-between items-center mb-3">
+             <div className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded">
+                <span className="text-[10px] text-gray-500">Comp:</span>
+                <FaceRating rating={booking.dogBehaviorRating || 3} readonly size={14} />
+            </div>
+            {booking.damageValue > 0 && (
+                <div className="flex items-center gap-1 text-[10px] text-red-600 bg-red-50 px-2 py-1 rounded font-bold border border-red-100">
+                    <AlertTriangle size={10} /> - R$ {booking.damageValue}
+                </div>
+            )}
+        </div>
+
+        {/* Rodapé */}
+        <div className="flex items-end justify-between border-t pt-2 border-gray-100">
+           <div>
+             <span className="text-xl font-bold text-indigo-600">{formatCurrency(totalNetValue)}</span>
+           </div>
+           <div className="flex items-center gap-1">
+              {waLink && (
+                <a href={waLink} target="_blank" rel="noopener noreferrer" className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition">
+                  <MessageCircle size={18} />
+                </a>
+              )}
+              <button onClick={onEdit} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition">
+                <Edit size={18} />
+              </button>
+              <button onClick={onDelete} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
+                <Trash2 size={18} />
+              </button>
+           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
