@@ -5,13 +5,11 @@ import {
   DollarSign, Trash2, Edit, CheckCircle, AlertCircle,
   Heart, History, Search, LayoutGrid, Users, Menu,
   LogOut, Lock, Mail, Send, PieChart, TrendingUp, CalendarRange, AlertTriangle,
-  Smile, Meh, Frown, Angry, Laugh, Upload, MessageCircle, FilePlus, Pill
+  Smile, Meh, Frown, Angry, Laugh, Upload, MessageCircle, FilePlus
 } from 'lucide-react';
 
 // --- IMPORTAÇÕES DO FIREBASE ---
-import { 
-  initializeApp 
-} from 'firebase/app';
+import { initializeApp } from 'firebase/app';
 import { 
   getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, where, getDocs 
 } from 'firebase/firestore';
@@ -367,39 +365,24 @@ function BookingCard({ booking, onEdit, onDelete }) {
     );
 }
 
-function BookingModal({ data, mode, clientDatabase, onSave, onClose, races, onAddRace }) {
+function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
-  const [newRace, setNewRace] = useState(''); // Novo estado para nova raça
-  const [newMedication, setNewMedication] = useState({ name: '', dosage: '', time: '' }); // Novo estado para nova medicação
-
   const [formData, setFormData] = useState({
     clientId: data?.clientId || (mode.startsWith('client') && data?.id ? data.id : '') || '',
     dogName: data?.dogName || '', 
-    dogSize: data?.dogSize || 'Pequeno', 
-    dogBreed: data?.dogBreed || 'Sem Raça Definida (SRD)', // Novo Campo: Raça
-    source: data?.source || 'Particular', // Novo Campo: Captação
-    
-    // TUTOR 1 (Primário)
+    dogSize: data?.dogSize || 'pequeno', // Novo Campo: Porte
     ownerName: data?.ownerName || '', 
-    whatsapp: data?.whatsapp || '',
-    
-    // TUTOR 2 (Secundário)
-    ownerName2: data?.ownerName2 || '', // Novo campo Tutor 2
-    whatsapp2: data?.whatsapp2 || '',   // Novo campo WhatsApp 2
-
-    ownerEmail: data?.ownerEmail || '',
+    ownerEmail: data?.ownerEmail || '', // Novo Campo: Email
     ownerDoc: data?.ownerDoc || '',
-    address: data?.address || '',
-    birthYear: data?.birthYear || '', // ALTERADO: Usa birthYear (Ano de Nascimento)
+    whatsapp: data?.whatsapp || '',
+    address: data?.address || '', 
+    birthDate: data?.birthDate || '', 
     history: data?.history || '',
     ownerHistory: data?.ownerHistory || '', 
     ownerRating: data?.ownerRating || 3, 
     restrictions: data?.restrictions || '', 
     socialization: data?.socialization || [], 
-    
-    medications: data?.medications || [], // Novo campo: Lista de medicações
-
     checkIn: data?.checkIn || '', 
     checkOut: data?.checkOut || '',
     rating: data?.rating || 5, 
@@ -409,10 +392,8 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose, races, onAd
     damageValue: data?.damageValue || '', 
     damageDescription: data?.damageDescription || '',
     photos: data?.photos || [], 
-    vaccineDocs: data?.vaccineDocs || [],
-    vaccines: data?.vaccines || '',
-    lastAntiRabica: data?.lastAntiRabica || '',
-    lastMultipla: data?.lastMultipla || '',
+    vaccineDocs: data?.vaccineDocs || [], // Novo Campo: Vacinas
+    vaccines: data?.vaccines || '', 
     pastBookings: data?.pastBookings || []
   });
   const [socialDogInput, setSocialDogInput] = useState('');
@@ -429,120 +410,53 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose, races, onAd
     return acc + (total - damage); 
   }, 0);
 
-  // --- CÁLCULO DE IDADE REAL (EM ANOS) ---
-  const calculateAge = (birthYear) => {
-    if (!birthYear) return 0;
-    const currentYear = new Date().getFullYear();
-    const age = currentYear - parseInt(birthYear);
+  // --- CÁLCULO DE IDADE REAL ---
+  const calculateAge = (birthDate) => {
+    if (!birthDate) return 0;
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+        age--;
+    }
     return age < 0 ? 0 : age;
   };
-  
-  const realAgeYears = calculateAge(formData.birthYear);
 
-  // --- GERAÇÃO DA LISTA DE ANOS ---
-  const generateYearOptions = () => {
-    const years = [];
-    const START_YEAR = 2000;
-    const END_YEAR = 2030;
-    for (let year = END_YEAR; year >= START_YEAR; year--) { // Inverte para o ano mais recente primeiro
-      years.push(year);
-    }
-    return years;
-  };
+  const realAge = calculateAge(formData.birthDate);
 
-  // --- CÁLCULO DE IDADE HUMANA (LÓGICA DA TABELA EM ANEXO) ---
-  const calculateHumanAge = (ageInYears, size) => {
-    const age = ageInYears;
-
-    // Tabela de mapeamento da imagem anexa (Idade Humana)
-    // Pequeno, Médio, Grande, Gigante.
-    const humanAgeMap = {
-        'Pequeno': [22, 27, 29, 36, 46, 55, 68, 76, 87, 99], // Idade Real: 1, 2, 4, 6, 8, 10, 14, 16, 18, 20
-        'Médio':   [12, 23, 39, 51, 63, 75, 95, 95, 95, 95], 
-        'Grande':  [8, 16, 22, 40, 55, 75, 94, 94, 94, 94], 
-        'Gigante': [12, 22, 40, 55, 75, 94, 94, 94, 94, 94]
+  // --- CÁLCULO DE IDADE HUMANA (Lógica da Tabela) ---
+  const calculateHumanAge = (age, size) => {
+    if (!age || age < 1) return 0;
+    const index = Math.min(age, 16) - 1; // Tabela vai até 16 anos
+    
+    const chart = {
+        pequeno: [15, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80],
+        medio:   [15, 24, 28, 32, 36, 42, 47, 51, 56, 60, 65, 69, 74, 78, 83, 87],
+        grande:  [15, 24, 28, 32, 36, 45, 50, 55, 61, 66, 72, 77, 82, 88, 93, 120]
     };
-
-    const dogAgePoints = [1, 2, 4, 6, 8, 10, 14, 16, 18, 20]; // Pontos de referência simplificados
-    const sizeKey = size || 'Pequeno';
-    const ages = humanAgeMap[sizeKey] || humanAgeMap['Pequeno'];
-
-    if (age <= 0) return 0;
     
-    // Trata idades menores que 1 ano (usando o valor de 1 ano como referência)
-    if (age < 1) return Math.round(age * ages[0]);
+    // Normalizar chave do tamanho
+    let sizeKey = 'pequeno';
+    if (size === 'Médio') sizeKey = 'medio';
+    if (size === 'Grande') sizeKey = 'grande';
     
-    // Interpolação para anos inteiros
-    for (let i = 0; i < dogAgePoints.length; i++) {
-        const point = dogAgePoints[i];
-        
-        if (age === point) {
-            return ages[i];
-        }
-        
-        // Se estiver entre dois pontos conhecidos
-        if (age > point && i + 1 < dogAgePoints.length && age < dogAgePoints[i+1]) {
-            const lowerAge = point;
-            const upperAge = dogAgePoints[i+1];
-            const lowerHuman = ages[i];
-            const upperHuman = ages[i+1];
-            
-            // Linear Interpolation
-            const ratio = (age - lowerAge) / (upperAge - lowerAge);
-            const interpolatedAge = lowerHuman + ratio * (upperHuman - lowerHuman);
-            return Math.round(interpolatedAge);
-        }
-
-        // Se for maior ou igual ao último ponto de dados (20 anos)
-        if (age >= 20) {
-            return ages[ages.length - 1];
-        }
-    }
-    
-    return ages[ages.length - 1]; // Fallback
+    return chart[sizeKey][index] || chart[sizeKey][15]; 
   };
 
-  const humanAge = calculateHumanAge(realAgeYears, formData.dogSize);
+  const humanAge = calculateHumanAge(realAge, formData.dogSize);
+
+  useEffect(() => {
+    if (isBookingMode && formData.checkIn && formData.checkOut && formData.dailyRate) {
+      const start = new Date(formData.checkIn);
+      const end = new Date(formData.checkOut);
+      const diffTime = Math.abs(end.getTime() - start.getTime());
+      const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24))); 
+      setFormData(prev => ({ ...prev, totalValue: diffDays * (parseFloat(prev.dailyRate) || 0) }));
+    }
+  }, [formData.checkIn, formData.checkOut, formData.dailyRate, isBookingMode]);
 
   const handleChange = (e) => { const { name, value } = e.target; setFormData(prev => ({ ...prev, [name]: value })); };
-  
-  const handleMedicationChange = (e) => { 
-    const { name, value } = e.target;
-    setNewMedication(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleAddMedication = (e) => {
-    e.preventDefault();
-    if (newMedication.name && newMedication.dosage && newMedication.time) {
-      setFormData(prev => ({
-        ...prev,
-        medications: [...(prev.medications || []), newMedication]
-      }));
-      setNewMedication({ name: '', dosage: '', time: '' });
-    } else {
-        alert("Preencha todos os campos da medicação.");
-    }
-  };
-
-  const handleRemoveMedication = (index) => {
-      setFormData(prev => ({
-        ...prev,
-        medications: prev.medications.filter((_, i) => i !== index)
-      }));
-  };
-
-  const handleAddRace = async (e) => {
-    e.preventDefault();
-    if (newRace && !races.map(r => r.name.toLowerCase()).includes(newRace.toLowerCase())) {
-        try {
-            await onAddRace(newRace);
-            setFormData(prev => ({ ...prev, dogBreed: newRace }));
-            setNewRace('');
-        } catch (error) {
-            alert("Falha ao adicionar nova raça.");
-        }
-    }
-  };
 
   // --- UPLOAD GENÉRICO (FOTOS OU VACINAS) ---
   const handleFileSelect = async (e, type) => {
@@ -612,20 +526,12 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose, races, onAd
   };
   const selectClient = (client) => {
     setFormData(prev => ({ ...prev, 
-      clientId: client.id, dogName: client.dogName, dogSize: client.dogSize || 'Pequeno', 
-      dogBreed: client.dogBreed || 'Sem Raça Definida (SRD)', 
-      source: client.source || 'Particular', 
-      ownerName: client.ownerName, ownerName2: client.ownerName2 || '', 
-      whatsapp: client.whatsapp, whatsapp2: client.whatsapp2 || '', // Carregar Tutor 2
-      ownerEmail: client.ownerEmail || '', ownerDoc: client.ownerDoc, 
-      address: client.address, birthYear: client.birthYear || '', history: client.history, 
+      clientId: client.id, dogName: client.dogName, dogSize: client.dogSize || 'pequeno', 
+      ownerName: client.ownerName, ownerEmail: client.ownerEmail || '', ownerDoc: client.ownerDoc, 
+      whatsapp: client.whatsapp,
+      address: client.address, birthDate: client.birthDate, history: client.history, 
       ownerHistory: client.ownerHistory, ownerRating: client.ownerRating, restrictions: client.restrictions, 
-      socialization: client.socialization || [], 
-      medications: client.medications || [], // Carregar Medicações
-      photos: client.photos || [], vaccineDocs: client.vaccineDocs || [], vaccines: client.vaccines, 
-      lastAntiRabica: client.lastAntiRabica || '',
-      lastMultipla: client.lastMultipla || '',
-      pastBookings: client.pastBookings || [] 
+      socialization: client.socialization || [], photos: client.photos || [], vaccineDocs: client.vaccineDocs || [], vaccines: client.vaccines, pastBookings: client.pastBookings || [] 
     }));
     setSearchQuery(''); setShowSearchResults(false);
   };
@@ -646,9 +552,9 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose, races, onAd
       setIsSaving(false);
   };
   
-  const openWhatsApp = (number) => {
-    if (!number) return;
-    const cleanNumber = number.replace(/\D/g, '');
+  const openWhatsApp = () => {
+    if (!formData.whatsapp) return;
+    const cleanNumber = formData.whatsapp.replace(/\D/g, '');
     const finalNumber = (cleanNumber.length === 10 || cleanNumber.length === 11) ? `55${cleanNumber}` : cleanNumber;
     window.open(`https://wa.me/${finalNumber}`, '_blank');
   };
@@ -691,88 +597,17 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose, races, onAd
                 <div>
                     <label className="block text-sm font-medium text-gray-700">Porte</label>
                     <select name="dogSize" value={formData.dogSize} onChange={handleChange} className="mt-1 w-full p-2 border rounded-lg outline-none bg-white">
-                        <option value="Pequeno">Pequeno</option>
-                        <option value="Médio">Médio</option>
-                        <option value="Grande">Grande</option>
-                        <option value="Gigante">Gigante</option>
+                        <option value="Pequeno">Pequeno (até 10kg)</option>
+                        <option value="Médio">Médio (10 a 25kg)</option>
+                        <option value="Grande">Grande (+25kg)</option>
                     </select>
                 </div>
             </div>
             <div className='grid grid-cols-3 gap-4'>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700">Ano de Nasc.</label>
-                    <select 
-                        required 
-                        name="birthYear" 
-                        value={formData.birthYear} 
-                        onChange={handleChange} 
-                        className="mt-1 w-full p-2 border rounded-lg outline-none bg-white"
-                    >
-                        <option value="" disabled>Selecione o ano</option>
-                        {generateYearOptions().map(year => (
-                            <option key={year} value={year}>{year}</option>
-                        ))}
-                    </select>
-                </div>
-                <div><label className="block text-sm font-medium text-gray-500">Idade (Real)</label><input type="text" readOnly value={realAgeYears > 0 ? `${realAgeYears} anos` : '-'} className="mt-1 w-full p-2 border rounded-lg bg-gray-100 text-gray-600 font-bold outline-none" /></div>
+                <div><label className="block text-sm font-medium text-gray-700">Nascimento</label><input type="date" name="birthDate" value={formData.birthDate} onChange={handleChange} className="mt-1 w-full p-2 border rounded-lg outline-none" /></div>
+                <div><label className="block text-sm font-medium text-gray-500">Idade (Real)</label><input type="text" readOnly value={realAge > 0 ? `${realAge} anos` : '-'} className="mt-1 w-full p-2 border rounded-lg bg-gray-100 text-gray-600 font-bold outline-none" /></div>
                 <div><label className="block text-sm font-medium text-gray-500">Idade (Humana)</label><input type="text" readOnly value={humanAge > 0 ? `${humanAge} anos` : '-'} className="mt-1 w-full p-2 border rounded-lg bg-[#FF7F00]/10 text-[#FF7F00] font-bold outline-none border-[#FF7F00]/30" /></div>
             </div>
-            {/* CAMPO DE RAÇA */}
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Raça</label>
-                <select name="dogBreed" value={formData.dogBreed} onChange={handleChange} className="mt-1 w-full p-2 border rounded-lg outline-none bg-white">
-                    {races.sort((a, b) => a.name.localeCompare(b.name)).map(race => (
-                        <option key={race.id} value={race.name}>{race.name}</option>
-                    ))}
-                </select>
-                <div className='mt-2 flex gap-2'>
-                    <input 
-                        type="text" 
-                        value={newRace} 
-                        onChange={(e) => setNewRace(e.target.value)} 
-                        placeholder="Nova Raça" 
-                        className="flex-1 p-2 border rounded-lg outline-none text-sm"
-                    />
-                    <button type="button" onClick={handleAddRace} disabled={!newRace} className="bg-[#00AA00] text-white px-3 py-1 rounded-lg hover:bg-[#00FF00] disabled:opacity-50 font-bold text-sm">
-                        + Incluir
-                    </button>
-                </div>
-            </div>
-            
-            {/* NOVO SETOR: MEDICAÇÕES */}
-            <div className="space-y-3 p-3 bg-red-50 rounded-lg border border-red-200">
-                <h3 className="text-[#FF0000] font-bold border-b border-red-300 pb-2 flex items-center gap-2"><Pill size={18}/> Medicações</h3>
-                
-                {/* Formulário de Nova Medicação */}
-                <div className='grid grid-cols-6 gap-2'>
-                    <div className="col-span-2"><input type="text" name="name" value={newMedication.name} onChange={handleMedicationChange} placeholder="Nome da medicação" className="w-full p-2 border rounded-lg text-sm outline-none" /></div>
-                    <div className="col-span-2"><input type="text" name="dosage" value={newMedication.dosage} onChange={handleMedicationChange} placeholder="Dosagem" className="w-full p-2 border rounded-lg text-sm outline-none" /></div>
-                    <div className="col-span-1"><input type="text" name="time" value={newMedication.time} onChange={handleMedicationChange} placeholder="Horário" className="w-full p-2 border rounded-lg text-sm outline-none" /></div>
-                    <button type="button" onClick={handleAddMedication} disabled={!(newMedication.name && newMedication.dosage && newMedication.time)} className="col-span-1 bg-[#FF0000] text-white rounded-lg hover:bg-[#AA0000] disabled:opacity-50 font-bold text-sm flex items-center justify-center p-2">
-                        <Plus size={16}/>
-                    </button>
-                </div>
-
-                {/* Lista de Medicações Atuais */}
-                <div className="mt-2 space-y-1 max-h-40 overflow-y-auto">
-                    {formData.medications.length === 0 ? (
-                        <p className="text-xs text-gray-500 italic">Nenhuma medicação registrada.</p>
-                    ) : (
-                        formData.medications.map((med, index) => (
-                            <div key={index} className="flex items-center justify-between bg-white p-2 rounded shadow-sm border border-red-100">
-                                <div className='text-sm text-gray-800'>
-                                    <span className="font-bold">{med.name}</span> ({med.dosage})
-                                    <span className='ml-2 text-xs text-[#FF7F00] font-medium'>às {med.time}</span>
-                                </div>
-                                <button type="button" onClick={() => handleRemoveMedication(index)} className="text-red-500 hover:text-[#AA0000] p-1 rounded-full transition">
-                                    <X size={14}/>
-                                </button>
-                            </div>
-                        ))
-                    )}
-                </div>
-            </div>
-            
             <div><label className="block text-sm font-medium text-gray-700 mb-1">Comportamento / Obs</label><textarea name="history" value={formData.history} onChange={handleChange} rows={2} className="mt-1 w-full p-2 border rounded-lg outline-none text-sm" placeholder="Histórico do cão..."></textarea></div>
             
             <div className="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
@@ -792,46 +627,34 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose, races, onAd
           <div className="space-y-4">
             <h3 className="text-[#0000FF] font-bold border-b pb-2 flex items-center gap-2"><User size={18}/> Dados do Tutor</h3>
             <div className="bg-gray-50 p-3 rounded-lg border space-y-3">
-              
-              {/* TUTOR 1 */}
-              <div className="border border-gray-300 p-3 rounded-lg bg-white space-y-2">
-                <h4 className="font-bold text-sm text-gray-700">Tutor 1 (Principal)</h4>
-                <div><label className="block text-sm font-medium text-gray-700">Nome Completo</label><input required name="ownerName" value={formData.ownerName} onChange={handleChange} className="mt-1 w-full p-2 border rounded-lg outline-none" /></div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-1"><MessageCircle size={16} className="text-[#00AA00]"/> WhatsApp 1</label>
-                    <div className="flex gap-2 mt-1">
-                        <input name="whatsapp" value={formData.whatsapp} onChange={handleChange} className="flex-1 p-2 border rounded-lg outline-none" placeholder="(00) 00000-0000" />
-                        <button type="button" onClick={() => openWhatsApp(formData.whatsapp)} disabled={!formData.whatsapp} className={`p-2 rounded-lg text-white transition ${!formData.whatsapp ? 'bg-gray-300 cursor-not-allowed' : 'bg-[#00AA00] hover:bg-[#00FF00]'}`} title="Abrir WhatsApp 1">
-                            <MessageCircle size={20} />
-                        </button>
-                    </div>
-                </div>
+              <div><label className="block text-sm font-medium text-gray-700">Nome Completo</label><input required name="ownerName" value={formData.ownerName} onChange={handleChange} className="mt-1 w-full p-2 border rounded-lg outline-none" /></div>
+              <div className="grid grid-cols-2 gap-4">
+                 <div><label className="block text-sm font-medium text-gray-700">Email</label><input type="email" name="ownerEmail" value={formData.ownerEmail} onChange={handleChange} className="mt-1 w-full p-2 border rounded-lg outline-none" placeholder="email@exemplo.com" /></div>
+                 <div><label className="block text-sm font-medium text-gray-700">CPF/RG</label><input required name="ownerDoc" value={formData.ownerDoc} onChange={handleChange} className="mt-1 w-full p-2 border rounded-lg outline-none" /></div>
               </div>
-
-              {/* TUTOR 2 */}
-              <div className="border border-gray-300 p-3 rounded-lg bg-white space-y-2">
-                <h4 className="font-bold text-sm text-gray-700">Tutor 2 (Alternativo)</h4>
-                <div><label className="block text-sm font-medium text-gray-700">Nome Completo</label><input name="ownerName2" value={formData.ownerName2} onChange={handleChange} className="mt-1 w-full p-2 border rounded-lg outline-none" /></div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-1"><MessageCircle size={16} className="text-[#00AA00]"/> WhatsApp 2</label>
-                    <div className="flex gap-2 mt-1">
-                        <input name="whatsapp2" value={formData.whatsapp2} onChange={handleChange} className="flex-1 p-2 border rounded-lg outline-none" placeholder="(00) 00000-0000" />
-                        <button type="button" onClick={() => openWhatsApp(formData.whatsapp2)} disabled={!formData.whatsapp2} className={`p-2 rounded-lg text-white transition ${!formData.whatsapp2 ? 'bg-gray-300 cursor-not-allowed' : 'bg-[#00AA00] hover:bg-[#00FF00]'}`} title="Abrir WhatsApp 2">
-                            <MessageCircle size={20} />
-                        </button>
-                    </div>
-                </div>
-              </div>
-              
-              {/* CAMPO CAPTAÇÃO */}
+              <div><label className="block text-sm font-medium text-gray-700">Endereço</label><input name="address" value={formData.address} onChange={handleChange} className="mt-1 w-full p-2 border rounded-lg outline-none" /></div>
               <div>
-                  <label className="block text-sm font-medium text-gray-700">Captação</label>
-                  <select name="source" value={formData.source} onChange={handleChange} className="mt-1 w-full p-2 border rounded-lg outline-none bg-white">
-                      <option value="Particular">Particular</option>
-                      <option value="DogHero">DogHero</option>
-                  </select>
+                 <label className="block text-sm font-medium text-gray-700 flex items-center gap-1"><MessageCircle size={16} className="text-[#00AA00]"/> WhatsApp</label>
+                 <div className="flex gap-2 mt-1">
+                    <input 
+                        name="whatsapp" 
+                        value={formData.whatsapp} 
+                        onChange={handleChange} 
+                        className="flex-1 p-2 border rounded-lg outline-none" 
+                        placeholder="(00) 00000-0000" 
+                    />
+                    <button 
+                        type="button"
+                        onClick={openWhatsApp}
+                        disabled={!formData.whatsapp}
+                        className={`p-2 rounded-lg text-white transition ${!formData.whatsapp ? 'bg-gray-300 cursor-not-allowed' : 'bg-[#00AA00] hover:bg-[#00FF00]'}`}
+                        title="Abrir WhatsApp"
+                    >
+                        <MessageCircle size={20} />
+                    </button>
+                 </div>
               </div>
-
+              
               <div className="border-t pt-2 mt-2">
                 <div className="flex justify-between items-center mb-1">
                     <label className="block text-sm font-medium text-gray-700">Avaliação Geral do Tutor</label>
@@ -917,7 +740,7 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose, races, onAd
                    {isUploading ? <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#0000FF]"></div><span className="text-sm font-medium">Enviando...</span></> : <><Upload size={20} /><span className="text-sm font-medium">Adicionar Foto</span></>}
                    <input 
                        type="file" 
-                       // Configuração para abrir o menu de escolha nativo (Câmera ou Galeria)
+                       // REMOÇÃO DO CAPTURE para permitir a escolha nativa do SO (Câmera ou Galeria)
                        accept="image/*" 
                        className="hidden" 
                        onChange={(e) => handleFileSelect(e, 'photos')}
@@ -948,7 +771,7 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose, races, onAd
                 </div> 
             ))}</div>
 
-            {/* DOCUMENTOS DE VACINA */}
+            {/* DOCUMENTOS DE VACINA - NOVA SEÇÃO */}
             <h3 className="text-[#0000FF] font-bold border-b pb-2 flex items-center gap-2 mt-4"><FilePlus size={18}/> Documentos de Vacinas</h3>
             <div className="flex gap-2 mb-2 items-center">
                <label className={`flex-1 cursor-pointer bg-[#0000FF]/10 hover:bg-[#0000FF]/20 text-[#0000FF] border border-[#0000FF]/30 rounded-lg p-2 flex items-center justify-center gap-2 transition ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
@@ -993,31 +816,6 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose, races, onAd
                         </button>
                     </div> 
                 )})}</div>
-
-            {/* ÚLTIMAS VACINAS - NOVO SETOR */}
-            <h3 className="text-[#0000FF] font-bold border-b pb-2 flex items-center gap-2 mt-4"><Calendar size={18}/> Últimas Vacinas</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Anti-Rábica</label>
-                    <input 
-                        type="date" 
-                        name="lastAntiRabica" 
-                        value={formData.lastAntiRabica} 
-                        onChange={handleChange} 
-                        className="w-full p-2 border rounded-lg outline-none" 
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Múltipla</label>
-                    <input 
-                        type="date" 
-                        name="lastMultipla" 
-                        value={formData.lastMultipla} 
-                        onChange={handleChange} 
-                        className="w-full p-2 border rounded-lg outline-none" 
-                    />
-                </div>
-            </div>
           </div>
 
           <div className="md:col-span-2 flex justify-end gap-4 pt-4 border-t">
@@ -1038,7 +836,6 @@ export default function DogHotelApp() {
     const [activeTab, setActiveTab] = useState('agenda');
     const [clientDatabase, setClientDatabase] = useState([]);
     const [bookings, setBookings] = useState([]);
-    const [races, setRaces] = useState([]); // Novo estado para raças
     
     const [view, setView] = useState('day'); 
     const [currentDate, setCurrentDate] = useState(new Date());
@@ -1049,14 +846,6 @@ export default function DogHotelApp() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingData, setEditingData] = useState(null);
     const [modalMode, setModalMode] = useState('booking');
-
-    const DEFAULT_RACES = [
-        "Sem Raça Definida (SRD)", "Shih Tzu", "Yorkshire Terrier", "Spitz Alemão (Lulu da Pomerânia)", 
-        "Lhasa Apso", "Golden Retriever", "Pinscher", "Dachshund (Salsicha)", "Pug", "Maltês", 
-        "Poodle", "Bulldog Francês", "Pastor Alemão", "Labrador Retriever", "Border Collie", 
-        "Rottweiler", "Husky Siberiano", "Chihuahua", "Pastor Belga Malinois", "Staffordshire Bull Terrier", 
-        "Jack Russell", "Pitbull", "Dogue Alemão", "São Bernardo"
-    ];
   
     useEffect(() => {
       const initAuth = async () => {
@@ -1083,17 +872,17 @@ export default function DogHotelApp() {
       return () => unsubscribe();
     }, []);
 
-    // UseEffect para garantir a criação do registro inicial de login E Raças padrão
+    // UseEffect para garantir a criação do registro inicial de login
     useEffect(() => {
-        const ensureDefaultData = async () => {
+        const ensureDefaultLogin = async () => {
             if (!user) return;
 
-            // 1. Garantir Login Padrão
+            // Rota pública para evitar erro de permissão: public/data/logins
             const loginsRef = collection(db, 'artifacts', appId, 'public', 'data', 'logins');
-            const qLogin = query(loginsRef, where("email", "==", "lyoni.berbert@gmail.com"));
+            const q = query(loginsRef, where("email", "==", "lyoni.berbert@gmail.com"));
             
             try {
-                const snapshot = await getDocs(qLogin);
+                const snapshot = await getDocs(q);
                 if (snapshot.empty) {
                     await addDoc(loginsRef, {
                         email: "lyoni.berbert@gmail.com",
@@ -1104,40 +893,24 @@ export default function DogHotelApp() {
             } catch (error) {
                 console.error("Erro ao verificar/criar usuário padrão:", error);
             }
-            
-            // 2. Garantir Raças Padrão
-            const racesRef = collection(db, 'artifacts', appId, 'public', 'data', 'races');
-            const qRaces = query(racesRef); // Tenta buscar qualquer raça
-            
-            try {
-                const snapshot = await getDocs(qRaces);
-                if (snapshot.empty) {
-                    for (const raceName of DEFAULT_RACES) {
-                        await addDoc(racesRef, { name: raceName });
-                    }
-                    console.log("Raças padrão criadas com sucesso.");
-                }
-            } catch (error) {
-                console.error("Erro ao verificar/criar raças padrão:", error);
-            }
         };
 
-        ensureDefaultData();
+        ensureDefaultLogin();
     }, [user]);
   
-    // MODIFICADO: UseEffect agora usa rota pública 'public/data' para todos os dados
+    // MODIFICADO: UseEffect agora usa rota pública 'public/data'
     useEffect(() => {
       if (!user) return;
       // Rotas públicas para garantir compartilhamento e evitar bloqueio de regras
       const clientsRef = collection(db, 'artifacts', appId, 'public', 'data', 'clients');
       const bookingsRef = collection(db, 'artifacts', appId, 'public', 'data', 'bookings');
-      const racesRef = collection(db, 'artifacts', appId, 'public', 'data', 'races'); // Listener para Raças
   
       const unsubscribeClients = onSnapshot(clientsRef, (snapshot) => {
         const clientsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setClientDatabase(clientsData);
       }, (error) => {
           console.error("Erro ao carregar clientes:", error);
+          // Não alertar aqui para evitar spam de alertas se for erro de permissão temporário
       });
   
       const unsubscribeBookings = onSnapshot(bookingsRef, (snapshot) => {
@@ -1146,24 +919,10 @@ export default function DogHotelApp() {
       }, (error) => {
           console.error("Erro ao carregar reservas:", error);
       });
-
-      const unsubscribeRaces = onSnapshot(racesRef, (snapshot) => {
-        const racesData = snapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name }));
-        setRaces(racesData);
-      }, (error) => {
-          console.error("Erro ao carregar raças:", error);
-      });
   
-      return () => { unsubscribeClients(); unsubscribeBookings(); unsubscribeRaces(); };
+      return () => { unsubscribeClients(); unsubscribeBookings(); };
     }, [user]);
   
-    // Função para adicionar nova raça
-    const handleAddRace = async (newRaceName) => {
-        if (!user || !newRaceName) return;
-        const racesRef = collection(db, 'artifacts', appId, 'public', 'data', 'races');
-        await addDoc(racesRef, { name: newRaceName });
-    };
-
     if (!isAuthenticated) return <LoginScreen onLogin={() => setIsAuthenticated(true)} db={db} appId={appId} isDbReady={!!user} />;
   
     // --- Helpers ---
@@ -1225,23 +984,16 @@ export default function DogHotelApp() {
           ? clientDatabase.find(c => (c.dogName || '').toLowerCase() === (formData.dogName || '').toLowerCase() && (c.ownerName || '').toLowerCase() === (formData.ownerName || '').toLowerCase())
           : clientDatabase.find(c => c.id === clientId);
   
-          // Note: ownerEmail, ownerDoc, address estão nos dados, mas são ignorados no formulário
           const clientDataToSave = {
-          dogName: formData.dogName, dogSize: formData.dogSize, dogBreed: formData.dogBreed, 
-          source: formData.source, // Salvar Captação
-          ownerName: formData.ownerName, ownerName2: formData.ownerName2, 
-          whatsapp: formData.whatsapp, whatsapp2: formData.whatsapp2, // Salvar Tutor 2
-          ownerEmail: formData.ownerEmail,
+          dogName: formData.dogName, dogSize: formData.dogSize, // Salvar Porte
+          ownerName: formData.ownerName, ownerEmail: formData.ownerEmail, // Salvar Email
           ownerDoc: formData.ownerDoc,
-          address: formData.address, birthYear: formData.birthYear, history: formData.history,
+          whatsapp: formData.whatsapp,
+          address: formData.address, birthDate: formData.birthDate, history: formData.history,
           ownerHistory: formData.ownerHistory, ownerRating: formData.ownerRating, restrictions: formData.restrictions,
-          socialization: formData.socialization || [], 
-          medications: formData.medications || [], // Salvar Medicações
-          photos: formData.photos || [], 
-          vaccineDocs: formData.vaccineDocs || [],
+          socialization: formData.socialization || [], photos: formData.photos || [], 
+          vaccineDocs: formData.vaccineDocs || [], // Salvar Vacinas
           vaccines: formData.vaccines,
-          lastAntiRabica: formData.lastAntiRabica,
-          lastMultipla: formData.lastMultipla,
           dogBehaviorRating: formData.dogBehaviorRating,
           };
   
@@ -1496,7 +1248,7 @@ export default function DogHotelApp() {
           </header>
           <main className="flex-1 overflow-y-auto p-2 md:p-6">{activeTab === 'agenda' && renderAgenda()}{activeTab === 'clients' && renderClientList()}{activeTab === 'financial' && renderFinancial()}</main>
         </div>
-        {isModalOpen && ( <BookingModal data={editingData} mode={modalMode} clientDatabase={clientDatabase} onSave={handleSave} onClose={() => setIsModalOpen(false)} races={races} onAddRace={handleAddRace} /> )}
+        {isModalOpen && ( <BookingModal data={editingData} mode={modalMode} clientDatabase={clientDatabase} onSave={handleSave} onClose={() => setIsModalOpen(false)} /> )}
       </div>
     );
   }
