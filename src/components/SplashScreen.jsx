@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { PawPrint } from 'lucide-react';
-// 1. Importamos nosso novo ícone SVG
-import AppIcon from './AppIcon';
+// Removemos o import do AppIcon
 
 export default function SplashScreen({ onFinish }) {
   const [step, setStep] = useState(0);
@@ -36,14 +35,16 @@ export default function SplashScreen({ onFinish }) {
       {/* Container Central */}
       <div className="relative flex flex-col items-center mb-8">
         
-        {/* --- ÍCONE PRINCIPAL --- */}
+        {/* --- ÍCONE PRINCIPAL (IMAGEM PNG) --- */}
         <div className={`transition-all duration-700 transform ${step >= 1 ? 'scale-100 translate-y-0 opacity-100' : 'scale-0 translate-y-10 opacity-0'}`}>
-          {/* Mantive o círculo branco atrás para dar destaque ao ícone azul,
-             exatamente como na imagem que você gerou.
-          */}
-          <div className="relative bg-white w-40 h-40 rounded-full shadow-2xl animate-bounce flex items-center justify-center p-4">
-             {/* 2. Usamos o novo ícone aqui, bem grande */}
-             <AppIcon size={120} />
+          {/* Fundo branco circular para destacar a imagem */}
+          <div className="relative bg-white w-40 h-40 rounded-full shadow-2xl animate-bounce flex items-center justify-center p-2">
+             {/* Usando a tag img referenciando o arquivo na pasta public */}
+             <img 
+                src="/logo.png" 
+                alt="Logo Uma Casa Boa Pra Cachorro" 
+                className="w-32 h-32 object-contain"
+             />
           </div>
         </div>
         {/* ----------------------- */}

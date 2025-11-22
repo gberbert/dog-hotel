@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Calendar, User, PieChart, LogOut,  // Removemos House e Dog daqui
+  Calendar, User, PieChart, LogOut, 
   Plus, ChevronLeft, ChevronRight, Search, Menu, X
 } from 'lucide-react';
 import { 
@@ -17,8 +17,7 @@ import BookingCard from './components/BookingCard';
 import BookingModal from './components/BookingModal';
 import FinancialPanel from './components/FinancialPanel';
 import ClientList from './components/ClientList';
-// 1. Importamos o novo ícone
-import AppIcon from './components/AppIcon';
+// Removemos o import do AppIcon
 
 export default function DogHotelApp() {
   // --- ESTADOS ---
@@ -208,11 +207,14 @@ export default function DogHotelApp() {
     <div className="flex h-screen bg-gray-100 font-sans text-gray-800 overflow-hidden">
       {/* SIDEBAR DESKTOP */}
       <aside className="hidden md:flex w-64 bg-[#000099] text-white flex-col shadow-xl z-20">
-        {/* --- LOGO E TÍTULO (ATUALIZADO COM SVG) --- */}
+        {/* --- LOGO E TÍTULO (IMAGEM PNG) --- */}
         <div className="p-6 flex items-center gap-3 border-b border-[#0000CC]">
-            {/* 2. Usamos o AppIcon limpo aqui, sem fundo branco pois o menu já é azul */}
-            <div className="shrink-0">
-                <AppIcon size={50} className="text-white drop-shadow-sm" />
+            <div className="shrink-0 bg-white rounded-full p-1">
+                <img 
+                    src="/logo.png" 
+                    alt="Logo" 
+                    className="w-10 h-10 object-contain" 
+                />
             </div>
             <div>
                 <h1 className="font-bold text-lg leading-none tracking-wide">Uma Casa Boa</h1>
@@ -240,10 +242,13 @@ export default function DogHotelApp() {
                 
                 <h2 className="text-xl font-bold text-gray-700 hidden md:block">{activeTab === 'agenda' ? 'Agenda' : activeTab === 'clients' ? 'Gerenciamento de Clientes' : 'Financeiro'}</h2>
 
-                {/* --- LOGO E TÍTULO MOBILE (ATUALIZADO COM SVG) --- */}
+                {/* --- LOGO E TÍTULO MOBILE (IMAGEM PNG) --- */}
                 <div className="flex items-center gap-2 md:hidden">
-                    {/* 3. Usamos o AppIcon aqui também */}
-                    <AppIcon size={36} />
+                    <img 
+                        src="/logo.png" 
+                        alt="Logo" 
+                        className="w-9 h-9 object-contain" 
+                    />
                     <div>
                         <h2 className="font-bold text-[#000099] leading-none text-[15px]">Uma Casa Boa</h2>
                         <p className="font-bold text-[#000099]/70 leading-none text-[10px] uppercase tracking-wider">Pra Cachorro</p>
