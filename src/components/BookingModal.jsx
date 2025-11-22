@@ -226,7 +226,7 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
             <button onClick={onClose} className="text-white hover:bg-[#0000AA] rounded-full p-1"><X size={24} /></button>
         </div>
 
-        {/* BUSCA DE CLIENTE (Apenas na Nova Reserva se não tiver dados) */}
+        {/* BUSCA DE CLIENTE */}
         {isBookingMode && !data && (
             <div className="bg-indigo-50 px-6 py-3 border-b border-indigo-100 relative">
                 <label className="text-sm font-bold text-indigo-800 flex items-center gap-2">
@@ -304,15 +304,22 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
                             <div><label className="text-sm text-gray-500">Real</label><input readOnly value={`${realAgeYears} anos`} className="w-full p-2 border bg-gray-100 text-xs font-bold rounded"/></div>
                             <div><label className="text-sm text-[#FF7F00]">Humana</label><input readOnly value={`${humanAge} anos`} className="w-full p-2 border border-[#FF7F00]/30 bg-[#FF7F00]/10 text-[#FF7F00] text-xs font-bold rounded"/></div>
                         </div>
+                        
+                        {/* --- CORREÇÃO: LAYOUT DE RAÇA RESPONSIVO --- */}
                         <div>
-                            <label className="text-sm font-medium">Raça</label>
-                            <div className="flex gap-2">
-                                <select name="dogBreed" value={formData.dogBreed} onChange={handleChange} className="flex-1 p-2 border rounded bg-white">
+                            <label className="text-sm font-medium block mb-1">Raça</label>
+                            <div className="flex flex-col sm:flex-row gap-2">
+                                <select name="dogBreed" value={formData.dogBreed} onChange={handleChange} className="w-full sm:flex-1 p-2 border rounded bg-white">
                                     {races.sort((a, b) => a.name.localeCompare(b.name)).map(r => <option key={r.id} value={r.name}>{r.name}</option>)}
                                 </select>
-                                <div className="flex gap-1"><input value={newRace} onChange={(e) => setNewRace(e.target.value)} placeholder="Nova" className="w-20 p-2 border rounded text-sm"/><button type="button" onClick={handleAddRace} disabled={!newRace} className="bg-green-600 text-white px-2 rounded font-bold">+</button></div>
+                                <div className="flex gap-2 w-full sm:w-auto">
+                                    <input value={newRace} onChange={(e) => setNewRace(e.target.value)} placeholder="Nova Raça" className="flex-1 sm:w-32 p-2 border rounded text-sm"/>
+                                    <button type="button" onClick={handleAddRace} disabled={!newRace} className="bg-green-600 text-white px-3 py-2 rounded font-bold hover:bg-green-700 flex-shrink-0">+</button>
+                                </div>
                             </div>
                         </div>
+                        {/* ---------------------------------------------- */}
+
                         <div className="bg-red-50 p-3 rounded border border-red-200">
                             <h4 className="text-red-600 font-bold text-sm mb-2 flex gap-2"><Pill size={16}/> Medicações</h4>
                             <div className="grid grid-cols-6 gap-2 mb-2">
@@ -334,7 +341,7 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
                     </>
                 )}
 
-                {/* SEÇÃO VARIÁVEIS DA HOSPEDAGEM (SEMPRE EDITÁVEL) */}
+                {/* SEÇÃO VARIÁVEIS DA HOSPEDAGEM */}
                 <div className="border-t pt-4 mt-4">
                     <h4 className="text-gray-500 text-xs font-bold uppercase mb-3">Variáveis desta Hospedagem</h4>
                     
@@ -384,7 +391,6 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
                     </>
                 )}
 
-                {/* CAMPOS EDITÁVEIS DO TUTOR */}
                 <div className="grid grid-cols-2 gap-4">
                      <div className="col-span-2">
                         <label className="text-sm font-medium">Captação</label>
@@ -399,7 +405,7 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
                 </div>
                 <textarea name="ownerHistory" value={formData.ownerHistory} onChange={handleChange} placeholder="Obs sobre o tutor (Editável)..." className="w-full p-2 border rounded h-16 text-sm focus:ring-2 focus:ring-blue-500"/>
 
-                {/* FINANCEIRO DA RESERVA (SEMPRE EDITÁVEL SE FOR BOOKING) */}
+                {/* FINANCEIRO DA RESERVA */}
                 {isBookingMode && (
                     <div className="bg-green-50 p-4 rounded border border-green-200 mt-4 shadow-sm">
                         <h3 className="text-green-700 font-bold mb-3 flex items-center gap-2"><DollarSign size={18}/> Dados da Hospedagem</h3>
@@ -419,7 +425,6 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
                     </div>
                 )}
 
-                {/* GALERIA E VACINAS (VISUALIZAÇÃO NA RESERVA, EDIÇÃO NO CADASTRO) */}
                 <div className="border-t pt-4">
                    <h4 className="text-[#0000FF] font-bold text-sm mb-2 flex gap-2"><Camera size={16}/> Galeria ({formData.photos.length})</h4>
                    <div className="flex gap-2 overflow-x-auto pb-2">
@@ -441,8 +446,6 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
 
                 <div>
                     <h4 className="text-[#0000FF] font-bold text-sm mb-2 flex gap-2"><FilePlus size={16}/> Vacinas ({formData.vaccineDocs.length})</h4>
-                    
-                    {/* Datas das Vacinas */}
                     <div className="grid grid-cols-2 gap-2 mb-2">
                         {showReadOnly ? (
                             <>
@@ -456,7 +459,6 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
                             </>
                         )}
                     </div>
-
                     <div className="flex gap-2 overflow-x-auto pb-2">
                         {!showReadOnly && (
                             <label className="w-16 h-16 border-2 border-dashed flex items-center justify-center cursor-pointer hover:bg-gray-50 rounded flex-shrink-0">
@@ -478,7 +480,6 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
                 </div>
             </div>
 
-            {/* HISTÓRICO DE HOSPEDAGENS */}
             <div className="md:col-span-2 border-t pt-4">
                 <div className="bg-gray-50 p-4 rounded border">
                     <div className="flex justify-between items-center mb-2">
@@ -510,7 +511,6 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
                 </div>
             </div>
 
-            {/* FOOTER DE AÇÃO */}
             <div className="md:col-span-2 flex justify-end gap-4 pt-4 border-t sticky bottom-0 bg-white p-4 -mx-6 -mb-6 border-t-gray-100 shadow-inner">
                 <button type="button" onClick={onClose} className="px-6 py-2 border rounded-lg text-gray-600 hover:bg-gray-50 font-medium">Cancelar</button>
                 <button type="submit" disabled={isSaving} className="px-8 py-2 bg-[#0000FF] text-white rounded-lg font-bold hover:bg-[#0000AA] shadow-lg flex items-center gap-2 disabled:opacity-70">
