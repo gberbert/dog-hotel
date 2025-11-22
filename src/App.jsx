@@ -11,6 +11,7 @@ import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 // Imports Modulares
 import { db, auth, appId } from './utils/firebase';
 import { formatDateBR } from './utils/calculations';
+import SplashScreen from './components/SplashScreen'; // Importando a animação
 import LoginScreen from './components/LoginScreen';
 import BookingCard from './components/BookingCard';
 import BookingModal from './components/BookingModal';
@@ -18,26 +19,29 @@ import FinancialPanel from './components/FinancialPanel';
 import ClientList from './components/ClientList';
 
 export default function DogHotelApp() {
+  // --- ESTADOS DE UI E AUTH ---
+  const [showSplash, setShowSplash] = useState(true); // Controle da Splash Screen
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState('agenda');
-  
-  // ESTADO DA VISÃO (Dia, Semana, Mês)
-  const [view, setView] = useState('day'); 
+  const [userName, setUserName] = useState('Recepcionista');
+
+  // --- ESTADOS DA AGENDA ---
+  const [view, setView] = useState('day'); // 'day', 'week', 'month'
   const [currentDate, setCurrentDate] = useState(new Date());
   
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
+  // --- ESTADOS DE DADOS ---
   const [bookings, setBookings] = useState([]);
   const [clients, setClients] = useState([]);
   const [races, setRaces] = useState([]);
-  const [userName, setUserName] = useState('Recepcionista');
 
+  // --- ESTADOS DE CONTROLE (MENU/MODAL) ---
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingData, setEditingData] = useState(null);
   const [modalMode, setModalMode] = useState('booking');
 
-  // --- AUTH & DATA ---
+  // --- EFEITOS (AUTH E DATA) ---
   useEffect(() => {
     const initAuth = async () => {
         try { await signInAnonymously(auth); } catch (e) { console.error("Auth fail", e); }
@@ -65,7 +69,7 @@ export default function DogHotelApp() {
     return () => { unsubClients(); unsubBookings(); unsubRaces(); };
   }, [user]);
 
-  // --- HELPERS DE DATA ---
+  // --- HELPERS DE DATA E LÓGICA ---
   const startOfWeek = (date) => {
     const d = new Date(date);
     const day = d.getDay();
@@ -112,7 +116,7 @@ export default function DogHotelApp() {
     return Object.values(uniqueMap).sort((a, b) => b.id - a.id);
   };
 
-  // --- ACTIONS ---
+  // --- ACTIONS (CRUD) ---
   const handleSave = async (formData) => {
       if (!user) return alert("Erro: Sem conexão.");
       const isNewClient = !formData.clientId;
@@ -229,7 +233,7 @@ export default function DogHotelApp() {
     setIsMobileMenuOpen(false);
   };
 
-  // --- RENDERIZADORES DE VISÃO (Restaurados) ---
+  // --- RENDERIZADORES DE VISÃO DA AGENDA ---
   const renderWeekView = () => {
     const start = startOfWeek(currentDate);
     const weekDays = Array.from({length: 7}, (_, i) => {
@@ -302,9 +306,17 @@ export default function DogHotelApp() {
     );
   };
 
-  // --- APP RENDER ---
+  // --- RENDERIZAÇÃO PRINCIPAL ---
+  
+  // 1. Splash Screen (Se estiver ativo)
+  if (showSplash) {
+    return <SplashScreen onFinish={() => setShowSplash(false)} />;
+  }
+
+  // 2. Login (Se não autenticado)
   if (!isAuthenticated) return <LoginScreen onLogin={() => setIsAuthenticated(true)} db={db} appId={appId} isDbReady={!!user} />;
 
+  // 3. App Principal
   return (
     <div className="flex h-screen bg-gray-100 font-sans text-gray-800 overflow-hidden">
       {/* SIDEBAR DESKTOP */}
@@ -321,7 +333,7 @@ export default function DogHotelApp() {
         <div className="p-4 border-t border-[#0000CC]"><button onClick={() => {if(confirm("Sair?")) setIsAuthenticated(false)}} className="w-full flex gap-2 text-gray-300 hover:text-white"><LogOut size={16}/> Sair</button></div>
       </aside>
 
-      {/* MAIN CONTENT */}
+      {/* CONTEÚDO PRINCIPAL */}
       <main className="flex-1 flex flex-col overflow-hidden relative">
         
         {/* HEADER */}
@@ -341,7 +353,7 @@ export default function DogHotelApp() {
             </div>
         </header>
 
-        {/* MENU MOBILE DROPDOWN */}
+        {/* MENU MOBILE DESLIZANTE */}
         {isMobileMenuOpen && (
             <div className="md:hidden absolute top-16 left-0 w-full bg-white shadow-xl border-t border-gray-100 z-20 animate-fade-in flex flex-col p-2">
                 <button onClick={() => handleMobileNav('agenda')} className={`flex items-center gap-3 p-4 rounded-lg font-medium ${activeTab === 'agenda' ? 'bg-blue-50 text-[#0000FF]' : 'text-gray-700 hover:bg-gray-50'}`}><Calendar size={20}/> Agenda</button>
@@ -352,15 +364,14 @@ export default function DogHotelApp() {
             </div>
         )}
 
-        {/* CONTENT AREA */}
+        {/* ÁREA DE CONTEÚDO COM SCROLL */}
         <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-100">
             {isMobileMenuOpen && <div className="md:hidden fixed inset-0 bg-black/20 z-10 top-16" onClick={() => setIsMobileMenuOpen(false)}></div>}
 
             {activeTab === 'agenda' && (
                 <div className="space-y-6">
-                    {/* CONTROLES DA AGENDA (DIA / SEMANA / MÊS) */}
+                    {/* Controles de Data e Visão */}
                     <div className="flex flex-col lg:flex-row justify-between items-center gap-4 bg-white p-4 rounded-xl shadow-sm border">
-                        {/* Seletor de Visão */}
                         <div className="flex bg-gray-100 p-1 rounded-lg w-full lg:w-auto">
                             {['day', 'week', 'month'].map(v => (
                                 <button 
@@ -372,8 +383,6 @@ export default function DogHotelApp() {
                                 </button>
                             ))}
                         </div>
-
-                        {/* Navegação de Data */}
                         <div className="flex items-center justify-between w-full lg:w-auto gap-4">
                             <button onClick={() => navigateDate(-1)} className="p-2 hover:bg-gray-100 rounded-full"><ChevronLeft/></button>
                             <h3 className="text-lg font-bold text-[#0000FF] capitalize text-center w-48">
@@ -385,7 +394,7 @@ export default function DogHotelApp() {
                         </div>
                     </div>
 
-                    {/* RENDERIZAÇÃO DA VISÃO SELECIONADA */}
+                    {/* Renderização da Visão */}
                     {view === 'day' && (
                         getBookingsForDate(currentDate).length === 0 ? (
                             <div className="text-center py-12 bg-white rounded-2xl border-2 border-dashed border-gray-200 text-gray-400">Nenhuma hospedagem para este dia.</div>
