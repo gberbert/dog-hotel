@@ -378,7 +378,7 @@ function BookingCard({ booking, onEdit, onDelete }) {
         {/* PREÇO E AÇÕES */}
         <div className="mt-auto pt-3 border-t border-gray-100 flex justify-between items-center">
            {/* CORREÇÃO: Exibe o valor total calculado */}
-           <span className="font-bold text-[#0000FF]">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalNetValue)}</span>
+           <span className="font-bold text-[#0000FF]">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((booking.totalValue || 0) - (booking.damageValue || 0))}</span>
            <div className="flex gap-2"><button onClick={onEdit} className="p-2 text-gray-400 hover:text-[#0000FF] hover:bg-indigo-50 rounded-full transition"><Edit size={18} /></button><button onClick={onDelete} className="p-2 text-gray-400 hover:text-[#FF0000] hover:bg-red-50 rounded-full transition"><Trash2 size={18} /></button></div>
         </div>
       </div>
@@ -722,8 +722,8 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose, races, onAd
   const availableDogs = clientDatabase.map(c => c.dogName).filter(n => n !== formData.dogName);
   const searchResults = searchQuery ? clientDatabase.filter(c => c.dogName.toLowerCase().includes(searchQuery.toLowerCase()) || c.ownerName.toLowerCase().includes(searchQuery.toLowerCase())) : [];
   const getTitle = () => { if (mode === 'client_new') return 'Novo Cadastro'; if (mode === 'client_edit') return 'Editar Cadastro'; return data ? 'Editar Hospedagem' : 'Nova Hospedagem'; };
-  
-  // Lógica para o rótulo do botão Salvar/Confirmar
+
+  // Lógica para o rótulo do botão Salvar/Confirmar (Movido para o topo do componente)
   const saveButtonLabel = isEditingBooking ? 'Salvar Alterações' : (mode === 'client_new' ? 'Salvar Cadastro' : 'Confirmar Reserva');
 
   return (
@@ -1501,9 +1501,9 @@ Verifique o cadastro existente.`);
               
               // 1. REGRA PRINCIPAL: Filtra o histórico para remover registros com as MESMAS DATAS
               // Isso garante que apenas um histórico por agendamento (datas) permaneça.
-              newPastBookings = newPastBookings.filter(hist => 
-                  !(hist.checkIn === bookingSummary.checkIn && hist.checkOut === bookingSummary.checkOut)
-              );
+              const isSameDate = (hist) => hist.checkIn === bookingSummary.checkIn && hist.checkOut === bookingSummary.checkOut;
+              
+              newPastBookings = newPastBookings.filter(hist => !isSameDate(hist));
               
               // 2. Insere o registro novo/atualizado no topo
               newPastBookings = [bookingSummary, ...newPastBookings];
@@ -1559,7 +1559,7 @@ Verifique o cadastro existente.`);
       }
     };
   
-    // --- Funções de Renderização (Definidas antes do return principal) ---
+    // --- Funções de Renderização (Definidas após os Helpers) ---
 
     const getBookingsForDate = (date) => {
         // Usa a função de mapeamento antes de filtrar
@@ -1607,51 +1607,56 @@ Verifique o cadastro existente.`);
       }).sort((a, b) => new Date(a.checkIn) - new Date(b.checkIn));
     }
     
-    const renderFinancial = () => (
-      <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 min-h-[500px] animate-fade-in">
-        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-          <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2"><PieChart className="text-[#0000FF]"/> Painel Financeiro</h2>
-          <div className="flex bg-gray-100 p-1 rounded-lg w-full md:w-auto">
-            <button onClick={() => setFinancialView('monthly')} className={`flex-1 md:flex-none px-6 py-2 rounded-md text-sm font-medium transition ${financialView === 'monthly' ? 'bg-white shadow text-[#0000FF]' : 'text-gray-600'}`}>Mensal</button>
-            <button onClick={() => setFinancialView('annual')} className={`flex-1 md:flex-none px-6 py-2 rounded-md text-sm font-medium transition ${financialView === 'annual' ? 'bg-white shadow text-[#0000FF]' : 'text-gray-600'}`}>Anual</button>
-          </div>
-        </div>
-        {financialView === 'monthly' ? (
-          <div className="space-y-6">
-            <div className="flex flex-wrap gap-4 items-center bg-[#0000FF]/5 p-4 rounded-xl border border-[#0000FF]/10">
-              <div className="flex items-center gap-2"><label className="font-bold text-[#0000FF]">Ano:</label><select value={finSelectedYear} onChange={(e) => setFinSelectedYear(parseInt(e.target.value))} className="p-2 border rounded-lg bg-white outline-none focus:ring-2 focus:ring-[#0000FF]">{[2023, 2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}</select></div>
-              <div className="flex items-center gap-2"><label className="font-bold text-[#0000FF]">Mês:</label><select value={finSelectedMonth} onChange={(e) => setFinSelectedMonth(parseInt(e.target.value))} className="p-2 border rounded-lg bg-white outline-none focus:ring-2 focus:ring-[#0000FF]">{monthNames.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}</select></div>
+    // VARIÁVEL DE MESES MOVIDA PARA O ESCOPO CORRETO
+    const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+
+    const renderFinancial = () => {
+        return (
+            <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 min-h-[500px] animate-fade-in">
+                <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                  <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2"><PieChart className="text-[#0000FF]"/> Painel Financeiro</h2>
+                  <div className="flex bg-gray-100 p-1 rounded-lg w-full md:w-auto">
+                    <button onClick={() => setFinancialView('monthly')} className={`flex-1 md:flex-none px-6 py-2 rounded-md text-sm font-medium transition ${financialView === 'monthly' ? 'bg-white shadow text-[#0000FF]' : 'text-gray-600'}`}>Mensal</button>
+                    <button onClick={() => setFinancialView('annual')} className={`flex-1 md:flex-none px-6 py-2 rounded-md text-sm font-medium transition ${financialView === 'annual' ? 'bg-white shadow text-[#0000FF]' : 'text-gray-600'}`}>Anual</button>
+                  </div>
+                </div>
+                {financialView === 'monthly' ? (
+                  <div className="space-y-6">
+                    <div className="flex flex-wrap gap-4 items-center bg-[#0000FF]/5 p-4 rounded-xl border border-[#0000FF]/10">
+                      <div className="flex items-center gap-2"><label className="font-bold text-[#0000FF]">Ano:</label><select value={finSelectedYear} onChange={(e) => setFinSelectedYear(parseInt(e.target.value))} className="p-2 border rounded-lg bg-white outline-none focus:ring-2 focus:ring-[#0000FF]">{[2023, 2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}</select></div>
+                      <div className="flex items-center gap-2"><label className="font-bold text-[#0000FF]">Mês:</label><select value={finSelectedMonth} onChange={(e) => setFinSelectedMonth(parseInt(e.target.value))} className="p-2 border rounded-lg bg-white outline-none focus:ring-2 focus:ring-[#0000FF]">{monthNames.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}</select></div>
+                    </div>
+                    <div className="bg-gradient-to-r from-[#00AA00] to-[#00FF00] rounded-2xl p-6 text-white shadow-lg">
+                      <div className="flex justify-between items-center">
+                        <div><p className="text-green-100 text-sm font-medium uppercase tracking-wider">Lucro Líquido (Valor Real) - {monthNames[finSelectedMonth]}/{finSelectedYear}</p><h3 className="text-4xl font-bold mt-2">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(calculateMonthlyNetTotal(finSelectedMonth, finSelectedYear))}</h3></div>
+                        <div className="bg-white bg-opacity-20 p-3 rounded-full"><DollarSign size={32} className="text-white" /></div>
+                      </div>
+                    </div>
+                    <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                          <thead className="bg-gray-50 border-b"><tr><th className="p-3 font-semibold text-gray-700">Data</th><th className="p-3 font-semibold text-gray-700">Cliente</th><th className="p-3 font-semibold text-gray-700 text-right">Bruto</th><th className="p-3 font-semibold text-[#FF0000] text-right">Prejuízos</th><th className="p-3 font-semibold text-[#00AA00] text-right">Valor Real</th></tr></thead>
+                          <tbody className="divide-y">
+                            {getBookingsByMonth(finSelectedMonth, finSelectedYear).length > 0 ? ( getBookingsByMonth(finSelectedMonth, finSelectedYear).map(booking => { const damage = parseFloat(booking.damageValue) || 0; const realValue = (parseFloat(booking.totalValue) || 0) - damage; return ( <tr key={booking.id} className="hover:bg-gray-50"><td className="p-3 text-gray-800">{new Date(booking.checkIn).toLocaleDateString('pt-BR')}</td><td className="p-3"><div className="font-medium text-gray-900">{booking.dogName}</div><div className="text-gray-600 text-xs">{booking.ownerName}</div>{damage > 0 && <div className="text-xs text-[#FF0000] italic mt-1">Obs: {booking.damageDescription}</div>}</td><td className="p-3 text-right text-gray-700">R$ {booking.totalValue}</td><td className="p-3 text-right text-[#FF0000] font-medium">{damage > 0 ? `- R$ ${damage}` : '-'}</td><td className="p-3 text-right font-bold text-[#00AA00]">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(realValue)}</td></tr> )}) ) : ( <tr><td colSpan="5" className="p-8 text-center text-gray-500 italic">Nenhum faturamento registrado neste período.</td></tr> )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-2 bg-[#0000FF]/5 p-4 rounded-xl border border-[#0000FF]/10 w-fit"><label className="font-bold text-[#0000FF]">Selecione o Ano:</label><select value={finSelectedYear} onChange={(e) => setFinSelectedYear(parseInt(e.target.value))} className="p-2 border rounded-lg bg-white outline-none focus:ring-2 focus:ring-[#0000FF]">{[2023, 2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}</select></div>
+                    <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
+                      <table className="w-full text-left"><thead className="bg-gray-100 border-b"><tr><th className="p-4 font-bold text-gray-800">Mês</th><th className="p-4 font-bold text-gray-800 text-center">Hospedagens</th><th className="p-4 font-bold text-gray-800 text-right">Lucro Líquido (Real)</th></tr></thead>
+                        <tbody className="divide-y">{monthNames.map((month, idx) => { const netTotal = calculateMonthlyNetTotal(idx, finSelectedYear); const count = getBookingsByMonth(idx, finSelectedYear).length; return ( <tr key={month} className="hover:bg-gray-50"><td className="p-4 font-medium text-gray-800">{month}</td><td className="p-4 text-center text-gray-600">{count > 0 ? <span className="bg-[#0000FF]/10 text-[#0000FF] px-2 py-1 rounded-full text-xs font-bold">{count}</span> : '-'}</td><td className={`p-4 text-right font-bold ${netTotal > 0 ? 'text-[#00AA00]' : 'text-gray-500'}`}>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(netTotal)}</td></tr> ); })}</tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
             </div>
-            <div className="bg-gradient-to-r from-[#00AA00] to-[#00FF00] rounded-2xl p-6 text-white shadow-lg">
-              <div className="flex justify-between items-center">
-                <div><p className="text-green-100 text-sm font-medium uppercase tracking-wider">Lucro Líquido (Valor Real) - {monthNames[finSelectedMonth]}/{finSelectedYear}</p><h3 className="text-4xl font-bold mt-2">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(calculateMonthlyNetTotal(finSelectedMonth, finSelectedYear))}</h3></div>
-                <div className="bg-white bg-opacity-20 p-3 rounded-full"><DollarSign size={32} className="text-white" /></div>
-              </div>
-            </div>
-            <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-gray-50 border-b"><tr><th className="p-3 font-semibold text-gray-700">Data</th><th className="p-3 font-semibold text-gray-700">Cliente</th><th className="p-3 font-semibold text-gray-700 text-right">Bruto</th><th className="p-3 font-semibold text-[#FF0000] text-right">Prejuízos</th><th className="p-3 font-semibold text-[#00AA00] text-right">Valor Real</th></tr></thead>
-                  <tbody className="divide-y">
-                    {getBookingsByMonth(finSelectedMonth, finSelectedYear).length > 0 ? ( getBookingsByMonth(finSelectedMonth, finSelectedYear).map(booking => { const damage = parseFloat(booking.damageValue) || 0; const realValue = (parseFloat(booking.totalValue) || 0) - damage; return ( <tr key={booking.id} className="hover:bg-gray-50"><td className="p-3 text-gray-800">{new Date(booking.checkIn).toLocaleDateString('pt-BR')}</td><td className="p-3"><div className="font-medium text-gray-900">{booking.dogName}</div><div className="text-gray-600 text-xs">{booking.ownerName}</div>{damage > 0 && <div className="text-xs text-[#FF0000] italic mt-1">Obs: {booking.damageDescription}</div>}</td><td className="p-3 text-right text-gray-700">R$ {booking.totalValue}</td><td className="p-3 text-right text-[#FF0000] font-medium">{damage > 0 ? `- R$ ${damage}` : '-'}</td><td className="p-3 text-right font-bold text-[#00AA00]">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(realValue)}</td></tr> )}) ) : ( <tr><td colSpan="5" className="p-8 text-center text-gray-500 italic">Nenhum faturamento registrado neste período.</td></tr> )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            <div className="flex items-center gap-2 bg-[#0000FF]/5 p-4 rounded-xl border border-[#0000FF]/10 w-fit"><label className="font-bold text-[#0000FF]">Selecione o Ano:</label><select value={finSelectedYear} onChange={(e) => setFinSelectedYear(parseInt(e.target.value))} className="p-2 border rounded-lg bg-white outline-none focus:ring-2 focus:ring-[#0000FF]">{[2023, 2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}</select></div>
-            <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
-              <table className="w-full text-left"><thead className="bg-gray-100 border-b"><tr><th className="p-4 font-bold text-gray-800">Mês</th><th className="p-4 font-bold text-gray-800 text-center">Hospedagens</th><th className="p-4 font-bold text-gray-800 text-right">Lucro Líquido (Real)</th></tr></thead>
-                <tbody className="divide-y">{monthNames.map((month, idx) => { const netTotal = calculateMonthlyNetTotal(idx, finSelectedYear); const count = getBookingsByMonth(idx, finSelectedYear).length; return ( <tr key={month} className="hover:bg-gray-50"><td className="p-4 font-medium text-gray-800">{month}</td><td className="p-4 text-center text-gray-600">{count > 0 ? <span className="bg-[#0000FF]/10 text-[#0000FF] px-2 py-1 rounded-full text-xs font-bold">{count}</span> : '-'}</td><td className={`p-4 text-right font-bold ${netTotal > 0 ? 'text-[#00AA00]' : 'text-gray-500'}`}>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(netTotal)}</td></tr> ); })}</tbody>
-              </table>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  
+        );
+    };
+
     const renderAgenda = () => (
       <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 min-h-[500px]">
         <div className="flex flex-col lg:flex-row justify-between items-center mb-6 gap-4">
