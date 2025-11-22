@@ -11,10 +11,10 @@ import {
 // --- IMPORTAÇÕES DO FIREBASE ---
 import { initializeApp } from 'firebase/app';
 import { 
-  getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, where, getDocs 
+  getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query 
 } from 'firebase/firestore';
 import { 
-  getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken 
+  getAuth, signInAnonymously, onAuthStateChanged 
 } from 'firebase/auth';
 import { 
   getStorage, ref, uploadBytes, getDownloadURL 
@@ -38,6 +38,10 @@ const storage = getStorage(app);
 
 // Identificador do App
 const appId = 'doghotel-production';
+
+// --- CONSTANTE PARA ID COMPARTILHADO ---
+// Isso garante que todos os dispositivos vejam os mesmos dados
+const SHARED_DB_ID = 'unidade_principal_doghotel';
 
 // --- COMPONENTES AUXILIARES ---
 
@@ -170,40 +174,22 @@ const ImageLightbox = ({ images, currentIndex, onClose, setIndex }) => {
   };
 
 // --- COMPONENTE DE LOGIN ---
-const LoginScreen = ({ onLogin, db, appId, isDbReady }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+const LoginScreen = ({ onLogin }) => {
+  const [email, setEmail] = useState('admin@doghotel.com');
+  const [password, setPassword] = useState('admin!@#$%123');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLoginSubmit = async (e) => {
+  const handleLoginSubmit = (e) => {
     e.preventDefault();
-    if (!isDbReady) {
-        alert("Aguardando conexão com o servidor...");
-        return;
-    }
-    
     setIsLoading(true);
-    
-    try {
-        // Referência à coleção pública de logins
-        // Caminho ajustado para evitar problemas de permissão: public/data/logins
-        const loginsRef = collection(db, 'artifacts', appId, 'public', 'data', 'logins');
-        
-        const q = query(loginsRef, where("email", "==", email), where("password", "==", password));
-        
-        const querySnapshot = await getDocs(q);
-        
-        if (!querySnapshot.empty) {
-            onLogin();
-        } else {
-            alert("Email ou senha incorretos. Verifique suas credenciais.");
-            setIsLoading(false);
-        }
-    } catch (error) {
-        console.error("Erro ao realizar login:", error);
-        alert(`Erro de conexão: ${error.message}`);
+    setTimeout(() => {
+      if (email && password) {
+        onLogin();
+      } else {
+        alert("Por favor, preencha email e senha.");
         setIsLoading(false);
-    }
+      }
+    }, 800);
   };
 
   return (
@@ -232,13 +218,10 @@ const LoginScreen = ({ onLogin, db, appId, isDbReady }) => {
                   <input type="password" required name='password' value={password} onChange={(e) => setPassword(e.target.value)} className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="••••••••" />
                 </div>
               </div>
-              <button type="submit" disabled={isLoading || !isDbReady} className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition shadow-lg flex items-center justify-center gap-2 disabled:opacity-70">
-                {isLoading ? 'Verificando...' : 'Acessar Sistema'}
+              <button type="submit" disabled={isLoading} className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition shadow-lg flex items-center justify-center gap-2 disabled:opacity-70">
+                {isLoading ? 'Entrando...' : 'Acessar Sistema'}
               </button>
             </form>
-            <p className="text-xs text-center text-gray-400 mt-4">
-                Status do Banco de Dados: {isDbReady ? <span className="text-green-500 font-bold">Conectado</span> : <span className="text-red-400">Conectando...</span>}
-            </p>
         </div>
       </div>
     </div>
@@ -350,8 +333,8 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
         setIsUploading(true); 
         try {
             const uniqueName = `${Date.now()}-${file.name}`;
-            // Caminho público para imagens
-            const storageRef = ref(storage, `images/public/${uniqueName}`);
+            // MODIFICADO: Usa SHARED_DB_ID ao invés de currentUser.uid para imagens compartilhadas
+            const storageRef = ref(storage, `images/${SHARED_DB_ID}/${uniqueName}`);
             await uploadBytes(storageRef, file);
             const downloadURL = await getDownloadURL(storageRef);
             if ((formData.photos || []).length < 5) {
@@ -614,18 +597,7 @@ export default function DogHotelApp() {
     useEffect(() => {
       const initAuth = async () => {
         try {
-          // No ambiente de preview, usamos signInWithCustomToken se disponível
-          if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            try {
-                await signInWithCustomToken(auth, __initial_auth_token);
-                return;
-            } catch (error) {
-                console.warn("Falha no token customizado, tentando anônimo:", error);
-            }
-          } 
-          
           await signInAnonymously(auth);
-          
         } catch (error) {
           console.error("Erro de autenticação no Firebase:", error);
           alert("Erro ao conectar com o servidor. Verifique se a Autenticação Anônima está ativada no painel do Firebase.");
@@ -635,59 +607,28 @@ export default function DogHotelApp() {
       const unsubscribe = onAuthStateChanged(auth, setUser);
       return () => unsubscribe();
     }, []);
-
-    // UseEffect para garantir a criação do registro inicial de login
-    useEffect(() => {
-        const ensureDefaultLogin = async () => {
-            if (!user) return;
-
-            // Rota pública para evitar erro de permissão: public/data/logins
-            const loginsRef = collection(db, 'artifacts', appId, 'public', 'data', 'logins');
-            const q = query(loginsRef, where("email", "==", "lyoni.berbert@gmail.com"));
-            
-            try {
-                const snapshot = await getDocs(q);
-                if (snapshot.empty) {
-                    await addDoc(loginsRef, {
-                        email: "lyoni.berbert@gmail.com",
-                        password: "admin@2015#!novo"
-                    });
-                    console.log("Usuário padrão criado com sucesso.");
-                }
-            } catch (error) {
-                console.error("Erro ao verificar/criar usuário padrão:", error);
-            }
-        };
-
-        ensureDefaultLogin();
-    }, [user]);
   
-    // MODIFICADO: UseEffect agora usa rota pública 'public/data'
+    // MODIFICADO: UseEffect agora usa SHARED_DB_ID para ler os dados
     useEffect(() => {
       if (!user) return;
-      // Rotas públicas para garantir compartilhamento e evitar bloqueio de regras
-      const clientsRef = collection(db, 'artifacts', appId, 'public', 'data', 'clients');
-      const bookingsRef = collection(db, 'artifacts', appId, 'public', 'data', 'bookings');
+      // Agora lemos de um caminho fixo 'unidade_principal_doghotel' em vez de user.uid
+      const clientsRef = collection(db, 'artifacts', appId, 'users', SHARED_DB_ID, 'clients');
+      const bookingsRef = collection(db, 'artifacts', appId, 'users', SHARED_DB_ID, 'bookings');
   
       const unsubscribeClients = onSnapshot(clientsRef, (snapshot) => {
         const clientsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setClientDatabase(clientsData);
-      }, (error) => {
-          console.error("Erro ao carregar clientes:", error);
-          // Não alertar aqui para evitar spam de alertas se for erro de permissão temporário
       });
   
       const unsubscribeBookings = onSnapshot(bookingsRef, (snapshot) => {
         const bookingsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setBookings(bookingsData);
-      }, (error) => {
-          console.error("Erro ao carregar reservas:", error);
       });
   
       return () => { unsubscribeClients(); unsubscribeBookings(); };
     }, [user]);
   
-    if (!isAuthenticated) return <LoginScreen onLogin={() => setIsAuthenticated(true)} db={db} appId={appId} isDbReady={!!user} />;
+    if (!isAuthenticated) return <LoginScreen onLogin={() => setIsAuthenticated(true)} isDbReady={!!user} />;
   
     // --- Helpers ---
     const getDaysInMonth = (date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
@@ -714,17 +655,17 @@ export default function DogHotelApp() {
     const handleOpenBookingModal = (booking = null) => { setEditingData(booking); setModalMode('booking'); setIsModalOpen(true); };
     const handleOpenClientModal = (client = null) => { setEditingData(client); setModalMode(client ? 'client_edit' : 'client_new'); setIsModalOpen(true); };
     
-    // MODIFICADO: Delete agora remove da rota pública
+    // MODIFICADO: Delete agora remove do caminho compartilhado SHARED_DB_ID
     const handleDeleteBooking = async (id) => { 
       if (window.prompt("Para confirmar a exclusão da reserva, digite 'DELETAR'") === 'DELETAR') {
-        if (user) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'bookings', id));
+        if (user) await deleteDoc(doc(db, 'artifacts', appId, 'users', SHARED_DB_ID, 'bookings', id));
       }
     };
     
-    // MODIFICADO: Delete agora remove da rota pública
+    // MODIFICADO: Delete agora remove do caminho compartilhado SHARED_DB_ID
     const handleDeleteClient = async (id) => { 
       if (window.prompt("Para confirmar a exclusão do cliente, digite 'DELETAR'") === 'DELETAR') {
-        if (user) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'clients', id));
+        if (user) await deleteDoc(doc(db, 'artifacts', appId, 'users', SHARED_DB_ID, 'clients', id));
       }
     };
     
@@ -733,7 +674,7 @@ export default function DogHotelApp() {
     };
   
     // --- CRUD Principal ---
-    // MODIFICADO: Save agora escreve na rota pública
+    // MODIFICADO: Save agora escreve no caminho compartilhado SHARED_DB_ID
     const handleSave = async (formData) => {
       if (!user) {
           alert("Erro Crítico: Você não está conectado ao banco de dados.");
@@ -742,7 +683,7 @@ export default function DogHotelApp() {
   
       try {
           let clientId = formData.clientId;
-          const clientsRef = collection(db, 'artifacts', appId, 'public', 'data', 'clients');
+          const clientsRef = collection(db, 'artifacts', appId, 'users', SHARED_DB_ID, 'clients');
           
           const existingClient = !clientId 
           ? clientDatabase.find(c => (c.dogName || '').toLowerCase() === (formData.dogName || '').toLowerCase() && (c.ownerName || '').toLowerCase() === (formData.ownerName || '').toLowerCase())
@@ -772,7 +713,7 @@ export default function DogHotelApp() {
   
           if (existingClient) {
           clientId = existingClient.id;
-          const clientDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientId);
+          const clientDocRef = doc(db, 'artifacts', appId, 'users', SHARED_DB_ID, 'clients', clientId);
           const newPastBookings = modalMode === 'booking' 
               ? [bookingSummary, ...(existingClient.pastBookings || [])] 
               : (existingClient.pastBookings || []);
@@ -784,10 +725,10 @@ export default function DogHotelApp() {
           }
   
           if (modalMode === 'booking') {
-              const bookingsRef = collection(db, 'artifacts', appId, 'public', 'data', 'bookings');
+              const bookingsRef = collection(db, 'artifacts', appId, 'users', SHARED_DB_ID, 'bookings');
               const bookingData = { ...formData, clientId: clientId };
               if (editingData && editingData.id) {
-              await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'bookings', editingData.id), bookingData);
+              await updateDoc(doc(db, 'artifacts', appId, 'users', SHARED_DB_ID, 'bookings', editingData.id), bookingData);
               } else {
               await addDoc(bookingsRef, bookingData);
               }
