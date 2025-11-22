@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Calendar, User, PieChart, LogOut, Dog, Plus, ChevronLeft, ChevronRight, 
-  Search, Menu, X
+  Calendar, User, PieChart, LogOut, Dog, House, // <--- Ícone House adicionado
+  Plus, ChevronLeft, ChevronRight, Search, Menu, X
 } from 'lucide-react';
 import { 
   collection, onSnapshot, addDoc, updateDoc, doc, deleteDoc, query, where, getDocs, getDoc 
@@ -11,7 +11,7 @@ import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 // Imports Modulares
 import { db, auth, appId } from './utils/firebase';
 import { formatDateBR } from './utils/calculations';
-import SplashScreen from './components/SplashScreen'; // Importando a animação
+import SplashScreen from './components/SplashScreen';
 import LoginScreen from './components/LoginScreen';
 import BookingCard from './components/BookingCard';
 import BookingModal from './components/BookingModal';
@@ -20,14 +20,14 @@ import ClientList from './components/ClientList';
 
 export default function DogHotelApp() {
   // --- ESTADOS DE UI E AUTH ---
-  const [showSplash, setShowSplash] = useState(true); // Controle da Splash Screen
+  const [showSplash, setShowSplash] = useState(true);
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeTab, setActiveTab] = useState('agenda');
   const [userName, setUserName] = useState('Recepcionista');
 
   // --- ESTADOS DA AGENDA ---
-  const [view, setView] = useState('day'); // 'day', 'week', 'month'
+  const [view, setView] = useState('day');
   const [currentDate, setCurrentDate] = useState(new Date());
   
   // --- ESTADOS DE DADOS ---
@@ -307,24 +307,31 @@ export default function DogHotelApp() {
   };
 
   // --- RENDERIZAÇÃO PRINCIPAL ---
-  
-  // 1. Splash Screen (Se estiver ativo)
   if (showSplash) {
     return <SplashScreen onFinish={() => setShowSplash(false)} />;
   }
 
-  // 2. Login (Se não autenticado)
   if (!isAuthenticated) return <LoginScreen onLogin={() => setIsAuthenticated(true)} db={db} appId={appId} isDbReady={!!user} />;
 
-  // 3. App Principal
   return (
     <div className="flex h-screen bg-gray-100 font-sans text-gray-800 overflow-hidden">
       {/* SIDEBAR DESKTOP */}
       <aside className="hidden md:flex w-64 bg-[#000099] text-white flex-col shadow-xl z-20">
+        {/* --- LOGO E TÍTULO DESKTOP --- */}
         <div className="p-6 flex items-center gap-3 border-b border-[#0000CC]">
-            <div className="bg-white p-1.5 rounded-full text-[#000099]"><Dog size={24} /></div>
-            <h1 className="font-bold text-lg tracking-wide">DogManager</h1>
+            <div className="bg-white p-1.5 rounded-full text-[#000099] flex items-center justify-center">
+                <House size={20} className="-mr-1" /> {/* Ícone Casa sobreposto */}
+                <Dog size={20} /> {/* Ícone Cão */}
+            </div>
+            <div>
+                <h1 className="font-bold text-lg leading-tight tracking-wide">
+                    Uma Casa Boa
+                </h1>
+                <p className="text-sm font-medium opacity-90 leading-tight">Pra Cachorro</p>
+            </div>
         </div>
+        {/* ----------------------------- */}
+
         <nav className="flex-1 py-6 space-y-2 px-3">
             <button onClick={() => setActiveTab('agenda')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${activeTab === 'agenda' ? 'bg-[#0000CC] shadow' : 'hover:bg-[#0000CC]'}`}><Calendar size={20}/> Agenda</button>
             <button onClick={() => setActiveTab('clients')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${activeTab === 'clients' ? 'bg-[#0000CC] shadow' : 'hover:bg-[#0000CC]'}`}><User size={20}/> Cadastros</button>
@@ -333,7 +340,7 @@ export default function DogHotelApp() {
         <div className="p-4 border-t border-[#0000CC]"><button onClick={() => {if(confirm("Sair?")) setIsAuthenticated(false)}} className="w-full flex gap-2 text-gray-300 hover:text-white"><LogOut size={16}/> Sair</button></div>
       </aside>
 
-      {/* CONTEÚDO PRINCIPAL */}
+      {/* MAIN CONTENT */}
       <main className="flex-1 flex flex-col overflow-hidden relative">
         
         {/* HEADER */}
@@ -342,9 +349,28 @@ export default function DogHotelApp() {
                 <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 focus:outline-none">
                     {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
                 </button>
-                <h2 className="text-xl font-bold text-gray-700 hidden md:block">{activeTab === 'agenda' ? 'Agenda' : activeTab === 'clients' ? 'Gerenciamento de Clientes' : 'Financeiro'}</h2>
-                <h2 className="text-lg font-bold text-gray-700 md:hidden flex items-center gap-2"><Dog size={20} className="text-[#0000FF]"/> DogManager</h2>
+                
+                {/* Título da Seção (Desktop) */}
+                <h2 className="text-xl font-bold text-gray-700 hidden md:block">
+                    {activeTab === 'agenda' ? 'Agenda' : activeTab === 'clients' ? 'Gerenciamento de Clientes' : 'Financeiro'}
+                </h2>
+
+                {/* --- LOGO E TÍTULO MOBILE --- */}
+                <div className="flex items-center gap-2 md:hidden">
+                    <div className="flex items-center text-[#0000FF]">
+                        <House size={22} className="-mr-1" />
+                        <Dog size={22} />
+                    </div>
+                    <div>
+                        <h2 className="font-bold text-[#000099] leading-tight text-[15px]">
+                            Uma Casa Boa
+                        </h2>
+                        <p className="font-bold text-[#000099] leading-tight text-xs">Pra Cachorro</p>
+                    </div>
+                </div>
+                {/* -------------------------- */}
             </div>
+
             <div className="flex items-center gap-3">
                 <span className="text-sm text-gray-500 hidden md:block">Olá, {userName}</span>
                 <button onClick={() => {setEditingData(null); setModalMode('booking'); setIsModalOpen(true);}} className="bg-[#0000FF] text-white px-3 py-2 md:px-4 md:py-2 rounded-lg font-bold flex items-center gap-2 shadow hover:bg-[#0000AA] text-sm md:text-base">
