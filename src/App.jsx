@@ -497,7 +497,7 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
                 mimeType = compressedBlob.type; // Deve ser image/jpeg
                 
                 if (fileToUpload.size > MAX_SIZE_MB * 1024 * 1024) {
-                    throw new Error(`O arquivo ainda é maior que ${MAX_SIZE_MB}MB mesmo após compressão. Por favor, escolha outra foto.`);
+                    throw new Error(`O arquivo ainda é maior que ${MAX_SIZE_MB}MB mesmo após compressão.`);
                 }
             }
 
@@ -747,9 +747,8 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
                    {isUploading ? <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#0000FF]"></div><span className="text-sm font-medium">Enviando...</span></> : <><Upload size={20} /><span className="text-sm font-medium">Adicionar Foto</span></>}
                    <input 
                        type="file" 
+                       // REMOVIDO capture="user"
                        accept="image/*" 
-                       // Adiciona capture="user" para sugerir abertura da câmera frontal/dar a opção no menu do SO
-                       capture="user" 
                        className="hidden" 
                        onChange={(e) => handleFileSelect(e, 'photos')}
                        disabled={(formData.photos || []).length >= 5 || isUploading}
