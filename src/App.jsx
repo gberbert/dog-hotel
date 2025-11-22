@@ -748,7 +748,8 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
                    <input 
                        type="file" 
                        accept="image/*" 
-                       // REMOVIDO: capture="camera" para permitir a escolha entre Câmera e Galeria
+                       // Adiciona capture="user" para sugerir abertura da câmera frontal/dar a opção no menu do SO
+                       capture="user" 
                        className="hidden" 
                        onChange={(e) => handleFileSelect(e, 'photos')}
                        disabled={(formData.photos || []).length >= 5 || isUploading}
