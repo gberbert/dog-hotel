@@ -40,11 +40,10 @@ const storage = getStorage(app);
 const appId = 'doghotel-production';
 
 // --- FUNÇÃO DE COMPRESSÃO DE IMAGEM ---
-// Transforma o File em Blob comprimido
 const compressImage = (file) => {
   return new Promise((resolve, reject) => {
     if (!file || !file.type.startsWith('image/')) {
-      resolve(file); // Não processa PDF ou não-imagens
+      resolve(file);
       return;
     }
 
@@ -52,13 +51,12 @@ const compressImage = (file) => {
     reader.onload = (event) => {
       const img = new Image();
       img.onload = () => {
-        const MAX_WIDTH = 1024; // Largura máxima para a imagem
-        const MAX_HEIGHT = 1024; // Altura máxima para a imagem
-        const MAX_SIZE_MB = 3; // Limite de 3MB
+        const MAX_WIDTH = 1024;
+        const MAX_HEIGHT = 1024;
+        const MAX_SIZE_MB = 3;
         let width = img.width;
         let height = img.height;
 
-        // Redimensionamento
         if (width > height) {
           if (width > MAX_WIDTH) {
             height *= MAX_WIDTH / width;
@@ -78,14 +76,12 @@ const compressImage = (file) => {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
 
-        // Tentativa de compressão iterativa
         let quality = 0.9;
         let compressedBlob;
 
         do {
           compressedBlob = dataURItoBlob(canvas.toDataURL('image/jpeg', quality));
           quality -= 0.1;
-          // Se a qualidade for muito baixa ou o arquivo ainda for muito grande, para para não travar.
         } while (compressedBlob.size > MAX_SIZE_MB * 1024 * 1024 && quality > 0.3);
 
         if (compressedBlob.size > MAX_SIZE_MB * 1024 * 1024) {
@@ -101,7 +97,6 @@ const compressImage = (file) => {
   });
 };
 
-// Helper para converter Data URI em Blob
 const dataURItoBlob = (dataURI) => {
   const byteString = atob(dataURI.split(',')[1]);
   const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
@@ -129,7 +124,7 @@ const StarRating = ({ rating, setRating, readonly = false, size = 24 }) => {
         >
           <Star
             size={readonly ? (size > 16 ? 16 : size) : size}
-            className={`${star <= rating ? 'fill-current text-[#FFD700]' : 'text-gray-300'}`} // Amarelo RGB vivo
+            className={`${star <= rating ? 'fill-current text-[#FFD700]' : 'text-gray-300'}`}
             strokeWidth={star <= rating ? 0 : 2}
             stroke={star <= rating ? 'none' : '#9CA3AF'}
           />
@@ -140,13 +135,12 @@ const StarRating = ({ rating, setRating, readonly = false, size = 24 }) => {
 };
 
 const FaceRating = ({ rating, setRating, readonly = false, size = 24 }) => {
-  // Cores baseadas na imagem de referência (RGB aproximado para Tailwind/Hex)
   const faces = [
-    { val: 1, icon: Angry, color: 'text-[#FF0000]', label: 'Raiva' }, // Vermelho RGB {1,0,0}
-    { val: 2, icon: Frown, color: 'text-[#FF7F00]', label: 'Triste' }, // Laranja RGB {255,127,0}
-    { val: 3, icon: Meh, color: 'text-[#FFD700]', label: 'Neutro' }, // Amarelo (similar ao warning)
-    { val: 4, icon: Smile, color: 'text-[#00FF00]', label: 'Bom' }, // Verde RGB {0,1,0} (Lime)
-    { val: 5, icon: Laugh, color: 'text-[#00AA00]', label: 'Excelente' }, // Verde mais escuro para contraste em fundo branco
+    { val: 1, icon: Angry, color: 'text-[#FF0000]', label: 'Raiva' },
+    { val: 2, icon: Frown, color: 'text-[#FF7F00]', label: 'Triste' },
+    { val: 3, icon: Meh, color: 'text-[#FFD700]', label: 'Neutro' },
+    { val: 4, icon: Smile, color: 'text-[#00FF00]', label: 'Bom' },
+    { val: 5, icon: Laugh, color: 'text-[#00AA00]', label: 'Excelente' },
   ];
 
   const safeRating = Number(rating) || 3;
@@ -171,7 +165,6 @@ const FaceRating = ({ rating, setRating, readonly = false, size = 24 }) => {
           >
             <Icon
               size={size}
-              // Se selecionado, usa a cor viva. Se não, um cinza claro mas visível
               className={`
                 ${isSelected ? face.color : 'text-gray-300'} 
                 ${isSelected && !readonly ? 'fill-current opacity-100 stroke-[2.5px]' : 'group-hover:text-gray-400'}
@@ -281,14 +274,14 @@ const LoginScreen = ({ onLogin, db, appId, isDbReady }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0000FF] to-[#0000AA] flex items-center justify-center p-4"> {/* Azul RGB {0,0,1} como base */}
+    <div className="min-h-screen bg-gradient-to-br from-[#0000FF] to-[#0000AA] flex items-center justify-center p-4">
       <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
         <div className="bg-indigo-50 p-8 text-center">
            <div className="inline-flex bg-white p-4 rounded-full shadow-md mb-4">
-             <Dog size={48} className="text-[#FF7F00]" /> {/* Laranja2 */}
+             <Dog size={48} className="text-[#FF7F00]" />
            </div>
-           <h1 className="text-2xl font-bold text-[#0000FF]">DogHotel Manager</h1> {/* Azul */}
-           <p className="text-[#FF7F00]">Gestão Compartilhada</p> {/* Laranja2 */}
+           <h1 className="text-2xl font-bold text-[#0000FF]">DogHotel Manager</h1>
+           <p className="text-[#FF7F00]">Gestão Compartilhada</p>
         </div>
         <div className="p-8">
             <form onSubmit={handleLoginSubmit} className="space-y-4">
@@ -747,7 +740,7 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
                    {isUploading ? <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#0000FF]"></div><span className="text-sm font-medium">Enviando...</span></> : <><Upload size={20} /><span className="text-sm font-medium">Adicionar Foto</span></>}
                    <input 
                        type="file" 
-                       // REMOVIDO capture="user"
+                       // REMOÇÃO DO CAPTURE para permitir a escolha nativa do SO (Câmera ou Galeria)
                        accept="image/*" 
                        className="hidden" 
                        onChange={(e) => handleFileSelect(e, 'photos')}
@@ -783,7 +776,6 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
             <div className="flex gap-2 mb-2 items-center">
                <label className={`flex-1 cursor-pointer bg-[#0000FF]/10 hover:bg-[#0000FF]/20 text-[#0000FF] border border-[#0000FF]/30 rounded-lg p-2 flex items-center justify-center gap-2 transition ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
                    {isUploading ? <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#0000FF]"></div><span className="text-sm font-medium">Enviando...</span></> : <><Upload size={20} /><span className="text-sm font-medium">Adicionar Vacina (Foto/PDF)</span></>}
-                   {/* ATUALIZADO PARA ACEITAR PDF */}
                    <input 
                        type="file" 
                        accept="image/*,application/pdf" 
