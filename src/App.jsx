@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Calendar, User, PieChart, LogOut, Dog, House, // Ícones necessários
+  Calendar, User, PieChart, LogOut,  // Removemos House e Dog daqui
   Plus, ChevronLeft, ChevronRight, Search, Menu, X
 } from 'lucide-react';
 import { 
@@ -17,6 +17,8 @@ import BookingCard from './components/BookingCard';
 import BookingModal from './components/BookingModal';
 import FinancialPanel from './components/FinancialPanel';
 import ClientList from './components/ClientList';
+// 1. Importamos o novo ícone
+import AppIcon from './components/AppIcon';
 
 export default function DogHotelApp() {
   // --- ESTADOS ---
@@ -77,7 +79,6 @@ export default function DogHotelApp() {
       });
   };
   const handleSave = async (formData) => {
-      // (Mantida a lógica de salvamento anterior intacta para brevidade)
       if (!user) return alert("Sem conexão.");
       const isNewClient = !formData.clientId;
       const isBooking = modalMode === 'booking';
@@ -207,11 +208,11 @@ export default function DogHotelApp() {
     <div className="flex h-screen bg-gray-100 font-sans text-gray-800 overflow-hidden">
       {/* SIDEBAR DESKTOP */}
       <aside className="hidden md:flex w-64 bg-[#000099] text-white flex-col shadow-xl z-20">
-        {/* --- LOGO E TÍTULO (COMPOSTO) --- */}
+        {/* --- LOGO E TÍTULO (ATUALIZADO COM SVG) --- */}
         <div className="p-6 flex items-center gap-3 border-b border-[#0000CC]">
-            <div className="bg-white w-12 h-12 rounded-full text-[#000099] relative flex items-center justify-center shadow-sm shrink-0">
-                <House size={22} className="absolute top-2 text-[#000099]/50" strokeWidth={2} />
-                <Dog size={26} className="relative z-10 mt-2" strokeWidth={2.5} />
+            {/* 2. Usamos o AppIcon limpo aqui, sem fundo branco pois o menu já é azul */}
+            <div className="shrink-0">
+                <AppIcon size={50} className="text-white drop-shadow-sm" />
             </div>
             <div>
                 <h1 className="font-bold text-lg leading-none tracking-wide">Uma Casa Boa</h1>
@@ -239,12 +240,10 @@ export default function DogHotelApp() {
                 
                 <h2 className="text-xl font-bold text-gray-700 hidden md:block">{activeTab === 'agenda' ? 'Agenda' : activeTab === 'clients' ? 'Gerenciamento de Clientes' : 'Financeiro'}</h2>
 
-                {/* --- LOGO E TÍTULO MOBILE --- */}
+                {/* --- LOGO E TÍTULO MOBILE (ATUALIZADO COM SVG) --- */}
                 <div className="flex items-center gap-2 md:hidden">
-                    <div className="relative w-8 h-8 flex items-center justify-center text-[#0000FF]">
-                        <House size={18} className="absolute top-0 text-[#000099]/40" strokeWidth={2} />
-                        <Dog size={22} className="relative z-10 mt-1.5" strokeWidth={2.5} />
-                    </div>
+                    {/* 3. Usamos o AppIcon aqui também */}
+                    <AppIcon size={36} />
                     <div>
                         <h2 className="font-bold text-[#000099] leading-none text-[15px]">Uma Casa Boa</h2>
                         <p className="font-bold text-[#000099]/70 leading-none text-[10px] uppercase tracking-wider">Pra Cachorro</p>

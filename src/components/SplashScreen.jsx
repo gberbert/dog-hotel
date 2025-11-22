@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Dog, PawPrint, House } from 'lucide-react';
+import { PawPrint } from 'lucide-react';
+// 1. Importamos nosso novo ícone SVG
+import AppIcon from './AppIcon';
 
 export default function SplashScreen({ onFinish }) {
   const [step, setStep] = useState(0);
@@ -32,22 +34,21 @@ export default function SplashScreen({ onFinish }) {
     <div className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#000099] transition-opacity duration-700 ${step === 3 ? 'opacity-0' : 'opacity-100'}`}>
       
       {/* Container Central */}
-      <div className="relative flex flex-col items-center mb-8"> {/* Aumentei a margem inferior */}
+      <div className="relative flex flex-col items-center mb-8">
         
-        {/* --- NOVO ÍCONE COMPOSTO (EM CAMADAS) --- */}
+        {/* --- ÍCONE PRINCIPAL --- */}
         <div className={`transition-all duration-700 transform ${step >= 1 ? 'scale-100 translate-y-0 opacity-100' : 'scale-0 translate-y-10 opacity-0'}`}>
-          {/* Círculo Branco Fundo */}
-          <div className="relative bg-white w-36 h-36 rounded-full shadow-2xl animate-bounce flex items-center justify-center overflow-visible">
-             {/* Casa atrás (um pouco menor e mais acima) */}
-             <House size={60} className="text-[#000099]/60 absolute -top-2" strokeWidth={2} />
-             
-             {/* Cachorro na frente (maior e centralizado) */}
-             <Dog size={85} className="text-[#000099] relative z-10 mt-4" strokeWidth={2.5} />
+          {/* Mantive o círculo branco atrás para dar destaque ao ícone azul,
+             exatamente como na imagem que você gerou.
+          */}
+          <div className="relative bg-white w-40 h-40 rounded-full shadow-2xl animate-bounce flex items-center justify-center p-4">
+             {/* 2. Usamos o novo ícone aqui, bem grande */}
+             <AppIcon size={120} />
           </div>
         </div>
-        {/* --------------------------------------- */}
+        {/* ----------------------- */}
 
-        {/* Texto com Novo Nome (Centralizado) */}
+        {/* Texto Centralizado */}
         <div className={`text-center mt-8 transition-all duration-1000 ${step >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
             <h1 className="text-4xl md:text-6xl font-black text-white tracking-wide leading-none">
               Uma Casa Boa
@@ -63,7 +64,7 @@ export default function SplashScreen({ onFinish }) {
         </div>
       </div>
 
-      {/* Animação das Patinhas */}
+      {/* Animação das Patinhas (Mantida) */}
       {step >= 2 && (
         <div className="absolute bottom-16 md:bottom-24 flex gap-8 opacity-40">
           <PawPrint size={30} className="text-white animate-pulse" style={{ animationDelay: '0ms', transform: 'rotate(-20deg)' }} />
