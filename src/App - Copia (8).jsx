@@ -721,11 +721,9 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose, races, onAd
             <div>
                 <label className="block text-sm font-medium text-gray-700">Raça</label>
                 <select name="dogBreed" value={formData.dogBreed} onChange={handleChange} className="mt-1 w-full p-2 border rounded-lg outline-none bg-white">
-                    {races.sort((a, b) => a.name.localeCompare(b.name))
-                        .filter(race => race.name && race.id)
-                        .map(race => (
-                            <option key={race.id} value={race.name}>{race.name}</option>
-                        ))}
+                    {races.sort((a, b) => a.name.localeCompare(b.name)).map(race => (
+                        <option key={race.id} value={race.name}>{race.name}</option>
+                    ))}
                 </select>
                 <div className='mt-2 flex gap-2'>
                     <input 
@@ -782,7 +780,7 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose, races, onAd
                 <FaceRating rating={formData.dogBehaviorRating} setRating={(r) => setFormData({...formData, dogBehaviorRating: r})} />
             </div>
 
-            <div><label className="block text-sm font-medium text-gray-700 flex items-center gap-2"><Heart size={14} className="text-[#E91E63]"/> Socialização</label><div className="flex gap-2 mb-2 mt-1"><select value={socialDogInput} onChange={(e) => setSocialDogInput(e.target.value)} className="flex-1 p-2 border rounded-lg text-sm"><option value="">+ Amigo</option>{availableDogs.map(d => <option key={d} value={d}>{d}</option>)}</select><button type="button" onClick={handleAddSocialDog} disabled={(formData.socialization || []).length >= 5 || !socialDogInput} className="bg-pink-100 text-[#E91E63] px-3 rounded-lg hover:bg-pink-200 disabled:opacity-50 font-bold">+</button></div><div className="flex flex-wrap gap-2">{(formData.socialization || []).map((dog, index) => ( <span key={index} className="bg-pink-50 text-[#E91E63] px-2 py-1 rounded-full text-xs flex items-center gap-1 border border-pink-100">{dog} <button type="button" onClick={() => removeSocialDog(dog)} className="hover:text-[#FF0000]"><X size={12}/></button></span> ))}</div></div>
+            <div><label className="block text-sm font-medium text-gray-700 flex items-center gap-2"><Heart size={14} className="text-[#E91E63]"/> Socialização</label><div className="flex gap-2 mb-2 mt-1"><select value={socialDogInput} onChange={(e) => setSocialDogInput(e.target.value)} className="flex-1 p-2 border rounded-lg text-sm"><option value="">+ Amigo</option>{availableDogs.map(d => <option key={d} value={d}>{d}</option>)}</select><button type="button" onClick={handleAddSocialDog} disabled={(formData.socialization || []).length >= 5 || !socialDogInput} className="bg-pink-100 text-[#E91E63] px-3 rounded-lg hover:bg-pink-200 disabled:opacity-50 font-bold">+</button></div><div className="flex flex-wrap gap-2">{(formData.socialization || []).map(dog => ( <span key={dog} className="bg-pink-50 text-[#E91E63] px-2 py-1 rounded-full text-xs flex items-center gap-1 border border-pink-100">{dog} <button type="button" onClick={() => removeSocialDog(dog)} className="hover:text-[#FF0000]"><X size={12}/></button></span> ))}</div></div>
             <div><label className="block text-sm font-medium text-gray-700">Restrições</label><input name="restrictions" value={formData.restrictions} onChange={handleChange} className="mt-1 w-full p-2 border rounded-lg border-[#FF0000]/30 bg-[#FF0000]/5 outline-none" placeholder="Ex: Alergias..." /></div>
             <div className="mt-4 bg-[#00FF00]/10 p-3 rounded-lg border border-[#00FF00]/30">
                 <h4 className="text-sm font-bold text-[#00AA00] flex items-center gap-1"><DollarSign size={16} /> Total Pago por {formData.dogName}</h4>
@@ -1043,18 +1041,7 @@ export default function DogHotelApp() {
     const [races, setRaces] = useState([]); // Novo estado para raças
     
     const [view, setView] = useState('day'); 
-    // CORRIGIDO: Inicializa currentDate com useState
-    const [currentDate, setCurrentDate] = useState(new Date()); 
-
-    // Garante que o estado inicial de currentDate comece no início do dia
-    useEffect(() => {
-        setCurrentDate(prev => {
-            const startOfDay = new Date(prev);
-            startOfDay.setHours(0, 0, 0, 0);
-            return startOfDay;
-        });
-    }, []);
-
+    const [currentDate, setCurrentDate] = useState(new Date());
     const [financialView, setFinancialView] = useState('monthly'); 
     const [finSelectedMonth, setFinSelectedMonth] = useState(new Date().getMonth());
     const [finSelectedYear, setFinSelectedYear] = useState(new Date().getFullYear());
@@ -1077,8 +1064,7 @@ export default function DogHotelApp() {
           // No ambiente de preview, usamos signInWithCustomToken se disponível
           if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
             try {
-                // ATENÇÃO: Corrigido o nome da variável de __initial_auth_token
-                await signInWithCustomToken(auth, __initial_auth_token); 
+                await signInWithCustomToken(auth, __initial_auth_token);
                 return;
             } catch (error) {
                 console.warn("Falha no token customizado, tentando anônimo:", error);
@@ -1224,62 +1210,17 @@ export default function DogHotelApp() {
     };
   
     // --- CRUD Principal ---
-    // Inclui a validação de duplicidade na criação de novos clientes
+    // MODIFICADO: Save agora escreve na rota pública
     const handleSave = async (formData) => {
       if (!user) {
           alert("Erro Crítico: Você não está conectado ao banco de dados.");
           return;
       }
-      
-      const isNewClient = !formData.clientId;
-
-      if (isNewClient && (modalMode === 'client_new' || modalMode === 'booking')) {
-          const dogName = (formData.dogName || '').trim().toLowerCase();
-          
-          // Limpa e normaliza os números de WhatsApp
-          const newWhatsapp1 = (formData.whatsapp || '').replace(/\D/g, '').trim();
-          const newWhatsapp2 = (formData.whatsapp2 || '').replace(/\D/g, '').trim();
-
-          const isDuplicate = clientDatabase.some(client => {
-              // Condição 1: Mesma chave "Nome do Pet"
-              const existingDogName = (client.dogName || '').trim().toLowerCase();
-              if (existingDogName !== dogName) {
-                  return false;
-              }
-
-              // Condição 2: E (WhatsApp 1 OU WhatsApp 2 do novo cadastro coincide com WhatsApp 1 OU WhatsApp 2 do cliente existente)
-              const existingWhatsapp1 = (client.whatsapp || '').replace(/\D/g, '').trim();
-              const existingWhatsapp2 = (client.whatsapp2 || '').replace(/\D/g, '').trim();
-
-              const whatsappMatch = (
-                  // Novo WA1 coincide com Existente WA1 ou WA2
-                  (newWhatsapp1 && (newWhatsapp1 === existingWhatsapp1 || newWhatsapp1 === existingWhatsapp2)) ||
-                  // Novo WA2 coincide com Existente WA1 ou WA2
-                  (newWhatsapp2 && (newWhatsapp2 === existingWhatsapp1 || newWhatsapp2 === existingWhatsapp2))
-              );
-              
-              // Se o nome do pet coincidir E houver qualquer coincidência de WhatsApp (1 ou 2)
-              return whatsappMatch;
-          });
-
-          if (isDuplicate) {
-              // MENSAGEM DE ERRO ESPECÍFICA SOLICITADA
-              alert(`Erro de Duplicidade no Cadastro:
-Não é possível salvar um novo registro com o nome de pet "${formData.dogName}".
-
-Um pet com esse mesmo nome já está cadastrado e vinculado a um dos números de WhatsApp fornecidos (Tutor 1 ou Tutor 2).
-
-Verifique o cadastro existente.`);
-              // CORRIGIDO: Retorna imediatamente após o alerta
-              return; 
-          }
-      }
-
+  
       try {
           let clientId = formData.clientId;
           const clientsRef = collection(db, 'artifacts', appId, 'public', 'data', 'clients');
           
-          // A verificação de cliente existente abaixo é para EDITAR um cadastro ou VINCULAR uma nova reserva a um cliente existente.
           const existingClient = !clientId 
           ? clientDatabase.find(c => (c.dogName || '').toLowerCase() === (formData.dogName || '').toLowerCase() && (c.ownerName || '').toLowerCase() === (formData.ownerName || '').toLowerCase())
           : clientDatabase.find(c => c.id === clientId);
