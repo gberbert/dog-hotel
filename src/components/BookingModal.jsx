@@ -40,7 +40,6 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
   const isBookingMode = mode === 'booking';
   const isEditingBooking = isBookingMode && data && data.id;
   
-  // Se for reserva, mostramos campos cadastrais como ReadOnly. Se for Cliente (novo/edit), mostramos Inputs.
   const showReadOnly = isBookingMode;
 
   const [formData, setFormData] = useState({
@@ -204,10 +203,13 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
     setSearchQuery(''); setShowSearchResults(false);
   };
 
-  const getWhatsAppLink = (number) => {
+  // Helper para criar o link do WhatsApp
+  const getWhatsAppUrl = (number) => {
     if (!number) return null;
-    const n = number.replace(/\D/g, '');
-    return (n.length >= 10) ? `https://wa.me/55${n}` : null;
+    const cleanNumber = number.replace(/\D/g, '');
+    // Adiciona 55 se não tiver (assumindo Brasil)
+    const finalNumber = cleanNumber.length >= 10 ? `55${cleanNumber}` : cleanNumber;
+    return `https://wa.me/${finalNumber}`;
   };
 
   const totalPaidValue = (formData.pastBookings || []).reduce((acc, curr) => acc + ((parseFloat(curr.totalValue)||0) - (parseFloat(curr.damageValue)||0)), 0);
@@ -226,7 +228,6 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
             <button onClick={onClose} className="text-white hover:bg-[#0000AA] rounded-full p-1"><X size={24} /></button>
         </div>
 
-        {/* BUSCA DE CLIENTE */}
         {isBookingMode && !data && (
             <div className="bg-indigo-50 px-6 py-3 border-b border-indigo-100 relative">
                 <label className="text-sm font-bold text-indigo-800 flex items-center gap-2">
@@ -253,11 +254,10 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
 
         <form onSubmit={(e) => { e.preventDefault(); onSave(formData); }} className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
             
-            {/* ================= COLUNA 1: PET (CADASTRO + VARIÁVEIS) ================= */}
+            {/* ================= COLUNA 1: PET ================= */}
             <div className="space-y-5">
                 <h3 className="text-[#0000FF] font-bold border-b pb-2 flex items-center gap-2"><Dog size={18}/> Dados do Pet</h3>
                 
-                {/* SEÇÃO CADASTRO (READ ONLY NA RESERVA) */}
                 {showReadOnly ? (
                     <div className="grid grid-cols-2 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-200 relative">
                         <div className="absolute top-2 right-2 text-gray-300"><Lock size={14}/></div>
@@ -289,7 +289,6 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
                     </div>
                 ) : (
                     <>
-                        {/* MODO EDIÇÃO/NOVO: CAMPOS INPUT */}
                         <div className="grid grid-cols-2 gap-4">
                             <div><label className="text-sm font-medium">Nome</label><input name="dogName" value={formData.dogName} onChange={handleChange} className="w-full p-2 border rounded" required /></div>
                             <div>
@@ -305,7 +304,6 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
                             <div><label className="text-sm text-[#FF7F00]">Humana</label><input readOnly value={`${humanAge} anos`} className="w-full p-2 border border-[#FF7F00]/30 bg-[#FF7F00]/10 text-[#FF7F00] text-xs font-bold rounded"/></div>
                         </div>
                         
-                        {/* --- CORREÇÃO: LAYOUT DE RAÇA RESPONSIVO --- */}
                         <div>
                             <label className="text-sm font-medium block mb-1">Raça</label>
                             <div className="flex flex-col sm:flex-row gap-2">
@@ -318,7 +316,6 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
                                 </div>
                             </div>
                         </div>
-                        {/* ---------------------------------------------- */}
 
                         <div className="bg-red-50 p-3 rounded border border-red-200">
                             <h4 className="text-red-600 font-bold text-sm mb-2 flex gap-2"><Pill size={16}/> Medicações</h4>
@@ -381,12 +378,28 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
                         <div className="bg-gray-50 p-3 rounded border space-y-2">
                             <h4 className="font-bold text-gray-700 text-sm">Tutor 1 (Principal)</h4>
                             <input name="ownerName" value={formData.ownerName} onChange={handleChange} placeholder="Nome" className="w-full p-2 border rounded bg-white" required />
-                            <input name="whatsapp" value={formData.whatsapp} onChange={handleChange} placeholder="WhatsApp" className="w-full p-2 border rounded bg-white" />
+                            {/* INPUT WHATSAPP 1 COM BOTÃO */}
+                            <div className="flex gap-2">
+                                <input name="whatsapp" value={formData.whatsapp} onChange={handleChange} placeholder="WhatsApp" className="flex-1 p-2 border rounded bg-white" />
+                                {formData.whatsapp && (
+                                    <a href={getWhatsAppUrl(formData.whatsapp)} target="_blank" rel="noopener noreferrer" className="p-2 bg-green-500 text-white rounded hover:bg-green-600 flex items-center justify-center transition" title="Abrir WhatsApp">
+                                        <MessageCircle size={20} />
+                                    </a>
+                                )}
+                            </div>
                         </div>
                         <div className="bg-gray-50 p-3 rounded border space-y-2">
                             <h4 className="font-bold text-gray-700 text-sm">Tutor 2 (Opcional)</h4>
                             <input name="ownerName2" value={formData.ownerName2} onChange={handleChange} placeholder="Nome" className="w-full p-2 border rounded bg-white" />
-                            <input name="whatsapp2" value={formData.whatsapp2} onChange={handleChange} placeholder="WhatsApp" className="w-full p-2 border rounded bg-white" />
+                            {/* INPUT WHATSAPP 2 COM BOTÃO */}
+                            <div className="flex gap-2">
+                                <input name="whatsapp2" value={formData.whatsapp2} onChange={handleChange} placeholder="WhatsApp" className="flex-1 p-2 border rounded bg-white" />
+                                {formData.whatsapp2 && (
+                                    <a href={getWhatsAppUrl(formData.whatsapp2)} target="_blank" rel="noopener noreferrer" className="p-2 bg-green-500 text-white rounded hover:bg-green-600 flex items-center justify-center transition" title="Abrir WhatsApp">
+                                        <MessageCircle size={20} />
+                                    </a>
+                                )}
+                            </div>
                         </div>
                     </>
                 )}
