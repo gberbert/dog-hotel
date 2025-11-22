@@ -220,7 +220,7 @@ const ImageLightbox = ({ images, currentIndex, onClose, setIndex }) => {
             onClick={(e) => { e.stopPropagation(); setIndex((currentIndex - 1 + images.length) % images.length); }} 
             className="absolute left-4 text-white hover:text-gray-300 p-3 rounded-full bg-black/20 hover:bg-white/10 transition"
           >
-            <ChevronLeft size={40} /> {/* CORRIGIDO: Fechamento correto */}
+            <ChevronLeft size={40} />
           </button>
         )}
         
@@ -240,7 +240,7 @@ const ImageLightbox = ({ images, currentIndex, onClose, setIndex }) => {
             onClick={(e) => { e.stopPropagation(); setIndex((currentIndex + 1) % images.length); }} 
             className="absolute right-4 text-white hover:text-gray-300 p-3 rounded-full bg-black/20 hover:bg-white/10 transition"
           >
-            <ChevronRight size={40} /> {/* CORRIGIDO: Fechamento correto */}
+            <ChevronRight size={40} />
           </button>
         )}
       </div>
@@ -748,7 +748,6 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose }) {
                    <input 
                        type="file" 
                        accept="image/*" 
-                       capture="camera" // ADICIONADO: Ativa a câmera em dispositivos móveis
                        className="hidden" 
                        onChange={(e) => handleFileSelect(e, 'photos')}
                        disabled={(formData.photos || []).length >= 5 || isUploading}
@@ -1132,7 +1131,7 @@ export default function DogHotelApp() {
     const renderAgenda = () => (
       <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 min-h-[500px]">
         <div className="flex flex-col lg:flex-row justify-between items-center mb-6 gap-4">
-          <div className="flex bg-gray-100 p-1 rounded-lg w-full lg:w-auto justify-center lg:justify-start">{['day', 'week', 'month'].map(v => (<button key={v} onClick={() => setView(v)} className={`flex-1 lg:flex-none px-4 py-2 rounded-md text-sm font-medium transition ${view === v ? 'bg-white shadow text-[#0000FF]' : 'text-gray-600'}`}>{v === 'day' ? 'Dia' : v === 'week' ? 'Semana' : 'Mês'}</button>))}</div>
+          <div className="flex bg-gray-100 p-1 rounded-lg w-full lg:w-auto justify-center lg:justify-start">{['day', 'week', 'month'].map(v => (<button key={v} onClick={() => setView(v)} className={`flex-1 lg:flex-none px-4 py-2 rounded-md text-sm font-medium transition capitalize ${view === v ? 'bg-white shadow text-[#0000FF]' : 'text-gray-600'}`}>{v === 'day' ? 'Dia' : v === 'week' ? 'Semana' : 'Mês'}</button>))}</div>
           <div className="flex items-center justify-between w-full lg:w-auto gap-2 bg-gray-50 lg:bg-transparent p-2 rounded-lg lg:p-0"><button onClick={() => navigateDate(-1)} className="p-2 hover:bg-gray-200 rounded-full bg-white lg:bg-transparent shadow-sm lg:shadow-none"><ChevronLeft size={24} className="text-gray-700"/></button><h2 className="text-lg font-semibold w-full text-center lg:w-64 truncate text-gray-800">{view === 'day' && formatDateBR(currentDate)}{view === 'month' && currentDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}{view === 'week' && `Semana de ${formatDateBR(startOfWeek(currentDate))}`}</h2><button onClick={() => navigateDate(1)} className="p-2 hover:bg-gray-200 rounded-full bg-white lg:bg-transparent shadow-sm lg:shadow-none"><ChevronRight size={24} className="text-gray-700"/></button></div>
           <button onClick={() => handleOpenBookingModal()} className="w-full lg:w-auto bg-[#0000FF] text-white px-4 py-3 rounded-lg font-bold flex items-center justify-center gap-2 shadow hover:bg-[#0000AA] transition-transform active:scale-95"><Plus size={20} /> <span>Nova Reserva</span></button>
         </div>
