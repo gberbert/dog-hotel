@@ -176,7 +176,7 @@ const ImageLightbox = ({ images, currentIndex, onClose, setIndex }) => {
 // --- COMPONENTE DE LOGIN ---
 const LoginScreen = ({ onLogin }) => {
   const [email, setEmail] = useState('admin@doghotel.com');
-  const [password, setPassword] = useState('admin123');
+  const [password, setPassword] = useState('admin!@#$%123');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLoginSubmit = (e) => {
