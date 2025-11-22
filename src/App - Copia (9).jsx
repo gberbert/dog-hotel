@@ -13,7 +13,7 @@ import {
   initializeApp 
 } from 'firebase/app';
 import { 
-  getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, where, getDocs, getDoc
+  getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, where, getDocs 
 } from 'firebase/firestore';
 import { 
   getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken 
@@ -159,7 +159,7 @@ const FaceRating = ({ rating, setRating, readonly = false, size = 24 }) => {
             type="button"
             onClick={(e) => { e.preventDefault(); !readonly && setRating && setRating(face.val); }}
             className={`
-              ${readonly ? 'cursor-default' : 'cursor-pointer'} focus:outline-none transition-colors duration-200
+              ${readonly ? 'cursor-default' : 'cursor-pointer hover:scale-110 transition-transform'}
               flex flex-col items-center gap-1 focus:outline-none group
             `}
             disabled={readonly}
@@ -326,20 +326,17 @@ function BookingCard({ booking, onEdit, onDelete }) {
 
     const waLink = getWhatsAppLink(booking.whatsapp);
 
-    // CORREÇÃO: Usa totalValue da reserva, que é calculado no Modal/Save
-    const totalNetValue = (parseFloat(booking.totalValue) || 0) - (parseFloat(booking.damageValue) || 0);
-
     return (
       <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-3 relative group">
         
         {/* BLOCO PRINCIPAL: FOTO + NOME + TUTOR */}
         <div className="flex items-start justify-between">
-          <div className="flex items-center gap-4 overflow-hidden">
-            <div className="w-16 h-16 rounded-full bg-gray-200 overflow-hidden border-2 border-white shadow-sm flex-shrink-0">
-              {booking.clientPhoto ? ( <img src={booking.clientPhoto} alt={booking.dogName} className="w-full h-full object-cover" /> ) : <Dog className="w-full h-full p-2 text-gray-400" />}
+          <div className="flex items-center gap-4 overflow-hidden"> {/* AUMENTADO O ESPAÇAMENTO DO GAP */}
+            <div className="w-16 h-16 rounded-full bg-gray-200 overflow-hidden border-2 border-white shadow-sm flex-shrink-0"> {/* AUMENTADO PARA W-16 H-16 */}
+              {booking.clientPhoto ? ( <img src={booking.clientPhoto} alt={booking.dogName} className="w-full h-full object-cover" /> ) : <Dog className="w-full h-full p-2 text-gray-400" />} {/* AJUSTADO O PADDING DO ÍCONE */}
             </div>
             <div className="min-w-0">
-              <h4 className="font-bold text-xl text-gray-800 truncate">{booking.dogName}</h4>
+              <h4 className="font-bold text-xl text-gray-800 truncate">{booking.dogName}</h4> {/* AUMENTADO O TAMANHO DO TEXTO */}
               <div className="flex items-center gap-2 mt-0.5">
                  <p className="text-sm text-gray-500 flex items-center gap-1 truncate"><User size={14} className="text-[#FF7F00]"/> {booking.ownerName}</p>
                  {waLink && (
@@ -357,6 +354,10 @@ function BookingCard({ booking, onEdit, onDelete }) {
               </div>
             </div>
           </div>
+          {/* REMOVIDO: Avaliação de comportamento do topo (item removido) */}
+          {/* <div className="flex items-center gap-2 bg-indigo-50 px-2 py-1 rounded text-[#0000FF] flex-shrink-0">
+            <FaceRating rating={booking.dogBehaviorRating || 3} readonly size={16} />
+          </div> */}
         </div>
         
         {/* DATAS DE AGENDAMENTO */}
@@ -367,8 +368,8 @@ function BookingCard({ booking, onEdit, onDelete }) {
         
         {/* POSICIONAMENTO CARINHAS ABAIXO DAS DATAS */}
         <div className="w-full flex justify-end">
-            <div className="flex items-center justify-end p-1 bg-gray-50 rounded-lg border border-gray-100">
-                <span className="text-xs font-medium text-gray-600 mr-2">Comp. Geral:</span>
+            <div className="flex items-center justify-end">
+                <span className="text-xs font-medium text-gray-500 mr-2">Comp. Geral:</span>
                 <FaceRating rating={booking.dogBehaviorRating || 3} readonly size={18} />
             </div>
         </div>
@@ -377,8 +378,7 @@ function BookingCard({ booking, onEdit, onDelete }) {
         
         {/* PREÇO E AÇÕES */}
         <div className="mt-auto pt-3 border-t border-gray-100 flex justify-between items-center">
-           {/* CORREÇÃO: Exibe o valor total calculado */}
-           <span className="font-bold text-[#0000FF]">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalNetValue)}</span>
+           <span className="font-bold text-[#0000FF]">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((booking.totalValue || 0) - (booking.damageValue || 0))}</span>
            <div className="flex gap-2"><button onClick={onEdit} className="p-2 text-gray-400 hover:text-[#0000FF] hover:bg-indigo-50 rounded-full transition"><Edit size={18} /></button><button onClick={onDelete} className="p-2 text-gray-400 hover:text-[#FF0000] hover:bg-red-50 rounded-full transition"><Trash2 size={18} /></button></div>
         </div>
       </div>
@@ -421,9 +421,8 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose, races, onAd
     checkIn: data?.checkIn || '', 
     checkOut: data?.checkOut || '',
     rating: data?.rating || 5, 
-    dailyRate: data?.dailyRate || 80, 
     dogBehaviorRating: data?.dogBehaviorRating || 3, 
-    // Garante que totalValue seja inicializado com o dado existente
+    dailyRate: data?.dailyRate || 80, 
     totalValue: data?.totalValue || 0,
     damageValue: data?.damageValue || '', 
     damageDescription: data?.damageDescription || '',
@@ -441,7 +440,6 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose, races, onAd
   const [vaccineLightboxIndex, setVaccineLightboxIndex] = useState(-1);
   
   const isBookingMode = mode === 'booking';
-  const isEditingBooking = isBookingMode && data && data.id; // Verifica se está editando uma reserva
 
   const totalPaidValue = (formData.pastBookings || []).reduce((acc, curr) => {
     const total = parseFloat(curr.totalValue) || 0;
@@ -523,26 +521,6 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose, races, onAd
   };
 
   const humanAge = calculateHumanAge(realAgeYears, formData.dogSize);
-
-  // --- CORREÇÃO: Ativação do Cálculo de Total Estimado no useEffect do Modal ---
-  useEffect(() => {
-    if (isBookingMode && formData.checkIn && formData.checkOut && formData.dailyRate) {
-      const start = new Date(formData.checkIn);
-      const end = new Date(formData.checkOut);
-      // Calcula a diferença em milissegundos
-      const diffTime = Math.abs(end.getTime() - start.getTime());
-      // Converte para dias, arredondando para cima e garantindo no mínimo 1 dia
-      const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24))); 
-      
-      const dailyRateFloat = parseFloat(formData.dailyRate) || 0;
-      
-      setFormData(prev => ({ 
-        ...prev, 
-        totalValue: diffDays * dailyRateFloat // Recalcula o valor total
-      }));
-    }
-  }, [formData.checkIn, formData.checkOut, formData.dailyRate, isBookingMode]);
-
 
   const handleChange = (e) => { const { name, value } = e.target; setFormData(prev => ({ ...prev, [name]: value })); };
   
@@ -679,32 +657,6 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose, races, onAd
   };
   const removeSocialDog = (name) => setFormData(prev => ({ ...prev, socialization: prev.socialization.filter(d => d !== name) }));
   
-  const handleDeleteHistoryItem = async (historyId) => {
-    if (!window.confirm("Tem certeza que deseja excluir este registro de histórico? Esta ação é irreversível.")) return;
-
-    if (!formData.clientId) {
-        alert("Erro: O cliente não está salvo. Não é possível deletar o histórico.");
-        return;
-    }
-
-    const clientDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', formData.clientId);
-
-    try {
-        const newPastBookings = formData.pastBookings.filter(hist => hist.id !== historyId);
-        
-        await updateDoc(clientDocRef, { pastBookings: newPastBookings });
-        
-        // Atualiza o estado local do modal para refletir a mudança
-        setFormData(prev => ({ ...prev, pastBookings: newPastBookings }));
-        
-        alert("Registro de histórico excluído com sucesso.");
-
-    } catch (error) {
-        console.error("Erro ao deletar item do histórico:", error);
-        alert(`Falha ao excluir histórico: ${error.message}`);
-    }
-  };
-
   const handleSubmit = async (e) => { 
       e.preventDefault(); 
       setIsSaving(true);
@@ -722,9 +674,6 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose, races, onAd
   const availableDogs = clientDatabase.map(c => c.dogName).filter(n => n !== formData.dogName);
   const searchResults = searchQuery ? clientDatabase.filter(c => c.dogName.toLowerCase().includes(searchQuery.toLowerCase()) || c.ownerName.toLowerCase().includes(searchQuery.toLowerCase())) : [];
   const getTitle = () => { if (mode === 'client_new') return 'Novo Cadastro'; if (mode === 'client_edit') return 'Editar Cadastro'; return data ? 'Editar Hospedagem' : 'Nova Hospedagem'; };
-  
-  // Lógica para o rótulo do botão Salvar/Confirmar
-  const saveButtonLabel = isEditingBooking ? 'Salvar Alterações' : (mode === 'client_new' ? 'Salvar Cadastro' : 'Confirmar Reserva');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-2 md:p-4 overflow-y-auto">
@@ -963,7 +912,7 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose, races, onAd
                                     <div className='text-sm font-medium text-gray-600'>
                                         Valor da Hospedagem: <span className='font-bold text-[#0000FF]'>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalValue)}</span>
                                     </div>
-                                    <div className='text-right flex items-center gap-2'>
+                                    <div className='text-right'>
                                         {hasDamage && (
                                             <div className="text-xs font-bold text-[#FF0000]">
                                                 Prejuízo: - {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(damageValue)}
@@ -972,15 +921,6 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose, races, onAd
                                         <div className="text-sm font-bold text-[#00AA00]">
                                             Valor Real Debitado: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(realDebitedValue)}
                                         </div>
-                                        {/* NOVO BOTÃO DE EXCLUSÃO */}
-                                        <button 
-                                            type="button"
-                                            onClick={() => handleDeleteHistoryItem(hosp.id)}
-                                            className="p-1 text-red-400 hover:text-[#FF0000] hover:bg-red-100 rounded-full transition"
-                                            title="Excluir Histórico"
-                                        >
-                                            <Trash2 size={14} />
-                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -1102,7 +1042,7 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose, races, onAd
 
           <div className="md:col-span-2 flex justify-end gap-4 pt-4 border-t">
              <button type="button" onClick={onClose} className="px-6 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium">Cancelar</button>
-             <button type="submit" className="px-6 py-2 rounded-lg bg-[#0000FF] text-white hover:bg-[#0000AA] font-bold shadow-lg flex items-center gap-2" disabled={isSaving}>{isSaving ? 'Salvando...' : <><CheckCircle size={18} /> {saveButtonLabel}</>}</button>
+             <button type="submit" className="px-6 py-2 rounded-lg bg-[#0000FF] text-white hover:bg-[#0000AA] font-bold shadow-lg flex items-center gap-2" disabled={isSaving}>{isSaving ? 'Salvando...' : <><CheckCircle size={18} /> {isBookingMode ? 'Confirmar Reserva' : 'Salvar Cadastro'}</>}</button>
           </div>
         </form>
       </div>
@@ -1110,47 +1050,10 @@ function BookingModal({ data, mode, clientDatabase, onSave, onClose, races, onAd
   );
 }
 
-// --- Funções de Limpeza de Histórico (Pós-Save) ---
-
-/**
- * Remove registros duplicados no histórico de hospedagens (pastBookings) do cliente.
- * Mantém apenas o registro mais antigo com as mesmas datas de Check-in/Check-out.
- * @param {object} client O objeto cliente com o histórico a ser limpo.
- * @returns {Array} O array de pastBookings limpo.
- */
-const cleanUpPastBookings = (client) => {
-    const history = client.pastBookings || [];
-    if (history.length <= 1) return history;
-
-    // 1. Agrupa os históricos pela chave única (CheckIn + CheckOut)
-    const uniqueBookingsMap = history.reduce((acc, hist) => {
-        if (!hist.checkIn || !hist.checkOut) return acc; // Ignora entradas inválidas
-
-        // Chave baseada nas datas
-        const key = `${hist.checkIn}-${hist.checkOut}`;
-        
-        // Mantém apenas o registro mais antigo com a mesma chave de datas.
-        if (acc[key]) {
-            // Se o ID do histórico atual for menor que o que está no mapa, ele é mais antigo e deve ser mantido.
-            if (hist.id < acc[key].id) {
-                acc[key] = hist; // Sobrescreve pelo mais antigo
-            }
-        } else {
-            acc[key] = hist; // Adiciona o primeiro encontrado
-        }
-        return acc;
-    }, {});
-
-    // 3. Converte o mapa de volta para um array e ordena pelo ID (mais recente no topo)
-    return Object.values(uniqueBookingsMap).sort((a, b) => b.id - a.id);
-};
-
-
 // --- App Principal (Main Component) ---
 export default function DogHotelApp() {
     const [isAuthenticated, setIsAuthenticated] = useState(false); 
     const [user, setUser] = useState(null);
-    const [userName, setUserName] = useState('Recepcionista'); // Novo estado para o nome do usuário logado
   
     const [activeTab, setActiveTab] = useState('agenda');
     const [clientDatabase, setClientDatabase] = useState([]);
@@ -1226,24 +1129,15 @@ export default function DogHotelApp() {
                 if (snapshot.empty) {
                     await addDoc(loginsRef, {
                         email: "lyoni.berbert@gmail.com",
-                        password: "admin@2015#!novo",
-                        name: "Lyoni" // Incluindo o campo name
+                        password: "admin@2015#!novo"
                     });
                     console.log("Usuário padrão criado com sucesso.");
-                }
-
-                // 2. Tenta obter o nome do usuário logado (usando o primeiro login encontrado)
-                if (!snapshot.empty) {
-                    const name = snapshot.docs[0].data().name || 'Recepcionista'; // Busca o campo name
-                    if (name) {
-                        setUserName(name.charAt(0).toUpperCase() + name.slice(1));
-                    }
                 }
             } catch (error) {
                 console.error("Erro ao verificar/criar usuário padrão:", error);
             }
             
-            // 3. Garantir Raças Padrão
+            // 2. Garantir Raças Padrão
             const racesRef = collection(db, 'artifacts', appId, 'public', 'data', 'races');
             const qRaces = query(racesRef); // Tenta buscar qualquer raça
             
@@ -1342,39 +1236,10 @@ export default function DogHotelApp() {
     const handleOpenBookingModal = (booking = null) => { setEditingData(booking); setModalMode('booking'); setIsModalOpen(true); };
     const handleOpenClientModal = (client = null) => { setEditingData(client); setModalMode(client ? 'client_edit' : 'client_new'); setIsModalOpen(true); };
     
-    // CORREÇÃO 2.2: Implementa o débito no histórico do cliente ao deletar
+    // MODIFICADO: Delete agora remove da rota pública
     const handleDeleteBooking = async (id) => { 
       if (window.prompt("Para confirmar a exclusão da reserva, digite 'DELETAR'") === 'DELETAR') {
-        const bookingToDelete = bookings.find(b => b.id === id);
-        if (!bookingToDelete) {
-            console.error("Reserva não encontrada para exclusão.");
-            return;
-        }
-
-        const clientDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', bookingToDelete.clientId);
-        const client = clientDatabase.find(c => c.id === bookingToDelete.clientId);
-        
-        if (client) {
-            // Remove o resumo da hospedagem do array pastBookings do cliente
-            const newPastBookings = (client.pastBookings || []).filter(
-                // Usa a chave de datas para encontrar o registro no histórico
-                hist => !(hist.checkIn === bookingToDelete.checkIn && hist.checkOut === bookingToDelete.checkOut)
-            );
-            
-            try {
-                await updateDoc(clientDocRef, { pastBookings: newPastBookings });
-                console.log(`Histórico da reserva ${id} removido do cliente ${client.id}.`);
-            } catch (error) {
-                console.error("Erro ao debitar histórico da reserva:", error);
-                alert("Erro ao remover o valor do histórico do cliente.");
-                return; // Impede a exclusão da reserva se o histórico não for atualizado
-            }
-        }
-
-        // Deleta a reserva da coleção bookings
-        if (user) {
-            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'bookings', id));
-        }
+        if (user) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'bookings', id));
       }
     };
     
@@ -1382,8 +1247,6 @@ export default function DogHotelApp() {
     const handleDeleteClient = async (id) => { 
       if (window.prompt("Para confirmar a exclusão do cliente, digite 'DELETAR'") === 'DELETAR') {
         if (user) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'clients', id));
-        // Nota: As reservas associadas a este cliente não são deletadas automaticamente,
-        // mas o cliente será removido, e as reservas não terão mais dados de foto/nome de pet.
       }
     };
     
@@ -1400,10 +1263,8 @@ export default function DogHotelApp() {
       }
       
       const isNewClient = !formData.clientId;
-      const isBooking = modalMode === 'booking';
-      const isEditingBooking = isBooking && formData.id; // Verifica se está editando uma reserva existente
 
-      if (isNewClient && (modalMode === 'client_new' || isBooking)) {
+      if (isNewClient && (modalMode === 'client_new' || modalMode === 'booking')) {
           const dogName = (formData.dogName || '').trim().toLowerCase();
           
           // Limpa e normaliza os números de WhatsApp
@@ -1434,7 +1295,7 @@ export default function DogHotelApp() {
 
           if (isDuplicate) {
               // MENSAGEM DE ERRO ESPECÍFICA SOLICITADA E RETORNO
-              alert(`Erro de Duplicação no Cadastro:
+              alert(`Erro de Duplicidade no Cadastro:
 Não é possível salvar um novo registro com o nome de pet "${formData.dogName}".
 
 Um pet com esse mesmo nome já está cadastrado e vinculado a um dos números de WhatsApp fornecidos (Tutor 1 ou Tutor 2).
@@ -1448,106 +1309,64 @@ Verifique o cadastro existente.`);
           let clientId = formData.clientId;
           const clientsRef = collection(db, 'artifacts', appId, 'public', 'data', 'clients');
           
-          // 1. Encontra o cliente existente ou usa os dados do formulário
+          // A verificação de cliente existente abaixo é para EDITAR um cadastro ou VINCULAR uma nova reserva a um cliente existente.
           const existingClient = !clientId 
           ? clientDatabase.find(c => (c.dogName || '').toLowerCase() === (formData.dogName || '').toLowerCase() && (c.ownerName || '').toLowerCase() === (formData.ownerName || '').toLowerCase())
           : clientDatabase.find(c => c.id === clientId);
   
-          // 2. Prepara os dados do cliente
+          // Note: ownerEmail, ownerDoc, address estão nos dados, mas são ignorados no formulário
           const clientDataToSave = {
-            dogName: formData.dogName, dogSize: formData.dogSize, dogBreed: formData.dogBreed, 
-            source: formData.source, 
-            ownerName: formData.ownerName, ownerName2: formData.ownerName2, 
-            whatsapp: formData.whatsapp, whatsapp2: formData.whatsapp2, 
-            ownerEmail: formData.ownerEmail, ownerDoc: formData.ownerDoc,
-            address: formData.address, birthYear: formData.birthYear, history: formData.history,
-            socialization: formData.socialization || [], 
-            medications: formData.medications || [], 
-            photos: formData.photos || [], 
-            vaccineDocs: formData.vaccineDocs || [],
-            vaccines: formData.vaccines,
-            lastAntiRabica: formData.lastAntiRabica,
-            lastMultipla: formData.lastMultipla,
-            dogBehaviorRating: formData.dogBehaviorRating,
-            ownerHistory: formData.ownerHistory, ownerRating: formData.ownerRating, restrictions: formData.restrictions, // Salvar avaliações do tutor
+          dogName: formData.dogName, dogSize: formData.dogSize, dogBreed: formData.dogBreed, 
+          source: formData.source, // Salvar Captação
+          ownerName: formData.ownerName, ownerName2: formData.ownerName2, 
+          whatsapp: formData.whatsapp, whatsapp2: formData.whatsapp2, // Salvar Tutor 2
+          ownerEmail: formData.ownerEmail,
+          ownerDoc: formData.ownerDoc,
+          address: formData.address, birthYear: formData.birthYear, history: formData.history,
+          ownerHistory: formData.ownerHistory, ownerRating: formData.ownerRating, restrictions: formData.restrictions,
+          socialization: formData.socialization || [], 
+          medications: formData.medications || [], // Salvar Medicações
+          photos: formData.photos || [], 
+          vaccineDocs: formData.vaccineDocs || [],
+          vaccines: formData.vaccines,
+          lastAntiRabica: formData.lastAntiRabica,
+          lastMultipla: formData.lastMultipla,
+          dogBehaviorRating: formData.dogBehaviorRating,
           };
   
           let bookingSummary = null;
-          
-          // 3. REGRA DE HISTÓRICO: Cria o resumo da hospedagem se for uma reserva
-          if (isBooking) {
+          if (modalMode === 'booking') {
               bookingSummary = {
-              // Mantém o ID de histórico antigo se for edição, senão gera um novo ID de timestamp
-              id: isEditingBooking ? formData.id + '_hist' : Date.now() + '_hist', 
+              id: Date.now() + '_hist',
               checkIn: formData.checkIn,
               checkOut: formData.checkOut,
               observation: `Hospedagem`,
               rating: formData.rating, dogBehaviorRating: formData.dogBehaviorRating, ownerRating: formData.ownerRating,
-              dailyRate: parseFloat(formData.dailyRate) || 0, 
-              totalValue: parseFloat(formData.totalValue) || 0,
+              dailyRate: formData.dailyRate, totalValue: parseFloat(formData.totalValue) || 0,
               damageValue: parseFloat(formData.damageValue) || 0, damageDescription: formData.damageDescription || ''
               };
           }
-          
-          let clientToUpdate = existingClient;
-
-          if (clientToUpdate) {
-          clientId = clientToUpdate.id;
+  
+          if (existingClient) {
+          clientId = existingClient.id;
           const clientDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientId);
-          
-          let newPastBookings = clientToUpdate.pastBookings || [];
-
-          if (bookingSummary) {
-              
-              // 1. REGRA PRINCIPAL: Filtra o histórico para remover registros com as MESMAS DATAS
-              // Isso garante que apenas um histórico por agendamento (datas) permaneça.
-              newPastBookings = newPastBookings.filter(hist => 
-                  !(hist.checkIn === bookingSummary.checkIn && hist.checkOut === bookingSummary.checkOut)
-              );
-              
-              // 2. Insere o registro novo/atualizado no topo
-              newPastBookings = [bookingSummary, ...newPastBookings];
-          }
-
-          // Salva os dados do cliente com o histórico atualizado
+          const newPastBookings = modalMode === 'booking' 
+              ? [bookingSummary, ...(existingClient.pastBookings || [])] 
+              : (existingClient.pastBookings || []);
           await updateDoc(clientDocRef, { ...clientDataToSave, pastBookings: newPastBookings });
-          
           } else {
-          // Novo Cliente
-          const newClientData = { 
-            ...clientDataToSave, 
-            pastBookings: bookingSummary ? [bookingSummary] : [] 
-          };
+          const newClientData = { ...clientDataToSave, pastBookings: modalMode === 'booking' ? [bookingSummary] : [] };
           const docRef = await addDoc(clientsRef, newClientData);
           clientId = docRef.id;
-          clientToUpdate = { id: clientId, ...newClientData }; // Cria objeto cliente temporário
           }
   
-          // 4. Salva/Atualiza a Reserva (Coleção Bookings)
-          if (isBooking) {
+          if (modalMode === 'booking') {
               const bookingsRef = collection(db, 'artifacts', appId, 'public', 'data', 'bookings');
               const bookingData = { ...formData, clientId: clientId };
               if (editingData && editingData.id) {
               await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'bookings', editingData.id), bookingData);
               } else {
               await addDoc(bookingsRef, bookingData);
-              }
-          }
-          
-          // 5. REGRA PÓS-SAVE: Limpeza de Histórico Duplicado por DATA (Último Recurso)
-          if (clientToUpdate) {
-              const clientDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientToUpdate.id);
-              const historySnapshot = await getDoc(clientDocRef);
-              // Pega a versão mais recente do cliente antes de limpar
-              const clientAfterSave = { id: clientToUpdate.id, ...historySnapshot.data() }; 
-
-              const cleanedHistory = cleanUpPastBookings(clientAfterSave);
-              
-              // Verifica se a limpeza realmente removeu algo (o que indica que a chave de datas foi duplicada,
-              // possivelmente por um novo agendamento com as mesmas datas de um antigo que não foi deletado)
-              if (cleanedHistory.length < (clientAfterSave.pastBookings || []).length) {
-                  await updateDoc(clientDocRef, { pastBookings: cleanedHistory });
-                  console.log("Limpeza pós-save de histórico duplicado (por datas) executada com sucesso.");
               }
           }
   
@@ -1559,8 +1378,7 @@ Verifique o cadastro existente.`);
       }
     };
   
-    // --- Funções de Renderização (Definidas antes do return principal) ---
-
+    // --- Filtros e Calculos ---
     const getBookingsForDate = (date) => {
         // Usa a função de mapeamento antes de filtrar
         const allBookingsWithData = getBookingsWithClientData(bookings, clientDatabase); 
@@ -1582,7 +1400,6 @@ Verifique o cadastro existente.`);
         (client.ownerName || '').toLowerCase().includes(term)
       );
     };
-
     const calculateMonthlyNetTotal = (month, year) => {
         const allBookingsWithData = getBookingsWithClientData(bookings, clientDatabase);
         
@@ -1596,7 +1413,6 @@ Verifique o cadastro existente.`);
           return acc + (revenue - damage);
       }, 0);
     };
-
     const getBookingsByMonth = (month, year) => {
         const allBookingsWithData = getBookingsWithClientData(bookings, clientDatabase);
 
@@ -1606,7 +1422,9 @@ Verifique o cadastro existente.`);
           return d.getMonth() === month && d.getFullYear() === year;
       }).sort((a, b) => new Date(a.checkIn) - new Date(b.checkIn));
     }
-    
+    const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+  
+    // --- Renders ---
     const renderFinancial = () => (
       <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 min-h-[500px] animate-fade-in">
         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
@@ -1774,7 +1592,7 @@ Verifique o cadastro existente.`);
                <h2 className="hidden md:block text-xl font-semibold text-gray-700 capitalize">{activeTab === 'agenda' && 'Agenda de Hospedagem'} {activeTab === 'clients' && 'Gerenciamento de Clientes'} {activeTab === 'financial' && 'Relatórios Financeiros'}</h2>
                <div className="flex items-center gap-3">
                   <div className="flex md:hidden gap-2 mr-2"><button onClick={() => setActiveTab('agenda')} className={`p-2 rounded ${activeTab === 'agenda' ? 'bg-[#0000FF]/10 text-[#0000FF]' : 'text-gray-500'}`}><Calendar size={20}/></button><button onClick={() => setActiveTab('clients')} className={`p-2 rounded ${activeTab === 'clients' ? 'bg-[#0000FF]/10 text-[#0000FF]' : 'text-gray-500'}`}><Users size={20}/></button><button onClick={() => setActiveTab('financial')} className={`p-2 rounded ${activeTab === 'financial' ? 'bg-[#0000FF]/10 text-[#0000FF]' : 'text-gray-500'}`}><PieChart size={20}/></button></div>
-                  <span className="text-sm text-gray-500 hidden sm:block">Olá, {userName}</span><div className="w-8 h-8 bg-[#0000FF]/10 rounded-full flex items-center justify-center text-[#0000FF] font-bold cursor-pointer" onClick={handleLogout}>{userName.charAt(0)}</div>
+                  <span className="text-sm text-gray-500 hidden sm:block">Olá, seja bem vindo</span><div className="w-8 h-8 bg-[#0000FF]/10 rounded-full flex items-center justify-center text-[#0000FF] font-bold cursor-pointer" onClick={handleLogout}>R</div>
                </div>
           </header>
           <main className="flex-1 overflow-y-auto p-2 md:p-6">{activeTab === 'agenda' && renderAgenda()}{activeTab === 'clients' && renderClientList()}{activeTab === 'financial' && renderFinancial()}</main>
