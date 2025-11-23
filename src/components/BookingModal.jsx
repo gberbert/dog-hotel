@@ -306,7 +306,7 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
                                 onClick={onCreateClient}
                                 className="bg-primary-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-primary-700 shadow-sm flex items-center gap-2 whitespace-nowrap"
                             >
-                                <Plus size={18} /> Cadastrar Pet
+                                <Plus size={18} /> Novo Pet
                             </button>
                         </div>
                     </div>
