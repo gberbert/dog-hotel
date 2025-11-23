@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Users, Search, Plus, FileText, Trash2, History, Dog } from 'lucide-react';
+import { Users, Search, Plus, FileText, Trash2, History, Dog, X } from 'lucide-react';
 import { FaceRating } from './shared/RatingComponents';
 
 export default function ClientList({ clients, onEdit, onDelete }) {
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedImage, setSelectedImage] = useState(null);
 
     const filteredClients = clients.filter(client =>
         (client.dogName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -45,9 +46,16 @@ export default function ClientList({ clients, onEdit, onDelete }) {
                     {filteredClients.map(client => (
                         <div key={client.id} className="border rounded-xl p-4 hover:shadow-md transition bg-secondary-50 flex flex-col gap-3">
                             <div className="flex items-center gap-3">
-                                <div className="w-14 h-14 bg-white rounded-full overflow-hidden border flex-shrink-0">
+                                <div
+                                    className="w-14 h-14 bg-white rounded-full overflow-hidden border flex-shrink-0 cursor-pointer group"
+                                    onClick={() => client.photos && client.photos[0] && setSelectedImage(client.photos[0])}
+                                >
                                     {client.photos && client.photos[0] ? (
-                                        <img src={client.photos[0]} alt="Dog" className="w-full h-full object-cover" />
+                                        <img
+                                            src={client.photos[0]}
+                                            alt="Dog"
+                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                        />
                                     ) : (
                                         <Dog className="p-3 text-secondary-400 w-full h-full" />
                                     )}
@@ -87,6 +95,27 @@ export default function ClientList({ clients, onEdit, onDelete }) {
                             </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* Fullscreen Image Modal */}
+            {selectedImage && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 p-4 animate-in fade-in duration-200"
+                    onClick={() => setSelectedImage(null)}
+                >
+                    <button
+                        className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors bg-black/50 rounded-full p-2"
+                        onClick={() => setSelectedImage(null)}
+                    >
+                        <X size={32} />
+                    </button>
+                    <img
+                        src={selectedImage}
+                        alt="Fullscreen Dog"
+                        className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+                        onClick={(e) => e.stopPropagation()}
+                    />
                 </div>
             )}
         </div>

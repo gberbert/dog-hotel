@@ -427,7 +427,13 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
                                     <div className="grid grid-cols-6 gap-2 mb-2">
                                         <input name="name" value={newMedication.name} onChange={handleMedicationChange} placeholder="Nome" className="col-span-2 p-1 border rounded text-xs" />
                                         <input name="dosage" value={newMedication.dosage} onChange={handleMedicationChange} placeholder="Dose" className="col-span-2 p-1 border rounded text-xs" />
-                                        <input name="time" value={newMedication.time} onChange={handleMedicationChange} placeholder="Hr" className="col-span-1 p-1 border rounded text-xs" />
+                                        <select name="time" value={newMedication.time} onChange={handleMedicationChange} className="col-span-1 p-1 border rounded text-xs bg-white">
+                                            <option value="">Hr</option>
+                                            {Array.from({ length: 24 }, (_, i) => {
+                                                const hour = i.toString().padStart(2, '0');
+                                                return <option key={hour} value={`${hour}:00`}>{`${hour}:00`}</option>;
+                                            })}
+                                        </select>
                                         <button type="button" onClick={handleAddMedication} className="col-span-1 bg-red-500 text-white rounded flex items-center justify-center"><Plus size={14} /></button>
                                     </div>
                                     <div className="space-y-1 max-h-32 overflow-y-auto">
