@@ -3,92 +3,92 @@ import { Users, Search, Plus, FileText, Trash2, History, Dog } from 'lucide-reac
 import { FaceRating } from './shared/RatingComponents';
 
 export default function ClientList({ clients, onEdit, onDelete }) {
-  const [searchTerm, setSearchTerm] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredClients = clients.filter(client => 
-    (client.dogName || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
-    (client.ownerName || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    const filteredClients = clients.filter(client =>
+        (client.dogName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (client.ownerName || '').toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
-  return (
-    <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 min-h-[500px]">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
-            <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                <Users className="text-[#0000FF]"/> Cadastros
-            </h2>
-            <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
-                <div className="relative flex-1 w-full">
-                    <input 
-                        type="text" 
-                        value={searchTerm} 
-                        onChange={(e) => setSearchTerm(e.target.value)} 
-                        placeholder="Buscar por cão ou tutor..." 
-                        className="pl-10 pr-4 py-3 border rounded-lg w-full lg:w-64 focus:outline-none focus:ring-2 focus:ring-[#0000FF]" 
-                    />
-                    <Search className="absolute left-3 top-3.5 text-[#0000FF]" size={18} />
+    return (
+        <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 min-h-[500px]">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
+                <h2 className="text-2xl font-bold text-secondary-800 flex items-center gap-2">
+                    <Users className="text-primary-600" /> Cadastros
+                </h2>
+                <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+                    <div className="relative flex-1 w-full">
+                        <input
+                            type="text"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            placeholder="Buscar por cão ou tutor..."
+                            className="pl-10 pr-4 py-3 border rounded-lg w-full lg:w-64 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        />
+                        <Search className="absolute left-3 top-3.5 text-primary-500" size={18} />
+                    </div>
+                    <button
+                        onClick={() => onEdit(null)} // null indica criação de novo cliente
+                        className="bg-success text-white px-6 py-3 rounded-lg font-bold flex items-center justify-center gap-2 shadow hover:bg-green-600 whitespace-nowrap w-full sm:w-auto"
+                    >
+                        <Plus size={20} /> Novo Cadastro
+                    </button>
                 </div>
-                <button 
-                    onClick={() => onEdit(null)} // null indica criação de novo cliente
-                    className="bg-[#00AA00] text-white px-6 py-3 rounded-lg font-bold flex items-center justify-center gap-2 shadow hover:bg-[#00FF00] whitespace-nowrap w-full sm:w-auto"
-                >
-                    <Plus size={20} /> Novo Cadastro
-                </button>
             </div>
-        </div>
 
-        {filteredClients.length === 0 ? ( 
-            <div className="text-center py-20 text-gray-500 border-2 border-dashed rounded-xl bg-gray-50">
-                {searchTerm ? 'Nenhum cliente encontrado para esta busca.' : 'Nenhum cliente cadastrado.'}
-            </div> 
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredClients.map(client => (
-                  <div key={client.id} className="border rounded-xl p-4 hover:shadow-md transition bg-gray-50 flex flex-col gap-3">
-                      <div className="flex items-center gap-3">
-                          <div className="w-14 h-14 bg-white rounded-full overflow-hidden border flex-shrink-0">
-                              {client.photos && client.photos[0] ? (
-                                  <img src={client.photos[0]} alt="Dog" className="w-full h-full object-cover" />
-                              ) : (
-                                  <Dog className="p-3 text-gray-400 w-full h-full"/>
-                              )}
-                          </div>
-                          <div className="min-w-0">
-                              <h3 className="font-bold text-lg truncate">{client.dogName}</h3>
-                              <p className="text-sm text-gray-600 truncate">{client.ownerName}</p>
-                          </div>
-                      </div>
-                      
-                      <div className="text-sm space-y-1 mt-1">
-                          <div className="flex items-center gap-2 text-gray-600">
-                              <FaceRating rating={client.pastBookings?.[0]?.dogBehaviorRating || 3} readonly size={16} /> 
-                              <span className="text-xs">(Último Comp.)</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-gray-600">
-                              <History size={14} className="text-[#0000FF]"/> {client.pastBookings?.length || 0} Hospedagens
-                          </div>
-                      </div>
-                      
-                      <div className="flex gap-2 mt-auto pt-3">
-                          <button 
-                              onClick={() => onEdit(client)} 
-                              className="flex-1 bg-white border border-[#0000FF]/30 text-[#0000FF] py-2 rounded-lg font-medium hover:bg-[#0000FF]/5 flex items-center justify-center gap-2"
-                          >
-                              <FileText size={16}/> Detalhes
-                          </button>
-                          {onDelete && (
-                              <button 
-                                  onClick={() => onDelete(client.id)} 
-                                  className="p-2 text-[#FF0000] hover:bg-[#FF0000]/10 rounded-lg"
-                                  title="Excluir Cliente"
-                              >
-                                  <Trash2 size={20}/>
-                              </button>
-                          )}
-                      </div>
-                  </div>
-              ))}
-          </div>
-        )}
-    </div>
-  );
+            {filteredClients.length === 0 ? (
+                <div className="text-center py-20 text-secondary-500 border-2 border-dashed rounded-xl bg-secondary-50">
+                    {searchTerm ? 'Nenhum cliente encontrado para esta busca.' : 'Nenhum cliente cadastrado.'}
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredClients.map(client => (
+                        <div key={client.id} className="border rounded-xl p-4 hover:shadow-md transition bg-secondary-50 flex flex-col gap-3">
+                            <div className="flex items-center gap-3">
+                                <div className="w-14 h-14 bg-white rounded-full overflow-hidden border flex-shrink-0">
+                                    {client.photos && client.photos[0] ? (
+                                        <img src={client.photos[0]} alt="Dog" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <Dog className="p-3 text-secondary-400 w-full h-full" />
+                                    )}
+                                </div>
+                                <div className="min-w-0">
+                                    <h3 className="font-bold text-lg truncate text-secondary-900">{client.dogName}</h3>
+                                    <p className="text-sm text-secondary-600 truncate">{client.ownerName}</p>
+                                </div>
+                            </div>
+
+                            <div className="text-sm space-y-1 mt-1">
+                                <div className="flex items-center gap-2 text-secondary-600">
+                                    <FaceRating rating={client.pastBookings?.[0]?.dogBehaviorRating || 3} readonly size={16} />
+                                    <span className="text-xs">(Último Comp.)</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-secondary-600">
+                                    <History size={14} className="text-primary-600" /> {client.pastBookings?.length || 0} Hospedagens
+                                </div>
+                            </div>
+
+                            <div className="flex gap-2 mt-auto pt-3">
+                                <button
+                                    onClick={() => onEdit(client)}
+                                    className="flex-1 bg-white border border-primary-200 text-primary-600 py-2 rounded-lg font-medium hover:bg-primary-50 flex items-center justify-center gap-2"
+                                >
+                                    <FileText size={16} /> Detalhes
+                                </button>
+                                {onDelete && (
+                                    <button
+                                        onClick={() => onDelete(client.id)}
+                                        className="p-2 text-error hover:bg-red-50 rounded-lg"
+                                        title="Excluir Cliente"
+                                    >
+                                        <Trash2 size={20} />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
 }
