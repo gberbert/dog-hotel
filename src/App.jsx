@@ -244,9 +244,9 @@ export default function DogHotelApp() {
         </div>
 
         <nav className="flex-1 py-6 space-y-2 px-3">
+          <button onClick={() => setActiveTab('financial')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${activeTab === 'financial' ? 'bg-primary-700 shadow' : 'hover:bg-primary-700'}`}><PieChart size={20} /> Financeiro</button>
           <button onClick={() => setActiveTab('agenda')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${activeTab === 'agenda' ? 'bg-primary-700 shadow' : 'hover:bg-primary-700'}`}><Calendar size={20} /> Agenda</button>
           <button onClick={() => setActiveTab('clients')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${activeTab === 'clients' ? 'bg-primary-700 shadow' : 'hover:bg-primary-700'}`}><User size={20} /> Cadastros</button>
-          <button onClick={() => setActiveTab('financial')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${activeTab === 'financial' ? 'bg-primary-700 shadow' : 'hover:bg-primary-700'}`}><PieChart size={20} /> Financeiro</button>
         </nav>
 
         <div className="px-3 pb-2">
@@ -287,9 +287,9 @@ export default function DogHotelApp() {
         {/* MENU MOBILE */}
         {isMobileMenuOpen && (
           <div className="md:hidden absolute top-16 left-0 w-full bg-white shadow-xl border-t border-secondary-100 z-20 animate-fade-in flex flex-col p-2">
+            <button onClick={() => handleMobileNav('financial')} className={`flex items-center gap-3 p-4 rounded-lg font-medium ${activeTab === 'financial' ? 'bg-primary-50 text-primary-600' : 'text-secondary-700 hover:bg-secondary-50'}`}><PieChart size={20} /> Financeiro</button>
             <button onClick={() => handleMobileNav('agenda')} className={`flex items-center gap-3 p-4 rounded-lg font-medium ${activeTab === 'agenda' ? 'bg-primary-50 text-primary-600' : 'text-secondary-700 hover:bg-secondary-50'}`}><Calendar size={20} /> Agenda</button>
             <button onClick={() => handleMobileNav('clients')} className={`flex items-center gap-3 p-4 rounded-lg font-medium ${activeTab === 'clients' ? 'bg-primary-50 text-primary-600' : 'text-secondary-700 hover:bg-secondary-50'}`}><User size={20} /> Cadastros</button>
-            <button onClick={() => handleMobileNav('financial')} className={`flex items-center gap-3 p-4 rounded-lg font-medium ${activeTab === 'financial' ? 'bg-primary-50 text-primary-600' : 'text-secondary-700 hover:bg-secondary-50'}`}><PieChart size={20} /> Financeiro</button>
 
             <div className="h-px bg-secondary-100 my-2"></div>
 

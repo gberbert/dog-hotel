@@ -31,6 +31,8 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
     const [newRace, setNewRace] = useState('');
     const [newMedication, setNewMedication] = useState({ name: '', dosage: '', time: '' });
     const [socialDogInput, setSocialDogInput] = useState('');
+    const [isSocialDropdownOpen, setIsSocialDropdownOpen] = useState(false);
+    const [socialSearchTerm, setSocialSearchTerm] = useState('');
 
     const [isUploading, setIsUploading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -465,8 +467,68 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
 
                             <div>
                                 <label className="text-sm font-medium flex items-center gap-1"><Heart size={14} className="text-pink-500" /> Socialização (Amigos)</label>
-                                <div className="flex gap-2 my-1">
-                                    <select value={socialDogInput} onChange={(e) => setSocialDogInput(e.target.value)} className="flex-1 p-2 border rounded text-sm"><option value="">+ Selecionar Amigo</option>{clientDatabase.map(c => c.dogName).filter(n => n !== formData.dogName).map(d => <option key={d} value={d}>{d}</option>)}</select>
+                                <div className="flex gap-2 my-1 relative">
+                                    <div className="flex-1 relative">
+                                        <div
+                                            className="w-full p-2 border rounded text-sm bg-white flex justify-between items-center cursor-pointer"
+                                            onClick={() => setIsSocialDropdownOpen(!isSocialDropdownOpen)}
+                                        >
+                                            <span className={!socialDogInput ? 'text-gray-500' : 'text-secondary-900'}>
+                                                {socialDogInput || '+ Selecionar Amigo'}
+                                            </span>
+                                            <ChevronDown size={16} className="text-gray-500" />
+                                        </div>
+
+                                        {isSocialDropdownOpen && (
+                                            <div className="absolute top-full left-0 w-full bg-white border rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto mt-1">
+                                                <div className="sticky top-0 bg-white border-b p-2">
+                                                    <div className="relative">
+                                                        <Search size={14} className="absolute left-2 top-2.5 text-gray-400" />
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Buscar amigo..."
+                                                            className="w-full pl-8 pr-2 py-1.5 border rounded text-sm outline-none focus:border-primary-500"
+                                                            value={socialSearchTerm}
+                                                            onChange={(e) => setSocialSearchTerm(e.target.value)}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            autoFocus
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="py-1">
+                                                    {clientDatabase
+                                                        .map(c => c.dogName)
+                                                        .filter(n => n !== formData.dogName && !formData.socialization.includes(n))
+                                                        .filter(n => n.toLowerCase().includes(socialSearchTerm.toLowerCase()))
+                                                        .sort()
+                                                        .map(dogName => (
+                                                            <div
+                                                                key={dogName}
+                                                                className="px-3 py-2 hover:bg-pink-50 cursor-pointer text-sm text-secondary-800"
+                                                                onClick={() => {
+                                                                    setSocialDogInput(dogName);
+                                                                    setIsSocialDropdownOpen(false);
+                                                                    setSocialSearchTerm('');
+                                                                }}
+                                                            >
+                                                                {dogName}
+                                                            </div>
+                                                        ))
+                                                    }
+                                                    {clientDatabase
+                                                        .map(c => c.dogName)
+                                                        .filter(n => n !== formData.dogName && !formData.socialization.includes(n))
+                                                        .filter(n => n.toLowerCase().includes(socialSearchTerm.toLowerCase()))
+                                                        .length === 0 && (
+                                                            <div className="px-3 py-4 text-center text-sm text-gray-500">
+                                                                Nenhum amigo encontrado.
+                                                            </div>
+                                                        )
+                                                    }
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                     <button type="button" onClick={handleAddSocialDog} className="bg-pink-100 text-pink-600 px-3 rounded font-bold hover:bg-pink-200">+</button>
                                 </div>
                                 <div className="flex flex-wrap gap-1">{formData.socialization.map((d, i) => <span key={i} className="bg-pink-50 text-pink-600 px-2 py-0.5 rounded-full text-xs border border-pink-100">{d} <button type="button" onClick={() => setFormData(prev => ({ ...prev, socialization: prev.socialization.filter(x => x !== d) }))} className="ml-1 hover:text-red-500">×</button></span>)}</div>
