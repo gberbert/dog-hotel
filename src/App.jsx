@@ -24,7 +24,7 @@ export default function DogHotelApp() {
   const [showSplash, setShowSplash] = useState(true);
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [activeTab, setActiveTab] = useState('agenda');
+  const [activeTab, setActiveTab] = useState('financial');
   const [userName, setUserName] = useState('Recepcionista');
   const [view, setView] = useState('day');
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -85,7 +85,14 @@ export default function DogHotelApp() {
   const getBookingsForDate = (date) => {
     const start = new Date(date).setHours(0, 0, 0, 0);
     const end = new Date(date).setHours(23, 59, 59, 999);
-    return bookings.map(b => ({ ...b, clientPhoto: clients.find(c => c.id === b.clientId)?.photos?.[0] })).filter(b => {
+    return bookings.map(b => {
+      const client = clients.find(c => c.id === b.clientId);
+      return {
+        ...b,
+        clientPhoto: client?.photos?.[0],
+        clientDogBehaviorRating: client?.dogBehaviorRating
+      };
+    }).filter(b => {
       if (!b.checkIn || !b.checkOut) return false;
       return (new Date(b.checkIn).getTime() <= end && new Date(b.checkOut).getTime() >= start);
     });

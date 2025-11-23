@@ -228,7 +228,7 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[95vh] overflow-y-auto flex flex-col">
                 <div className="bg-primary-800 px-6 py-4 flex justify-between items-center sticky top-0 z-10">
                     <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                        <FileText /> {mode === 'client_new' ? 'Novo Cadastro' : (isBookingMode ? 'Nova Hospedagem' : 'Editar Cliente')}
+                        <FileText /> {mode === 'client_new' ? 'Novo Cadastro' : (isBookingMode ? 'Hospedagem' : 'Editar Cliente')}
                     </h2>
                     <button onClick={onClose} className="text-white hover:bg-primary-700 rounded-full p-1"><X size={24} /></button>
                 </div>
@@ -640,7 +640,7 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
                         <button type="button" onClick={onClose} className="px-6 py-2 border border-secondary-300 rounded-lg text-secondary-600 hover:bg-secondary-50 font-medium transition">Cancelar</button>
                         <button type="submit" disabled={isSaving} className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-bold shadow-lg hover:shadow-xl transition flex items-center gap-2">
                             {isSaving ? <div className="animate-spin h-5 w-5 border-2 border-white rounded-full border-t-transparent"></div> : <CheckCircle size={20} />}
-                            Salvar Cadastro
+                            Salvar
                         </button>
                     </div>
                 </form>

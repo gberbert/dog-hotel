@@ -83,13 +83,14 @@ export default function BookingCard({ booking, onEdit, onDelete }) {
               <span className="block font-bold text-secondary-700 text-sm">{formatDateShort(booking.checkOut)}</span>
               <span className="text-[10px] text-secondary-400">{new Date(booking.checkOut).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
+
           </div>
 
           {/* Comportamento e Prejuízo */}
           <div className="flex justify-between items-center mb-3">
             <div className="flex items-center gap-1 bg-secondary-50 px-2 py-1 rounded">
-              <span className="text-[10px] text-secondary-500">Comp:</span>
-              <FaceRating rating={booking.dogBehaviorRating || 3} readonly size={14} />
+              <span className="text-[10px] text-secondary-500">Avaliação:</span>
+              <FaceRating rating={booking.clientDogBehaviorRating || 3} readonly size={14} />
             </div>
             {booking.damageValue > 0 && (
               <div className="flex items-center gap-1 text-[10px] text-error bg-red-50 px-2 py-1 rounded font-bold border border-red-100">

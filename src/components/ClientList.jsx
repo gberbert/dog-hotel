@@ -68,8 +68,8 @@ export default function ClientList({ clients, onEdit, onDelete }) {
 
                             <div className="text-sm space-y-1 mt-1">
                                 <div className="flex items-center gap-2 text-secondary-600">
-                                    <FaceRating rating={client.pastBookings?.[0]?.dogBehaviorRating || 3} readonly size={16} />
-                                    <span className="text-xs">(Último Comp.)</span>
+                                    <FaceRating rating={client.dogBehaviorRating || 3} readonly size={16} />
+                                    <span className="text-xs">(Avaliação Geral)</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-secondary-600">
                                     <History size={14} className="text-primary-600" /> {client.pastBookings?.length || 0} Hospedagens
