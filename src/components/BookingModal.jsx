@@ -25,7 +25,7 @@ const ReadOnlyField = ({ label, value, icon: Icon, highlight = false }) => (
     </div>
 );
 
-export default function BookingModal({ data, mode, clientDatabase, onSave, onClose, races, onAddRace, onDeleteRace }) {
+export default function BookingModal({ data, mode, clientDatabase, onSave, onClose, races, onAddRace, onDeleteRace, onCreateClient }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [showSearchResults, setShowSearchResults] = useState(false);
     const [newRace, setNewRace] = useState('');
@@ -89,6 +89,50 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
         lastMultipla: data?.lastMultipla || '',
         pastBookings: data?.pastBookings || []
     });
+
+    useEffect(() => {
+        setFormData({
+            clientId: data?.clientId || (mode.startsWith('client') && data?.id ? data.id : '') || '',
+            dogName: data?.dogName || '',
+            dogSize: data?.dogSize || 'Pequeno',
+            dogBreed: data?.dogBreed || 'Sem Raça Definida (SRD)',
+            source: data?.source || 'Particular',
+
+            ownerName: data?.ownerName || '',
+            whatsapp: data?.whatsapp || '',
+            ownerName2: data?.ownerName2 || '',
+            whatsapp2: data?.whatsapp2 || '',
+
+            ownerEmail: data?.ownerEmail || '',
+            ownerDoc: data?.ownerDoc || '',
+            address: data?.address || '',
+            birthYear: data?.birthYear || '',
+
+            history: data?.history || '',
+            ownerHistory: data?.ownerHistory || '',
+            ownerRating: data?.ownerRating || 3,
+            restrictions: data?.restrictions || '',
+            socialization: data?.socialization || [],
+
+            medications: data?.medications || [],
+
+            checkIn: data?.checkIn || '',
+            checkOut: data?.checkOut || '',
+            rating: data?.rating || 5,
+            dailyRate: data?.dailyRate || 80,
+            dogBehaviorRating: data?.dogBehaviorRating || 3,
+            totalValue: data?.totalValue || 0,
+            damageValue: data?.damageValue || '',
+            damageDescription: data?.damageDescription || '',
+
+            photos: data?.photos || [],
+            vaccineDocs: data?.vaccineDocs || [],
+            vaccines: data?.vaccines || '',
+            lastAntiRabica: data?.lastAntiRabica || '',
+            lastMultipla: data?.lastMultipla || '',
+            pastBookings: data?.pastBookings || []
+        });
+    }, [data, mode]);
 
     const generateYearOptions = () => {
         const years = [];
@@ -237,25 +281,34 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
 
                 {isBookingMode && !data && (
                     <div className="bg-secondary-50 px-6 py-3 border-b border-secondary-100 relative">
-                        <label className="text-sm font-bold text-primary-800 flex items-center gap-2">
+                        <label className="text-sm font-bold text-primary-800 flex items-center gap-2 mb-1">
                             <Search size={16} /> Buscar Cliente Cadastrado
                         </label>
-                        <div className="mt-1 relative">
-                            <input value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setShowSearchResults(true); }} placeholder="Digite o nome do cão..." className="w-full p-2 pl-3 border rounded shadow-sm outline-none focus:ring-2 focus:ring-primary-500" />
-                        </div>
-                        {showSearchResults && searchQuery && (
-                            <div className="absolute left-0 right-0 bg-white shadow-xl z-20 max-h-60 overflow-y-auto border mt-1 mx-6 rounded-lg">
-                                {clientDatabase.filter(c => c.dogName.toLowerCase().includes(searchQuery.toLowerCase())).map(c => (
-                                    <div key={c.id} onClick={() => selectClient(c)} className="p-3 hover:bg-secondary-50 cursor-pointer border-b font-medium flex justify-between">
-                                        <span>{c.dogName}</span>
-                                        <span className="text-sm text-secondary-500">{c.ownerName}</span>
+                        <div className="flex gap-2">
+                            <div className="relative flex-1">
+                                <input value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setShowSearchResults(true); }} placeholder="Digite o nome do cão..." className="w-full p-2 pl-3 border rounded shadow-sm outline-none focus:ring-2 focus:ring-primary-500" />
+                                {showSearchResults && searchQuery && (
+                                    <div className="absolute left-0 right-0 bg-white shadow-xl z-20 max-h-60 overflow-y-auto border mt-1 rounded-lg">
+                                        {clientDatabase.filter(c => c.dogName.toLowerCase().includes(searchQuery.toLowerCase())).map(c => (
+                                            <div key={c.id} onClick={() => selectClient(c)} className="p-3 hover:bg-secondary-50 cursor-pointer border-b font-medium flex justify-between">
+                                                <span>{c.dogName}</span>
+                                                <span className="text-sm text-secondary-500">{c.ownerName}</span>
+                                            </div>
+                                        ))}
+                                        {clientDatabase.filter(c => c.dogName.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+                                            <div className="p-3 text-secondary-500 text-sm">Nenhum cliente encontrado.</div>
+                                        )}
                                     </div>
-                                ))}
-                                {clientDatabase.filter(c => c.dogName.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
-                                    <div className="p-3 text-secondary-500 text-sm">Nenhum cliente encontrado.</div>
                                 )}
                             </div>
-                        )}
+                            <button
+                                type="button"
+                                onClick={onCreateClient}
+                                className="bg-primary-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-primary-700 shadow-sm flex items-center gap-2 whitespace-nowrap"
+                            >
+                                <Plus size={18} /> Cadastrar Pet
+                            </button>
+                        </div>
                     </div>
                 )}
 
@@ -465,244 +518,193 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
                                 <FaceRating rating={formData.dogBehaviorRating} setRating={(r) => setFormData({ ...formData, dogBehaviorRating: r })} />
                             </div>
 
-                            <div>
-                                <label className="text-sm font-medium flex items-center gap-1"><Heart size={14} className="text-pink-500" /> Socialização (Amigos)</label>
-                                <div className="flex gap-2 my-1 relative">
-                                    <div className="flex-1 relative">
-                                        <div
-                                            className="w-full p-2 border rounded text-sm bg-white flex justify-between items-center cursor-pointer"
-                                            onClick={() => setIsSocialDropdownOpen(!isSocialDropdownOpen)}
-                                        >
-                                            <span className={!socialDogInput ? 'text-gray-500' : 'text-secondary-900'}>
-                                                {socialDogInput || '+ Selecionar Amigo'}
-                                            </span>
-                                            <ChevronDown size={16} className="text-gray-500" />
-                                        </div>
-
-                                        {isSocialDropdownOpen && (
-                                            <div className="absolute top-full left-0 w-full bg-white border rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto mt-1">
-                                                <div className="sticky top-0 bg-white border-b p-2">
-                                                    <div className="relative">
-                                                        <Search size={14} className="absolute left-2 top-2.5 text-gray-400" />
-                                                        <input
-                                                            type="text"
-                                                            placeholder="Buscar amigo..."
-                                                            className="w-full pl-8 pr-2 py-1.5 border rounded text-sm outline-none focus:border-primary-500"
-                                                            value={socialSearchTerm}
-                                                            onChange={(e) => setSocialSearchTerm(e.target.value)}
-                                                            onClick={(e) => e.stopPropagation()}
-                                                            autoFocus
-                                                        />
-                                                    </div>
+                            <div className="mb-3">
+                                <label className="text-sm font-medium block mb-1">Socialização</label>
+                                <div className="relative">
+                                    <div
+                                        className="w-full p-2 border rounded bg-white flex justify-between items-center cursor-pointer"
+                                        onClick={() => setIsSocialDropdownOpen(!isSocialDropdownOpen)}
+                                    >
+                                        <span className="text-sm text-gray-600">Adicionar cão...</span>
+                                        <ChevronDown size={16} className="text-gray-500" />
+                                    </div>
+                                    {isSocialDropdownOpen && (
+                                        <div className="absolute top-full left-0 w-full bg-white border rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto mt-1">
+                                            <div className="sticky top-0 bg-white border-b p-2">
+                                                <div className="relative">
+                                                    <Search size={14} className="absolute left-2 top-2.5 text-gray-400" />
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Buscar cão..."
+                                                        className="w-full pl-8 pr-2 py-1.5 border rounded text-sm outline-none focus:border-primary-500"
+                                                        value={socialSearchTerm}
+                                                        onChange={(e) => setSocialSearchTerm(e.target.value)}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        autoFocus
+                                                    />
                                                 </div>
-                                                <div className="py-1">
-                                                    {clientDatabase
-                                                        .map(c => c.dogName)
-                                                        .filter(n => n !== formData.dogName && !formData.socialization.includes(n))
-                                                        .filter(n => n.toLowerCase().includes(socialSearchTerm.toLowerCase()))
-                                                        .sort()
-                                                        .map(dogName => (
-                                                            <div
-                                                                key={dogName}
-                                                                className="px-3 py-2 hover:bg-pink-50 cursor-pointer text-sm text-secondary-800"
-                                                                onClick={() => {
-                                                                    setSocialDogInput(dogName);
+                                            </div>
+                                            <div className="py-1">
+                                                {availableDogs
+                                                    .filter(dog => dog.toLowerCase().includes(socialSearchTerm.toLowerCase()) && !formData.socialization.includes(dog))
+                                                    .sort()
+                                                    .map((dog, index) => (
+                                                        <div
+                                                            key={index}
+                                                            className="px-3 py-2 hover:bg-primary-50 cursor-pointer text-sm"
+                                                            onClick={() => {
+                                                                if (formData.socialization.length < 5) {
+                                                                    setFormData(prev => ({ ...prev, socialization: [...prev.socialization, dog] }));
                                                                     setIsSocialDropdownOpen(false);
                                                                     setSocialSearchTerm('');
-                                                                }}
-                                                            >
-                                                                {dogName}
-                                                            </div>
-                                                        ))
-                                                    }
-                                                    {clientDatabase
-                                                        .map(c => c.dogName)
-                                                        .filter(n => n !== formData.dogName && !formData.socialization.includes(n))
-                                                        .filter(n => n.toLowerCase().includes(socialSearchTerm.toLowerCase()))
-                                                        .length === 0 && (
-                                                            <div className="px-3 py-4 text-center text-sm text-gray-500">
-                                                                Nenhum amigo encontrado.
-                                                            </div>
-                                                        )
-                                                    }
-                                                </div>
+                                                                }
+                                                            }}
+                                                        >
+                                                            {dog}
+                                                        </div>
+                                                    ))
+                                                }
+                                                {availableDogs.filter(dog => dog.toLowerCase().includes(socialSearchTerm.toLowerCase()) && !formData.socialization.includes(dog)).length === 0 && (
+                                                    <div className="px-3 py-4 text-center text-sm text-gray-500">
+                                                        Nenhum cão encontrado.
+                                                    </div>
+                                                )}
                                             </div>
-                                        )}
-                                    </div>
-                                    <button type="button" onClick={handleAddSocialDog} className="bg-pink-100 text-pink-600 px-3 rounded font-bold hover:bg-pink-200">+</button>
+                                        </div>
+                                    )}
                                 </div>
-                                <div className="flex flex-wrap gap-1">{formData.socialization.map((d, i) => <span key={i} className="bg-pink-50 text-pink-600 px-2 py-0.5 rounded-full text-xs border border-pink-100">{d} <button type="button" onClick={() => setFormData(prev => ({ ...prev, socialization: prev.socialization.filter(x => x !== d) }))} className="ml-1 hover:text-red-500">×</button></span>)}</div>
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                    {formData.socialization.map((dog, i) => (
+                                        <span key={i} className="bg-primary-100 text-primary-800 text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                                            {dog}
+                                            <button type="button" onClick={() => setFormData(prev => ({ ...prev, socialization: prev.socialization.filter((_, idx) => idx !== i) }))} className="hover:text-red-600"><X size={12} /></button>
+                                        </span>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* ================= COLUNA 2: TUTOR + FINANCEIRO ================= */}
-                    <div className="space-y-5">
-                        <h3 className="text-primary-800 font-bold border-b pb-2 flex items-center gap-2"><User size={18} /> Dados do Tutor</h3>
+                    {/* ================= COLUNA 2: TUTOR & HOSPEDAGEM ================= */}
+                    <div className="space-y-6">
+                        <h3 className="text-secondary-800 font-bold border-b pb-2 flex items-center gap-2"><User size={18} /> Dados do Tutor</h3>
 
                         {showReadOnly ? (
-                            <div className="grid grid-cols-1 gap-2 bg-secondary-50 p-3 rounded-lg border border-secondary-200 relative">
+                            <div className="bg-secondary-50 p-3 rounded-lg border border-secondary-200 relative">
                                 <div className="absolute top-2 right-2 text-secondary-300"><Lock size={14} /></div>
-                                <ReadOnlyField label="Tutor 1" value={`${formData.ownerName} ${formData.whatsapp ? `(${formData.whatsapp})` : ''}`} />
-                                {formData.ownerName2 && <ReadOnlyField label="Tutor 2" value={`${formData.ownerName2} ${formData.whatsapp2 ? `(${formData.whatsapp2})` : ''}`} />}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <ReadOnlyField label="Tutor 1" value={formData.ownerName} icon={User} />
+                                    <ReadOnlyField label="WhatsApp 1" value={formData.whatsapp} icon={MessageCircle} />
+                                    <ReadOnlyField label="Tutor 2" value={formData.ownerName2} icon={User} />
+                                    <ReadOnlyField label="WhatsApp 2" value={formData.whatsapp2} icon={MessageCircle} />
+                                </div>
+                                <ReadOnlyField label="Endereço" value={formData.address} />
+                                <div className="mt-2">
+                                    <span className="text-xs font-bold text-secondary-400 uppercase block mb-1">Histórico do Tutor</span>
+                                    <p className="text-sm text-secondary-700 bg-white p-2 rounded border border-secondary-100 italic">
+                                        {formData.ownerHistory || "Sem observações."}
+                                    </p>
+                                </div>
                             </div>
                         ) : (
-                            <>
-                                <div className="bg-secondary-50 p-3 rounded border space-y-2">
-                                    <h4 className="font-bold text-secondary-700 text-sm">Tutor 1 (Principal)</h4>
-                                    <input name="ownerName" value={formData.ownerName} onChange={handleChange} placeholder="Nome" className="w-full p-2 border rounded bg-white" required />
-                                    {/* INPUT WHATSAPP 1 COM BOTÃO */}
-                                    <div className="flex gap-2">
-                                        <input name="whatsapp" value={formData.whatsapp} onChange={handleChange} placeholder="WhatsApp" className="flex-1 p-2 border rounded bg-white" />
-                                        {formData.whatsapp && (
-                                            <a href={getWhatsAppUrl(formData.whatsapp)} target="_blank" rel="noopener noreferrer" className="p-2 bg-success text-white rounded hover:bg-green-600 flex items-center justify-center transition" title="Abrir WhatsApp">
-                                                <MessageCircle size={20} />
-                                            </a>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="bg-secondary-50 p-3 rounded border space-y-2">
-                                    <h4 className="font-bold text-secondary-700 text-sm">Tutor 2 (Opcional)</h4>
-                                    <input name="ownerName2" value={formData.ownerName2} onChange={handleChange} placeholder="Nome" className="w-full p-2 border rounded bg-white" />
-                                    {/* INPUT WHATSAPP 2 COM BOTÃO */}
-                                    <div className="flex gap-2">
-                                        <input name="whatsapp2" value={formData.whatsapp2} onChange={handleChange} placeholder="WhatsApp" className="flex-1 p-2 border rounded bg-white" />
-                                        {formData.whatsapp2 && (
-                                            <a href={getWhatsAppUrl(formData.whatsapp2)} target="_blank" rel="noopener noreferrer" className="p-2 bg-success text-white rounded hover:bg-green-600 flex items-center justify-center transition" title="Abrir WhatsApp">
-                                                <MessageCircle size={20} />
-                                            </a>
-                                        )}
-                                    </div>
-                                </div>
-                            </>
-                        )}
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="col-span-2">
-                                <label className="text-sm font-medium">Captação</label>
-                                <select name="source" value={formData.source} onChange={handleChange} className="w-full p-2 border rounded bg-white focus:ring-2 focus:ring-primary-500">
-                                    <option>Particular</option><option>DogHero</option><option>Indicação</option><option>Instagram</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium block mb-1">Avaliação do Tutor</label>
-                                <FaceRating rating={formData.ownerRating} setRating={(r) => setFormData({ ...formData, ownerRating: r })} size={20} />
-                            </div>
-                        </div>
-                        <textarea name="ownerHistory" value={formData.ownerHistory} onChange={handleChange} placeholder="Obs sobre o tutor (Editável)..." className="w-full p-2 border rounded h-16 text-sm focus:ring-2 focus:ring-primary-500" />
-
-                        {/* FINANCEIRO DA RESERVA */}
-                        {isBookingMode && (
-                            <div className="bg-green-50 p-4 rounded border border-green-200 mt-4 shadow-sm">
-                                <h3 className="text-green-700 font-bold mb-3 flex items-center gap-2"><DollarSign size={18} /> Dados da Hospedagem</h3>
+                            <div className="space-y-3">
                                 <div className="grid grid-cols-2 gap-3">
-                                    <div><label className="text-xs text-gray-600 font-bold">Entrada</label><input type="datetime-local" name="checkIn" value={formData.checkIn} onChange={handleChange} className="w-full p-2 border border-green-200 rounded text-sm focus:ring-2 focus:ring-green-500" required /></div>
-                                    <div><label className="text-xs text-gray-600 font-bold">Saída</label><input type="datetime-local" name="checkOut" value={formData.checkOut} onChange={handleChange} className="w-full p-2 border border-green-200 rounded text-sm focus:ring-2 focus:ring-green-500" required /></div>
-                                    <div><label className="text-xs text-gray-600 font-bold">Diária (R$)</label><input type="number" name="dailyRate" value={formData.dailyRate} onChange={handleChange} className="w-full p-2 border border-green-200 rounded text-sm font-bold text-green-700" /></div>
-                                    <div><label className="text-xs text-gray-600 font-bold">Total Estimado</label><div className="w-full p-2 bg-white border border-green-300 rounded text-sm font-bold text-green-800 shadow-inner">{formatCurrency(formData.totalValue)}</div></div>
+                                    <div><label className="text-sm font-medium">Tutor 1</label><input name="ownerName" value={formData.ownerName} onChange={handleChange} className="w-full p-2 border rounded" required /></div>
+                                    <div><label className="text-sm font-medium">WhatsApp 1</label><input name="whatsapp" value={formData.whatsapp} onChange={handleChange} className="w-full p-2 border rounded" placeholder="(00) 00000-0000" required /></div>
                                 </div>
-                                <div className="mt-3 pt-3 border-t border-green-200">
-                                    <label className="text-xs font-bold text-red-600 flex gap-1 mb-1"><AlertTriangle size={12} /> Prejuízos / Danos</label>
-                                    <div className="flex gap-2">
-                                        <input type="number" name="damageValue" value={formData.damageValue} onChange={handleChange} className="w-24 p-2 border border-red-200 bg-white rounded text-sm text-red-700" placeholder="R$" />
-                                        <input type="text" name="damageDescription" value={formData.damageDescription} onChange={handleChange} className="flex-1 p-2 border border-red-200 bg-white rounded text-sm" placeholder="Motivo" />
-                                    </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div><label className="text-sm font-medium">Tutor 2</label><input name="ownerName2" value={formData.ownerName2} onChange={handleChange} className="w-full p-2 border rounded" /></div>
+                                    <div><label className="text-sm font-medium">WhatsApp 2</label><input name="whatsapp2" value={formData.whatsapp2} onChange={handleChange} className="w-full p-2 border rounded" placeholder="(00) 00000-0000" /></div>
+                                </div>
+                                <div><label className="text-sm font-medium">Endereço</label><input name="address" value={formData.address} onChange={handleChange} className="w-full p-2 border rounded" /></div>
+                                <div><label className="text-sm font-medium">Histórico do Tutor</label><textarea name="ownerHistory" value={formData.ownerHistory} onChange={handleChange} rows={2} className="w-full p-2 border rounded" /></div>
+                            </div>
+                        )}
+
+                        {isBookingMode && (
+                            <div className="bg-primary-50 p-4 rounded-xl border border-primary-100 mt-6">
+                                <h3 className="text-primary-800 font-bold border-b border-primary-200 pb-2 mb-3 flex items-center gap-2"><CalendarIcon size={18} /> Dados da Reserva</h3>
+                                <div className="grid grid-cols-2 gap-4 mb-3">
+                                    <div><label className="text-sm font-bold text-primary-700">Check-in</label><input type="datetime-local" name="checkIn" value={formData.checkIn} onChange={handleChange} className="w-full p-2 border rounded bg-white" required /></div>
+                                    <div><label className="text-sm font-bold text-primary-700">Check-out</label><input type="datetime-local" name="checkOut" value={formData.checkOut} onChange={handleChange} className="w-full p-2 border rounded bg-white" required /></div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4 mb-3">
+                                    <div><label className="text-sm font-medium">Diária (R$)</label><input type="number" name="dailyRate" value={formData.dailyRate} onChange={handleChange} className="w-full p-2 border rounded" /></div>
+                                    <div><label className="text-sm font-bold text-success-700">Total (R$)</label><input type="number" name="totalValue" value={formData.totalValue} readOnly className="w-full p-2 border rounded bg-success-50 font-bold text-success-800" /></div>
                                 </div>
                             </div>
                         )}
 
-                        <div className="border-t pt-4">
-                            <h4 className="text-primary-800 font-bold text-sm mb-2 flex gap-2"><Camera size={16} /> Galeria ({formData.photos.length})</h4>
-                            <div className="flex gap-2 overflow-x-auto pb-2">
-                                {!showReadOnly && (
-                                    <label className={`w-16 h-16 border-2 border-dashed flex items-center justify-center cursor-pointer hover:bg-secondary-50 rounded flex-shrink-0 ${isUploading ? 'opacity-50' : ''}`}>
-                                        {isUploading ? <div className="animate-spin h-4 w-4 border-2 border-primary-500 rounded-full border-t-transparent"></div> : <Upload size={20} className="text-secondary-400" />}
-                                        <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileSelect(e, 'photos')} disabled={formData.photos.length >= 5 || isUploading} />
-                                    </label>
-                                )}
-                                {formData.photos.length === 0 && showReadOnly && <span className="text-xs text-secondary-400 italic">Sem fotos cadastradas.</span>}
-                                {formData.photos.map((url, i) => (
-                                    <div key={i} className="relative w-16 h-16 flex-shrink-0 group">
-                                        <img src={url} className="w-full h-full object-cover rounded shadow cursor-zoom-in" onClick={() => setLightboxIndex(i)} />
-                                        {!showReadOnly && <button type="button" onClick={() => removePhoto(i, 'photos')} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition"><X size={10} /></button>}
-                                    </div>
-                                ))}
+                        {/* UPLOAD DE FOTOS E VACINAS */}
+                        <div className="mt-6 space-y-4">
+                            <div>
+                                <label className="text-sm font-bold flex items-center gap-2 mb-2"><Camera size={16} /> Fotos do Pet (Max 5)</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {formData.photos.map((url, i) => (
+                                        <div key={i} className="relative w-16 h-16 group">
+                                            <img src={url} alt="Pet" className="w-full h-full object-cover rounded-lg cursor-pointer border hover:border-primary-500" onClick={() => setLightboxIndex(i)} />
+                                            <button type="button" onClick={() => removePhoto(i, 'photos')} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition"><X size={12} /></button>
+                                        </div>
+                                    ))}
+                                    {formData.photos.length < 5 && (
+                                        <label className={`w-16 h-16 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-secondary-50 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                            <Upload size={20} className="text-secondary-400" />
+                                            <span className="text-[10px] text-secondary-400">Add</span>
+                                            <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileSelect(e, 'photos')} disabled={isUploading} />
+                                        </label>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="text-sm font-bold flex items-center gap-2 mb-2"><FilePlus size={16} /> Carteira de Vacinação (Max 3)</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {formData.vaccineDocs.map((url, i) => (
+                                        <div key={i} className="relative w-16 h-16 group">
+                                            <img src={url} alt="Vacina" className="w-full h-full object-cover rounded-lg cursor-pointer border hover:border-primary-500" onClick={() => setVaccineLightboxIndex(i)} />
+                                            <button type="button" onClick={() => removePhoto(i, 'vaccines')} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition"><X size={12} /></button>
+                                        </div>
+                                    ))}
+                                    {formData.vaccineDocs.length < 3 && (
+                                        <label className={`w-16 h-16 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-secondary-50 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                            <Upload size={20} className="text-secondary-400" />
+                                            <span className="text-[10px] text-secondary-400">Add</span>
+                                            <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileSelect(e, 'vaccines')} disabled={isUploading} />
+                                        </label>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
-                        <div>
-                            <h4 className="text-primary-800 font-bold text-sm mb-2 flex gap-2"><FilePlus size={16} /> Vacinas ({formData.vaccineDocs.length})</h4>
-                            <div className="grid grid-cols-2 gap-2 mb-2">
-                                {showReadOnly ? (
-                                    <>
-                                        <ReadOnlyField label="Anti-Rábica" value={formData.lastAntiRabica ? new Date(formData.lastAntiRabica).toLocaleDateString('pt-BR') : null} highlight />
-                                        <ReadOnlyField label="Múltipla" value={formData.lastMultipla ? new Date(formData.lastMultipla).toLocaleDateString('pt-BR') : null} highlight />
-                                    </>
-                                ) : (
-                                    <>
-                                        <div><label className="text-xs text-secondary-500">Anti-Rábica</label><input type="date" name="lastAntiRabica" value={formData.lastAntiRabica} onChange={handleChange} className="w-full p-1 border rounded text-xs" /></div>
-                                        <div><label className="text-xs text-secondary-500">Múltipla (V8/V10)</label><input type="date" name="lastMultipla" value={formData.lastMultipla} onChange={handleChange} className="w-full p-1 border rounded text-xs" /></div>
-                                    </>
-                                )}
-                            </div>
-                            <div className="flex gap-2 overflow-x-auto pb-2">
-                                {!showReadOnly && (
-                                    <label className="w-16 h-16 border-2 border-dashed flex items-center justify-center cursor-pointer hover:bg-secondary-50 rounded flex-shrink-0">
-                                        <Upload size={20} className="text-secondary-400" />
-                                        <input type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => handleFileSelect(e, 'vaccines')} disabled={formData.vaccineDocs.length >= 3 || isUploading} />
-                                    </label>
-                                )}
-                                {formData.vaccineDocs.length === 0 && showReadOnly && <span className="text-xs text-secondary-400 italic">Sem docs.</span>}
-                                {formData.vaccineDocs.map((url, i) => (
-                                    <div key={i} className="relative w-16 h-16 flex-shrink-0 group">
-                                        {url.toLowerCase().includes('.pdf') ?
-                                            <a href={url} target="_blank" className="w-full h-full flex flex-col items-center justify-center bg-red-50 border border-red-200 rounded"><FileText className="text-red-500" /><span className="text-[8px] font-bold text-red-500">PDF</span></a> :
-                                            <img src={url} className="w-full h-full object-cover rounded shadow cursor-zoom-in" onClick={() => setVaccineLightboxIndex(i)} />
-                                        }
-                                        {!showReadOnly && <button type="button" onClick={() => removePhoto(i, 'vaccines')} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition"><X size={10} /></button>}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="md:col-span-2 border-t pt-4">
-                        <div className="bg-secondary-50 p-4 rounded border">
-                            <div className="flex justify-between items-center mb-2">
-                                <h3 className="font-bold text-secondary-700 flex gap-2"><History size={18} /> Histórico Financeiro ({formData.pastBookings.length})</h3>
-                                <p className="text-xs text-success font-bold">Total Acumulado: {formatCurrency(totalPaidValue)}</p>
-                            </div>
-                            <div className="max-h-40 overflow-y-auto space-y-2 pr-2">
-                                {formData.pastBookings.length === 0 ? <p className="text-secondary-400 text-sm italic">Nenhum registro anterior.</p> :
-                                    formData.pastBookings.map((h, i) => {
-                                        const total = (parseFloat(h.totalValue) || 0);
-                                        const damage = (parseFloat(h.damageValue) || 0);
-                                        const final = total - damage;
-                                        return (
-                                            <div key={h.id || i} className="bg-white p-2 rounded border text-xs flex justify-between items-center">
-                                                <div>
-                                                    <span className="font-bold text-primary-700">{new Date(h.checkIn).toLocaleDateString('pt-BR')}</span>
-                                                    <span className="mx-2 text-secondary-300">|</span>
-                                                    <span className="text-secondary-600">{h.dogName} ({calculateTotalDays(h.checkIn, h.checkOut)}d)</span>
-                                                    {damage > 0 && <span className="ml-2 text-red-500 font-bold">(-{formatCurrency(damage)})</span>}
-                                                </div>
-                                                <div className="flex items-center gap-3">
-                                                    <span className="font-bold text-success">{formatCurrency(final)}</span>
-                                                    <button type="button" onClick={() => handleDeleteHistoryItem(h.id)} className="text-red-400 hover:text-red-600"><Trash2 size={12} /></button>
-                                                </div>
+                        {/* HISTÓRICO FINANCEIRO E DE ESTADIAS */}
+                        {formData.pastBookings.length > 0 && (
+                            <div className="mt-6 border-t pt-4">
+                                <h4 className="text-sm font-bold flex items-center gap-2 mb-3"><History size={16} /> Histórico de Estadias</h4>
+                                <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                                    {formData.pastBookings.map((h) => (
+                                        <div key={h.id} className="text-xs bg-secondary-50 p-2 rounded border flex justify-between items-center group">
+                                            <div>
+                                                <span className="font-bold">{new Date(h.checkIn).toLocaleDateString('pt-BR')}</span>
+                                                <span className="mx-1">à</span>
+                                                <span className="font-bold">{new Date(h.checkOut).toLocaleDateString('pt-BR')}</span>
+                                                <div className="text-secondary-500">Total: {formatCurrency(h.totalValue)}</div>
                                             </div>
-                                        );
-                                    })
-                                }
+                                            <button type="button" onClick={() => handleDeleteHistoryItem(h.id)} className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100"><Trash2 size={14} /></button>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="mt-2 text-right text-xs font-bold text-primary-700">
+                                    Total Gasto: {formatCurrency(totalPaidValue)}
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
 
-                    <div className="md:col-span-2 flex justify-end gap-4 pt-4 border-t">
-                        <button type="button" onClick={onClose} className="px-6 py-2 border border-secondary-300 rounded-lg text-secondary-600 hover:bg-secondary-50 font-medium transition">Cancelar</button>
-                        <button type="submit" disabled={isSaving} className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-bold shadow-lg hover:shadow-xl transition flex items-center gap-2">
-                            {isSaving ? <div className="animate-spin h-5 w-5 border-2 border-white rounded-full border-t-transparent"></div> : <CheckCircle size={20} />}
-                            Salvar
+                    {/* BOTÕES DE AÇÃO */}
+                    <div className="col-span-1 md:col-span-2 flex justify-end gap-3 pt-6 border-t mt-4">
+                        <button type="button" onClick={onClose} className="px-6 py-2 rounded-lg border border-secondary-300 text-secondary-600 font-bold hover:bg-secondary-50">Cancelar</button>
+                        <button type="submit" disabled={isSaving} className="px-8 py-2 rounded-lg bg-primary-600 text-white font-bold hover:bg-primary-700 shadow-lg flex items-center gap-2">
+                            {isSaving ? 'Salvando...' : <><CheckCircle size={20} /> Salvar</>}
                         </button>
                     </div>
                 </form>

@@ -355,6 +355,7 @@ export default function DogHotelApp() {
               alert("Erro ao deletar raça: " + error.message);
             }
           }}
+          onCreateClient={() => { setEditingData(null); setModalMode('client_new'); }}
         />
       )}
     </div>
