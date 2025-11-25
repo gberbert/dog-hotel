@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Função auxiliar para verificar autenticação
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // ARQUIVOS DO APP
+    match /artifacts/doghotel-production/public/data {
+      
+      // 1. Coleção LOGINS
+      // PERIGO: Mantido como 'read: true' para seu sistema de login atual funcionar.
+      // RECOMENDAÇÃO: Migrar para Firebase Auth nativo para poder bloquear leitura aqui.
+      match /logins/{loginId} {
+        allow read: if true;
+        allow write: if false; // Bloqueia escrita pública
+      }
+
+      // 2. Outras Coleções (Bookings, Clients, Races)
+      // Só permite ler/escrever se o usuário estiver "logado" (mesmo anonimamente)
+      match /{collectionName}/{docId} {
+        allow read, write: if isAuthenticated();
+      }
+    }
+  }
+}
