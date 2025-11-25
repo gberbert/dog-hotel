@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Plus, X, CheckCircle, Search, Camera, FilePlus, History, Trash2, Upload, AlertCircle } from 'lucide-react';
+import { FileText, Plus, X, CheckCircle, Search, Camera, FilePlus, History, Trash2, Upload, Calendar as CalendarIcon, Syringe } from 'lucide-react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { updateDoc, doc } from 'firebase/firestore';
 import { db, storage, appId } from '../utils/firebase';
@@ -7,7 +7,7 @@ import { compressImage } from '../utils/fileHelpers';
 import { calculateTotalDays, formatCurrency } from '../utils/calculations';
 import ImageLightbox from './shared/ImageLightbox';
 
-// Sub-Componentes
+// Sub-Componentes (Caminhos ajustados)
 import PetForm from './booking/PetForm';
 import OwnerForm from './booking/OwnerForm';
 import BookingDetailsForm from './booking/BookingDetailsForm';
@@ -17,7 +17,6 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
     const [showSearchResults, setShowSearchResults] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     
-    // Estado de salvamento para feedback visual
     const [isSaving, setIsSaving] = useState(false);
     
     const [lightboxIndex, setLightboxIndex] = useState(-1);
@@ -34,7 +33,9 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
         socialization: [], medications: [],
         checkIn: '', checkOut: '', rating: 5, dailyRate: 80, dogBehaviorRating: 3,
         totalValue: 0, damageValue: '', damageDescription: '',
-        photos: [], vaccineDocs: [], pastBookings: []
+        photos: [], vaccineDocs: [], pastBookings: [],
+        // Campos de Vacina
+        lastAntiRabica: '', lastMultipla: ''
     });
 
     // Carga de dados inicial
@@ -57,7 +58,10 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
             totalValue: data?.totalValue || 0,
             damageValue: data?.damageValue || '', damageDescription: data?.damageDescription || '',
             photos: data?.photos || [], vaccineDocs: data?.vaccineDocs || [],
-            pastBookings: data?.pastBookings || []
+            pastBookings: data?.pastBookings || [],
+            // Carrega datas salvas ou vazio
+            lastAntiRabica: data?.lastAntiRabica || '',
+            lastMultipla: data?.lastMultipla || ''
         }));
     }, [data, mode]);
 
@@ -72,24 +76,16 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
 
     const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
-    // --- MANIPULADOR DE SUBMIT ROBUSTO ---
+    // --- MANIPULADOR DE SUBMIT ---
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
-        // Ativa estado de carregamento
         setIsSaving(true);
-        
         try {
-            // Chama a função do pai (App.jsx) e espera ela terminar
-            // Se houver erro de validação lá (alert), o código para aqui até o usuário dar OK
             await onSave(formData);
         } catch (error) {
             console.error("Erro no Modal:", error);
             alert("Ocorreu um erro ao salvar: " + error.message);
         } finally {
-            // Desativa o loading independentemente do resultado
-            // Se salvou com sucesso, o componente será desmontado pelo pai (App.jsx)
-            // Se falhou, o loading para e o usuário pode tentar de novo
             setIsSaving(false);
         }
     };
@@ -147,6 +143,7 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
             ownerHistory: client.ownerHistory, ownerRating: client.ownerRating, restrictions: client.restrictions,
             socialization: client.socialization || [], medications: client.medications || [],
             photos: client.photos || [], vaccineDocs: client.vaccineDocs || [],
+            lastAntiRabica: client.lastAntiRabica || '', lastMultipla: client.lastMultipla || '',
             pastBookings: client.pastBookings || []
         }));
         setSearchQuery(''); setShowSearchResults(false);
@@ -183,9 +180,6 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
                                                 <span className="text-sm text-secondary-500">{c.ownerName}</span>
                                             </div>
                                         ))}
-                                        {clientDatabase.filter(c => c.dogName.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
-                                            <div className="p-3 text-secondary-500 text-sm">Nenhum cliente encontrado.</div>
-                                        )}
                                     </div>
                                 )}
                             </div>
@@ -194,7 +188,7 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
                     </div>
                 )}
 
-                {/* FORMULÁRIO COM O HANDLER CORRIGIDO */}
+                {/* FORMULÁRIO */}
                 <form onSubmit={handleSubmit} className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
                     
                     <PetForm 
@@ -223,6 +217,7 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
                         )}
 
                         <div className="mt-6 space-y-4">
+                            {/* Fotos do Pet */}
                             <div>
                                 <label className="text-sm font-bold flex items-center gap-2 mb-2"><Camera size={16} /> Fotos do Pet (Max 5)</label>
                                 <div className="flex flex-wrap gap-2">
@@ -235,16 +230,18 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
                                     {formData.photos.length < 5 && (
                                         <label className={`w-16 h-16 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-secondary-50 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
                                             <Upload size={20} className="text-secondary-400" />
-                                            <span className="text-[10px] text-secondary-400">Add</span>
                                             <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileSelect(e, 'photos')} disabled={isUploading} />
                                         </label>
                                     )}
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="text-sm font-bold flex items-center gap-2 mb-2"><FilePlus size={16} /> Carteira de Vacinação (Max 3)</label>
-                                <div className="flex flex-wrap gap-2">
+                            {/* Carteira de Vacinação + Datas */}
+                            <div className="bg-secondary-50 p-3 rounded-lg border border-secondary-200">
+                                <label className="text-sm font-bold flex items-center gap-2 mb-2"><FilePlus size={16} /> Carteira de Vacinação</label>
+                                
+                                {/* Uploads */}
+                                <div className="flex flex-wrap gap-2 mb-4">
                                     {formData.vaccineDocs.map((url, i) => (
                                         <div key={i} className="relative w-16 h-16 group">
                                             <img src={url} alt="Vacina" className="w-full h-full object-cover rounded-lg cursor-pointer border hover:border-primary-500" onClick={() => setVaccineLightboxIndex(i)} />
@@ -252,16 +249,44 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
                                         </div>
                                     ))}
                                     {formData.vaccineDocs.length < 3 && (
-                                        <label className={`w-16 h-16 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-secondary-50 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                        <label className={`w-16 h-16 border-2 border-dashed bg-white rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-secondary-50 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
                                             <Upload size={20} className="text-secondary-400" />
                                             <span className="text-[10px] text-secondary-400">Add</span>
                                             <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileSelect(e, 'vaccines')} disabled={isUploading} />
                                         </label>
                                     )}
                                 </div>
+
+                                {/* NOVOS CAMPOS DE DATA (Layout Mobile Otimizado) */}
+                                <div className="border-t border-secondary-200 pt-3">
+                                    <label className="text-xs font-bold text-secondary-500 flex items-center gap-1 mb-2"><Syringe size={14} /> Últimas Doses</label>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="text-[10px] font-bold text-primary-700 uppercase mb-1 block">Anti-Rábica</label>
+                                            <input 
+                                                type="date" 
+                                                name="lastAntiRabica" 
+                                                value={formData.lastAntiRabica} 
+                                                onChange={handleChange} 
+                                                className="w-full p-2 border border-secondary-300 rounded text-sm bg-white focus:ring-2 focus:ring-primary-500 outline-none" 
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-bold text-primary-700 uppercase mb-1 block">Multi V8 / V10</label>
+                                            <input 
+                                                type="date" 
+                                                name="lastMultipla" 
+                                                value={formData.lastMultipla} 
+                                                onChange={handleChange} 
+                                                className="w-full p-2 border border-secondary-300 rounded text-sm bg-white focus:ring-2 focus:ring-primary-500 outline-none" 
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
+                        {/* Histórico */}
                         {formData.pastBookings.length > 0 && (
                             <div className="mt-6 border-t pt-4">
                                 <h4 className="text-sm font-bold flex items-center gap-2 mb-3"><History size={16} /> Histórico de Estadias</h4>
