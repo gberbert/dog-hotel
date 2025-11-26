@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Share2 } from 'lucide-react';
 
 const ImageLightbox = ({ images, currentIndex, onClose, setIndex }) => {
   // Estados para Zoom e Posição
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
   
   // Referências para cálculos de movimento
   const imageRef = useRef(null);
@@ -55,6 +56,56 @@ const ImageLightbox = ({ images, currentIndex, onClose, setIndex }) => {
     });
   };
 
+  // --- FUNÇÃO DE COMPARTILHAMENTO ---
+  const handleShare = async (e) => {
+    e?.stopPropagation();
+    if (isSharing) return;
+    setIsSharing(true);
+
+    const imageUrl = images[currentIndex];
+
+    try {
+        if (navigator.share) {
+            // Tenta buscar a imagem para compartilhar como ARQUIVO (Melhor UX)
+            let fileShared = false;
+            try {
+                const response = await fetch(imageUrl);
+                const blob = await response.blob();
+                const file = new File([blob], `pet_photo_${currentIndex}.jpg`, { type: blob.type });
+                
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({
+                        files: [file],
+                        title: 'Foto do Pet',
+                        text: 'Olha que foto legal!'
+                    });
+                    fileShared = true;
+                }
+            } catch (err) {
+                console.warn("Não foi possível compartilhar o arquivo, tentando URL...", err);
+            }
+
+            // Se falhar o arquivo, compartilha a URL
+            if (!fileShared) {
+                await navigator.share({
+                    title: 'Foto do Pet',
+                    url: imageUrl
+                });
+            }
+        } else {
+            // Fallback para Desktop antigo: Copiar Link
+            await navigator.clipboard.writeText(imageUrl);
+            alert("Link da imagem copiado para a área de transferência!");
+        }
+    } catch (error) {
+        if (error.name !== 'AbortError') {
+            console.error("Erro ao compartilhar:", error);
+        }
+    } finally {
+        setIsSharing(false);
+    }
+  };
+
   // --- LÓGICA DE TOQUE (TOUCH EVENTS) ---
   const onTouchStart = (e) => {
     if (e.touches.length === 2) {
@@ -68,7 +119,6 @@ const ImageLightbox = ({ images, currentIndex, onClose, setIndex }) => {
       // Início do Arrastar (Pan) - Só se tiver zoom
       setIsDragging(true);
       startPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-      // Importante: Atualiza lastPos com o estado atual para evitar pulos
       lastPos.current = { ...position };
     }
   };
@@ -85,7 +135,6 @@ const ImageLightbox = ({ images, currentIndex, onClose, setIndex }) => {
       );
       if (lastDist.current) {
         const diff = dist - lastDist.current;
-        // Sensibilidade do zoom (0.005)
         const newScale = Math.min(Math.max(1, scale + diff * 0.005), 4);
         setScale(newScale);
         lastDist.current = dist;
@@ -95,10 +144,6 @@ const ImageLightbox = ({ images, currentIndex, onClose, setIndex }) => {
       const dx = e.touches[0].clientX - startPos.current.x;
       const dy = e.touches[0].clientY - startPos.current.y;
       
-      // Limites simples para não perder a imagem de vista
-      const limitX = (window.innerWidth * (scale - 1)) / 2;
-      const limitY = (window.innerHeight * (scale - 1)) / 2;
-
       let newX = lastPos.current.x + dx;
       let newY = lastPos.current.y + dy;
 
@@ -109,7 +154,6 @@ const ImageLightbox = ({ images, currentIndex, onClose, setIndex }) => {
   const onTouchEnd = () => {
     setIsDragging(false);
     lastDist.current = null;
-    // Salva a posição final ao soltar
     lastPos.current = { ...position };
   };
 
@@ -145,6 +189,9 @@ const ImageLightbox = ({ images, currentIndex, onClose, setIndex }) => {
          
          {/* Botões de Ação */}
          <div className="pointer-events-auto flex gap-2">
+             <button onClick={handleShare} className="p-2 rounded-full bg-black/40 text-white hover:bg-white/20 border border-white/10" title="Compartilhar">
+                {isSharing ? <span className="animate-pulse">...</span> : <Share2 size={20}/>}
+             </button>
              <button onClick={resetZoom} className="p-2 rounded-full bg-black/40 text-white hover:bg-white/20 border border-white/10" title="Resetar Zoom"><RotateCcw size={20}/></button>
              <button onClick={handleZoomOut} className="p-2 rounded-full bg-black/40 text-white hover:bg-white/20 border border-white/10"><ZoomOut size={20}/></button>
              <button onClick={handleZoomIn} className="p-2 rounded-full bg-black/40 text-white hover:bg-white/20 border border-white/10"><ZoomIn size={20}/></button>
