@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import {
-  Clock, User, MessageCircle, Trash2, Edit, AlertTriangle, Dog
+  Clock, User, MessageCircle, Trash2, Edit, AlertTriangle, Dog, Syringe, MapPin
 } from 'lucide-react';
-import { formatCurrency, getBookingStatus } from '../utils/calculations';
-import { FaceRating } from './shared/RatingComponents';
-import ImageLightbox from './shared/ImageLightbox';
+import { formatCurrency, getBookingStatus } from '../utils/calculations.js';
+import { FaceRating } from './shared/RatingComponents.jsx';
+import ImageLightbox from './shared/ImageLightbox.jsx';
 
 export default function BookingCard({ booking, onEdit, onDelete }) {
   const [lightboxIndex, setLightboxIndex] = useState(-1);
@@ -13,6 +13,16 @@ export default function BookingCard({ booking, onEdit, onDelete }) {
 
   const formatDateShort = (dateStr) => {
     return new Date(dateStr).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).toUpperCase();
+  };
+
+  const formatDateSimple = (dateStr) => {
+    if (!dateStr) return '--/--';
+    // Ajuste para fuso horário se necessário, ou uso simples
+    const date = new Date(dateStr);
+    // Adiciona o fuso horário offset para garantir a data correta visualmente se vier YYYY-MM-DD
+    const userTimezoneOffset = date.getTimezoneOffset() * 60000;
+    const correctedDate = new Date(date.getTime() + userTimezoneOffset);
+    return correctedDate.toLocaleDateString('pt-BR');
   };
 
   const getWhatsAppLink = (number) => {
@@ -37,14 +47,12 @@ export default function BookingCard({ booking, onEdit, onDelete }) {
         <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${status.color.split(' ')[0].replace('bg-', 'bg-opacity-100 bg-')}`}></div>
 
         <div className="p-4 pl-6">
-          {/* --- CABEÇALHO CORRIGIDO --- */}
+          {/* --- CABEÇALHO --- */}
           <div className="flex justify-between items-start mb-3 gap-2">
-            {/* Lado Esquerdo: Foto + Textos (Flexível com min-w-0 para truncar) */}
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <div
                 className="w-12 h-12 rounded-full bg-secondary-100 overflow-hidden border border-secondary-100 flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-primary-400 transition"
                 onClick={() => booking.clientPhoto && setLightboxIndex(0)}
-                title={booking.clientPhoto ? "Clique para ampliar" : ""}
               >
                 {booking.clientPhoto ? (
                   <img src={booking.clientPhoto} alt={booking.dogName} className="w-full h-full object-cover" />
@@ -53,25 +61,28 @@ export default function BookingCard({ booking, onEdit, onDelete }) {
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="font-bold text-secondary-900 text-lg leading-tight truncate" title={booking.dogName}>
+                <h3 className="font-bold text-secondary-900 text-lg leading-tight truncate">
                   {booking.dogName}
                 </h3>
                 <p className="text-xs text-secondary-500 flex items-center gap-1 mt-0.5 truncate">
                   <User size={12} className="flex-shrink-0" />
                   <span className="truncate">{booking.ownerName}</span>
                 </p>
+                {/* ORIGEM DO CLIENTE */}
+                <p className="text-[10px] text-primary-600 font-bold flex items-center gap-1 mt-0.5 uppercase tracking-wide">
+                  <MapPin size={10} />
+                  {booking.source || 'Particular'}
+                </p>
               </div>
             </div>
 
-            {/* Lado Direito: Badge (Fixo, não encolhe) */}
             <span className={`flex-shrink-0 whitespace-nowrap text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${status.color}`}>
               {status.label}
             </span>
           </div>
-          {/* --------------------------- */}
 
-          {/* Datas */}
-          <div className="flex items-center justify-between bg-secondary-50 rounded-lg p-2 mb-3 border border-secondary-100 text-xs">
+          {/* DATAS CHECK-IN / OUT */}
+          <div className="flex items-center justify-between bg-secondary-50 rounded-lg p-2 mb-2 border border-secondary-100 text-xs">
             <div className="text-center">
               <span className="block text-secondary-400 font-bold">ENTRADA</span>
               <span className="block font-bold text-secondary-700 text-sm">{formatDateShort(booking.checkIn)}</span>
@@ -83,13 +94,28 @@ export default function BookingCard({ booking, onEdit, onDelete }) {
               <span className="block font-bold text-secondary-700 text-sm">{formatDateShort(booking.checkOut)}</span>
               <span className="text-[10px] text-secondary-400">{new Date(booking.checkOut).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
-
           </div>
 
-          {/* Comportamento e Prejuízo */}
+          {/* INFO DE VACINAS */}
+          <div className="bg-blue-50/50 rounded-lg p-2 mb-3 border border-blue-100 text-[10px] grid grid-cols-2 gap-2">
+             <div className="flex flex-col">
+                <span className="text-secondary-400 font-bold flex items-center gap-1"><Syringe size={10}/> ANTI-RÁBICA</span>
+                <span className={`font-medium ${booking.lastAntiRabica ? 'text-secondary-700' : 'text-red-400'}`}>
+                   {booking.lastAntiRabica ? formatDateSimple(booking.lastAntiRabica) : 'Pendente'}
+                </span>
+             </div>
+             <div className="flex flex-col border-l border-blue-100 pl-2">
+                <span className="text-secondary-400 font-bold flex items-center gap-1"><Syringe size={10}/> V8 / V10</span>
+                <span className={`font-medium ${booking.lastMultipla ? 'text-secondary-700' : 'text-red-400'}`}>
+                   {booking.lastMultipla ? formatDateSimple(booking.lastMultipla) : 'Pendente'}
+                </span>
+             </div>
+          </div>
+
+          {/* AVALIAÇÃO E PREJUÍZO */}
           <div className="flex justify-between items-center mb-3">
             <div className="flex items-center gap-1 bg-secondary-50 px-2 py-1 rounded">
-              <span className="text-[10px] text-secondary-500">Avaliação:</span>
+              <span className="text-[10px] text-secondary-500">Comp:</span>
               <FaceRating rating={booking.clientDogBehaviorRating || 3} readonly size={14} />
             </div>
             {booking.damageValue > 0 && (
@@ -99,7 +125,7 @@ export default function BookingCard({ booking, onEdit, onDelete }) {
             )}
           </div>
 
-          {/* Rodapé */}
+          {/* RODAPÉ */}
           <div className="flex items-end justify-between border-t pt-2 border-secondary-100">
             <div className="min-w-0 pr-2">
               <span className="text-xl font-bold text-primary-600 truncate block">{formatCurrency(totalNetValue)}</span>

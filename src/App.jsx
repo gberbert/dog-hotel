@@ -8,24 +8,23 @@ import {
 } from 'firebase/firestore';
 import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 
-// Imports Modulares
-import { db, auth, appId } from './utils/firebase';
-import { formatDateBR } from './utils/calculations';
-import SplashScreen from './components/SplashScreen';
-import LoginScreen from './components/LoginScreen';
-import BookingCard from './components/BookingCard';
-import BookingModal from './components/BookingModal';
-import FinancialPanel from './components/FinancialPanel';
-import ClientList from './components/ClientList';
-import InstallButton from './components/InstallButton';
-import UpcomingBookings from './components/UpcomingBookings';
+// Imports Modulares (Com extensões explícitas para evitar erros)
+import { db, auth, appId } from './utils/firebase.js';
+import { formatDateBR } from './utils/calculations.js';
+import SplashScreen from './components/SplashScreen.jsx';
+import LoginScreen from './components/LoginScreen.jsx';
+import BookingCard from './components/BookingCard.jsx';
+import BookingModal from './components/BookingModal.jsx';
+import FinancialPanel from './components/FinancialPanel.jsx';
+import ClientList from './components/ClientList.jsx';
+import InstallButton from './components/InstallButton.jsx';
+import UpcomingBookings from './components/UpcomingBookings.jsx';
 
-// --- IMPORT DA VERSÃO (NOVO) ---
-// Certifique-se de que o arquivo src/version.js existe (criado pelo script ou manualmente)
-import { appVersion } from './version';
+// Import da Versão
+import { appVersion } from './version.js';
 
 // Import do Contexto
-import { DataProvider } from './context/DataContext';
+import { DataProvider } from './context/DataContext.jsx';
 
 export default function DogHotelApp() {
   // --- ESTADOS ---
@@ -33,13 +32,14 @@ export default function DogHotelApp() {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   
+  // Aba padrão 'home'
   const [activeTab, setActiveTab] = useState('home'); 
   
   const [userName, setUserName] = useState('Recepcionista');
   const [view, setView] = useState('day');
   const [currentDate, setCurrentDate] = useState(new Date());
   
-  // Mantemos estes estados locais para compatibilidade de views legadas
+  // Estados locais para compatibilidade com componentes antigos
   const [bookings, setBookings] = useState([]);
   const [clients, setClients] = useState([]);
   const [races, setRaces] = useState([]);
@@ -49,10 +49,9 @@ export default function DogHotelApp() {
   const [editingData, setEditingData] = useState(null);
   const [modalMode, setModalMode] = useState('booking');
 
-  // --- ESTADO DO PWA ---
   const [deferredPrompt, setDeferredPrompt] = useState(null);
 
-  // --- CAPTURA EVENTO DE INSTALAÇÃO ---
+  // --- EFEITOS ---
   useEffect(() => {
     const handler = (e) => {
       e.preventDefault();
@@ -62,7 +61,6 @@ export default function DogHotelApp() {
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
-  // --- AUTH & DATA ---
   useEffect(() => {
     const initAuth = async () => { try { await signInAnonymously(auth); } catch (e) { console.error(e); } };
     initAuth();
@@ -104,8 +102,12 @@ export default function DogHotelApp() {
       const client = clients.find(c => c.id === b.clientId);
       return {
         ...b,
+        // ENRIQUECIMENTO DE DADOS PARA O CARD (Agenda)
         clientPhoto: client?.photos?.[0],
-        clientDogBehaviorRating: client?.dogBehaviorRating
+        clientDogBehaviorRating: client?.dogBehaviorRating,
+        source: client?.source || b.source || 'Particular',
+        lastAntiRabica: client?.lastAntiRabica,
+        lastMultipla: client?.lastMultipla
       };
     }).filter(b => {
       if (!b.checkIn || !b.checkOut) return false;
@@ -113,7 +115,6 @@ export default function DogHotelApp() {
     });
   };
 
-  // --- FUNÇÃO DE SALVAR ---
   const handleSave = async (formData) => {
     if (!user) return alert("Sem conexão.");
     const isNewClient = !formData.clientId;
@@ -142,6 +143,7 @@ export default function DogHotelApp() {
       const existingClient = !clientId ?
         clients.find(c => c.dogName.toLowerCase() === formData.dogName.toLowerCase()) : clients.find(c => c.id === clientId);
 
+      // Objeto Seguro (evita undefined)
       const clientData = {
         dogName: formData.dogName || '',
         dogNameLower: (formData.dogName || '').toLowerCase(),
@@ -199,6 +201,7 @@ export default function DogHotelApp() {
       if (isBooking) {
         const bRef = collection(db, 'artifacts', appId, 'public', 'data', 'bookings');
         const bData = { ...formData, clientId: clientId };
+        // Limpeza final de undefined
         Object.keys(bData).forEach(key => bData[key] === undefined && delete bData[key]);
         
         if (editingData && editingData.id) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'bookings', editingData.id), bData);
@@ -293,7 +296,6 @@ export default function DogHotelApp() {
             <button onClick={() => setActiveTab('clients')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${activeTab === 'clients' ? 'bg-primary-700 shadow' : 'hover:bg-primary-700'}`}><User size={20} /> Cadastros</button>
           </nav>
           
-          {/* DISPLAY DA VERSÃO (SIDEBAR) */}
           <div className="px-6 pb-4 mt-auto">
              <div className="text-[10px] text-primary-300 font-mono opacity-60 text-center border-t border-primary-700 pt-2">
                 versão {appVersion}
@@ -345,8 +347,7 @@ export default function DogHotelApp() {
               <button onClick={() => handleMobileNav('clients')} className={`flex items-center gap-3 p-4 rounded-lg font-medium ${activeTab === 'clients' ? 'bg-primary-50 text-primary-600' : 'text-secondary-700 hover:bg-secondary-50'}`}><User size={20} /> Cadastros</button>
 
               <div className="h-px bg-secondary-100 my-2"></div>
-
-              {/* VERSÃO MOBILE (NOVO) */}
+              
               <div className="text-center text-xs text-secondary-400 py-2">v{appVersion}</div>
 
               <div className="px-2 mb-2">

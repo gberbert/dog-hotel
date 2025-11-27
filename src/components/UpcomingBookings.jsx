@@ -1,19 +1,24 @@
 import React from 'react';
 import { Calendar, Home } from 'lucide-react';
-import BookingCard from './BookingCard';
+import BookingCard from './BookingCard.jsx';
 
 export default function UpcomingBookings({ bookings, clients, onEdit, onDelete }) {
-  // 1. Enriquecer as reservas com dados do cliente (Foto, Comportamento, etc)
+  // 1. Enriquecer as reservas com dados do cliente (Foto, Comportamento, Vacinas, Origem)
+  // Isso é crucial para que o BookingCard tenha todas as informações necessárias para exibir
   const enrichedBookings = bookings.map(b => {
     const client = clients.find(c => c.id === b.clientId);
     return {
       ...b,
       clientPhoto: client?.photos?.[0],
-      clientDogBehaviorRating: client?.dogBehaviorRating
+      clientDogBehaviorRating: client?.dogBehaviorRating,
+      // Dados adicionais para o card (Vacinas e Origem)
+      source: client?.source || b.source || 'Particular',
+      lastAntiRabica: client?.lastAntiRabica,
+      lastMultipla: client?.lastMultipla
     };
   });
 
-  // 2. Data de hoje (zerando horas para comparação justa)
+  // 2. Data de hoje (zerando horas para comparação justa de datas)
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -55,8 +60,8 @@ export default function UpcomingBookings({ bookings, clients, onEdit, onDelete }
       ) : (
         <div className="space-y-4">
           {upcomingList.map(booking => (
-            // CORREÇÃO: Removido 'transform' e 'hover:-translate' que quebravam o modal da foto.
-            // Mantido apenas hover:shadow-md que é seguro.
+            // IMPORTANTE: Mantido apenas hover:shadow-md. 
+            // Evitamos 'transform' aqui para não criar um novo contexto de empilhamento que quebraria o modal de foto em tela cheia.
             <div key={booking.id} className="transition-all duration-300 hover:shadow-md rounded-xl">
               <BookingCard 
                 booking={booking} 
