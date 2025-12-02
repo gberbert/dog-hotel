@@ -3,6 +3,8 @@ import {
     Camera, Upload, CheckCircle, Settings, RefreshCw,
     AlertCircle, ChevronLeft, Image as ImageIcon, FileText
 } from 'lucide-react';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db, appId } from '../utils/firebase';
 import { compressImage } from '../utils/fileHelpers';
 
 const DEFAULT_PROMPT = "Atue como um especialista em cinologia. Identifique a raça do cão na imagem, descreva seu temperamento, nível de energia e cuidados. Responda em Português do Brasil com formatação rica.";
@@ -24,28 +26,49 @@ export default function BreedIdentifier() {
 
     // --- LIFECYCLE ---
     useEffect(() => {
-        const storedKey = localStorage.getItem('gemini_api_key');
-        const storedPrompt = localStorage.getItem('gemini_prompt');
+        const loadSettings = async () => {
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'breed_settings');
+                const docSnap = await getDoc(docRef);
 
-        if (storedKey) {
-            setApiKey(storedKey);
-            setStep('orientation');
-        }
-        if (storedPrompt) {
-            setSystemPrompt(storedPrompt);
-        }
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.apiKey) {
+                        setApiKey(data.apiKey);
+                        // Only auto-advance if we have a key
+                        setStep('orientation');
+                    }
+                    if (data.systemPrompt) {
+                        setSystemPrompt(data.systemPrompt);
+                    }
+                }
+            } catch (error) {
+                console.error("Erro ao carregar configurações:", error);
+            }
+        };
+        loadSettings();
     }, []);
 
     // --- ACTIONS ---
-    const handleSaveConfig = () => {
+    const handleSaveConfig = async () => {
         if (!apiKey.trim()) {
             setError("Por favor, insira uma API Key válida.");
             return;
         }
-        localStorage.setItem('gemini_api_key', apiKey);
-        localStorage.setItem('gemini_prompt', systemPrompt);
-        setError(null);
-        setStep('orientation');
+
+        try {
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'breed_settings');
+            await setDoc(docRef, {
+                apiKey,
+                systemPrompt
+            });
+
+            setError(null);
+            setStep('orientation');
+        } catch (error) {
+            console.error("Erro ao salvar:", error);
+            setError("Erro ao salvar configurações no banco de dados.");
+        }
     };
 
     const handleResetConfig = () => {
@@ -215,7 +238,7 @@ export default function BreedIdentifier() {
                         className="w-full p-3 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition"
                     />
                     <p className="text-xs text-secondary-500 mt-1">
-                        Sua chave será salva localmente no navegador.
+                        Sua chave será salva no banco de dados do sistema.
                     </p>
                 </div>
 
