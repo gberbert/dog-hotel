@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Calendar, User, PieChart, LogOut, Home,
-  Plus, ChevronLeft, ChevronRight, Search, Menu, X
+  Plus, ChevronLeft, ChevronRight, Search, Menu, X, PawPrint
 } from 'lucide-react';
 import {
   collection, onSnapshot, addDoc, updateDoc, doc, deleteDoc, query, where, getDocs
@@ -19,6 +19,7 @@ import FinancialPanel from './components/FinancialPanel.jsx';
 import ClientList from './components/ClientList.jsx';
 import InstallButton from './components/InstallButton.jsx';
 import UpcomingBookings from './components/UpcomingBookings.jsx';
+import BreedIdentifier from './components/BreedIdentifier.jsx';
 
 // Import da Versão
 import { appVersion } from './version.js';
@@ -31,19 +32,19 @@ export default function DogHotelApp() {
   const [showSplash, setShowSplash] = useState(true);
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  
+
   // Aba padrão 'home'
-  const [activeTab, setActiveTab] = useState('home'); 
-  
+  const [activeTab, setActiveTab] = useState('home');
+
   const [userName, setUserName] = useState('Recepcionista');
   const [view, setView] = useState('day');
   const [currentDate, setCurrentDate] = useState(new Date());
-  
+
   // Estados locais para compatibilidade com componentes antigos
   const [bookings, setBookings] = useState([]);
   const [clients, setClients] = useState([]);
   const [races, setRaces] = useState([]);
-  
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingData, setEditingData] = useState(null);
@@ -84,9 +85,11 @@ export default function DogHotelApp() {
   }, [user]);
 
   // --- HELPERS ---
-  const startOfWeek = (d) => { const date = new Date(d); const day = date.getDay();
-    const diff = date.getDate() - day; return new Date(date.setDate(diff)); };
-  
+  const startOfWeek = (d) => {
+    const date = new Date(d); const day = date.getDay();
+    const diff = date.getDate() - day; return new Date(date.setDate(diff));
+  };
+
   const navigateDate = (dir) => {
     const newDate = new Date(currentDate);
     if (view === 'day') newDate.setDate(newDate.getDate() + dir);
@@ -147,28 +150,28 @@ export default function DogHotelApp() {
       const clientData = {
         dogName: formData.dogName || '',
         dogNameLower: (formData.dogName || '').toLowerCase(),
-        dogSize: formData.dogSize || 'Pequeno', 
-        dogBreed: formData.dogBreed || 'SRD', 
+        dogSize: formData.dogSize || 'Pequeno',
+        dogBreed: formData.dogBreed || 'SRD',
         source: formData.source || 'Particular',
-        ownerName: formData.ownerName || '', 
-        ownerName2: formData.ownerName2 || '', 
-        whatsapp: formData.whatsapp || '', 
+        ownerName: formData.ownerName || '',
+        ownerName2: formData.ownerName2 || '',
+        whatsapp: formData.whatsapp || '',
         whatsapp2: formData.whatsapp2 || '',
-        ownerEmail: formData.ownerEmail || '', 
-        ownerDoc: formData.ownerDoc || '', 
-        address: formData.address || '', 
+        ownerEmail: formData.ownerEmail || '',
+        ownerDoc: formData.ownerDoc || '',
+        address: formData.address || '',
         birthYear: formData.birthYear || '',
-        history: formData.history || '', 
-        ownerHistory: formData.ownerHistory || '', 
+        history: formData.history || '',
+        ownerHistory: formData.ownerHistory || '',
         ownerRating: formData.ownerRating || 3,
-        restrictions: formData.restrictions || '', 
-        socialization: formData.socialization || [], 
+        restrictions: formData.restrictions || '',
+        socialization: formData.socialization || [],
         medications: formData.medications || [],
-        photos: formData.photos || [], 
-        vaccineDocs: formData.vaccineDocs || [], 
+        photos: formData.photos || [],
+        vaccineDocs: formData.vaccineDocs || [],
         vaccines: formData.vaccines || '',
-        lastAntiRabica: formData.lastAntiRabica || '', 
-        lastMultipla: formData.lastMultipla || '', 
+        lastAntiRabica: formData.lastAntiRabica || '',
+        lastMultipla: formData.lastMultipla || '',
         dogBehaviorRating: formData.dogBehaviorRating || 3
       };
 
@@ -203,14 +206,14 @@ export default function DogHotelApp() {
         const bData = { ...formData, clientId: clientId };
         // Limpeza final de undefined
         Object.keys(bData).forEach(key => bData[key] === undefined && delete bData[key]);
-        
+
         if (editingData && editingData.id) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'bookings', editingData.id), bData);
         else await addDoc(bRef, bData);
       }
       setIsModalOpen(false); setEditingData(null);
-    } catch (e) { 
-        console.error("Erro ao salvar:", e);
-        alert("Erro ao salvar: " + e.message); 
+    } catch (e) {
+      console.error("Erro ao salvar:", e);
+      alert("Erro ao salvar: " + e.message);
     }
   };
 
@@ -294,12 +297,13 @@ export default function DogHotelApp() {
             <button onClick={() => setActiveTab('financial')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${activeTab === 'financial' ? 'bg-primary-700 shadow' : 'hover:bg-primary-700'}`}><PieChart size={20} /> Financeiro</button>
             <button onClick={() => setActiveTab('agenda')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${activeTab === 'agenda' ? 'bg-primary-700 shadow' : 'hover:bg-primary-700'}`}><Calendar size={20} /> Agenda</button>
             <button onClick={() => setActiveTab('clients')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${activeTab === 'clients' ? 'bg-primary-700 shadow' : 'hover:bg-primary-700'}`}><User size={20} /> Cadastros</button>
+            <button onClick={() => setActiveTab('breed')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${activeTab === 'breed' ? 'bg-primary-700 shadow' : 'hover:bg-primary-700'}`}><PawPrint size={20} /> Minha Raça</button>
           </nav>
-          
+
           <div className="px-6 pb-4 mt-auto">
-             <div className="text-[10px] text-primary-300 font-mono opacity-60 text-center border-t border-primary-700 pt-2">
-                versão {appVersion}
-             </div>
+            <div className="text-[10px] text-primary-300 font-mono opacity-60 text-center border-t border-primary-700 pt-2">
+              versão {appVersion}
+            </div>
           </div>
 
           <div className="px-3 pb-2">
@@ -318,7 +322,7 @@ export default function DogHotelApp() {
               </button>
 
               <h2 className="text-xl font-bold text-secondary-700 hidden md:block">
-                {activeTab === 'home' ? 'Início' : activeTab === 'agenda' ? 'Agenda' : activeTab === 'clients' ? 'Gerenciamento de Clientes' : 'Financeiro'}
+                {activeTab === 'home' ? 'Início' : activeTab === 'agenda' ? 'Agenda' : activeTab === 'clients' ? 'Gerenciamento de Clientes' : activeTab === 'breed' ? 'Identificador de Raças' : 'Financeiro'}
               </h2>
 
               <div className="flex items-center gap-2 md:hidden">
@@ -345,9 +349,10 @@ export default function DogHotelApp() {
               <button onClick={() => handleMobileNav('financial')} className={`flex items-center gap-3 p-4 rounded-lg font-medium ${activeTab === 'financial' ? 'bg-primary-50 text-primary-600' : 'text-secondary-700 hover:bg-secondary-50'}`}><PieChart size={20} /> Financeiro</button>
               <button onClick={() => handleMobileNav('agenda')} className={`flex items-center gap-3 p-4 rounded-lg font-medium ${activeTab === 'agenda' ? 'bg-primary-50 text-primary-600' : 'text-secondary-700 hover:bg-secondary-50'}`}><Calendar size={20} /> Agenda</button>
               <button onClick={() => handleMobileNav('clients')} className={`flex items-center gap-3 p-4 rounded-lg font-medium ${activeTab === 'clients' ? 'bg-primary-50 text-primary-600' : 'text-secondary-700 hover:bg-secondary-50'}`}><User size={20} /> Cadastros</button>
+              <button onClick={() => handleMobileNav('breed')} className={`flex items-center gap-3 p-4 rounded-lg font-medium ${activeTab === 'breed' ? 'bg-primary-50 text-primary-600' : 'text-secondary-700 hover:bg-secondary-50'}`}><PawPrint size={20} /> Minha Raça</button>
 
               <div className="h-px bg-secondary-100 my-2"></div>
-              
+
               <div className="text-center text-xs text-secondary-400 py-2">v{appVersion}</div>
 
               <div className="px-2 mb-2">
@@ -362,11 +367,11 @@ export default function DogHotelApp() {
             {isMobileMenuOpen && <div className="md:hidden fixed inset-0 bg-black/20 z-10 top-16" onClick={() => setIsMobileMenuOpen(false)}></div>}
 
             {activeTab === 'home' && (
-              <UpcomingBookings 
-                bookings={bookings} 
-                clients={clients} 
-                onEdit={(b) => { setEditingData(b); setModalMode('booking'); setIsModalOpen(true); }} 
-                onDelete={(id) => handleDeleteBooking(id)} 
+              <UpcomingBookings
+                bookings={bookings}
+                clients={clients}
+                onEdit={(b) => { setEditingData(b); setModalMode('booking'); setIsModalOpen(true); }}
+                onDelete={(id) => handleDeleteBooking(id)}
               />
             )}
 
@@ -400,6 +405,7 @@ export default function DogHotelApp() {
 
             {activeTab === 'clients' && <ClientList onEdit={(c) => { setEditingData(c); setModalMode(c ? 'client_edit' : 'client_new'); setIsModalOpen(true); }} onDelete={(id) => { if (confirm("Deletar?")) deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'clients', id)) }} />}
             {activeTab === 'financial' && <FinancialPanel bookings={bookings.map(b => ({ ...b, clientName: clients.find(c => c.id === b.clientId)?.dogName }))} />}
+            {activeTab === 'breed' && <BreedIdentifier />}
           </div>
         </main>
 
