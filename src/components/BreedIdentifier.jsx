@@ -150,75 +150,82 @@ export default function BreedIdentifier() {
             setStep('camera'); // Allow retry
         }
     };
-
     const handleNewAnalysis = () => {
         setSelectedImage(null);
         setApiResult('');
         setStep('camera');
     };
 
-    const handlePrint = () => {
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) return alert("Por favor, permita pop-ups para gerar o relatório.");
+    const generatePDFReport = async () => {
+        // 1. Load html2pdf library dynamically if not present
+        if (!window.html2pdf) {
+            const loadingBtn = document.getElementById('btn-generate-pdf');
+            if (loadingBtn) loadingBtn.innerText = 'Carregando...';
 
-        const date = new Date().toLocaleDateString('pt-BR');
+            try {
+                await new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                });
+            } catch (err) {
+                console.error("Erro ao carregar biblioteca de PDF", err);
+                alert("Erro ao carregar gerador de PDF. Verifique sua conexão.");
+                if (loadingBtn) loadingBtn.innerText = 'Gerar PDF';
+                return;
+            }
+        }
 
-        // Convert markdown-like text to simple HTML for print
-        const formattedText = apiResult
-            .split('\n')
-            .map(line => {
-                if (line.startsWith('## ')) return `<h2 style="font-size: 18px; font-weight: bold; color: #1e40af; margin-top: 20px; margin-bottom: 10px;">${line.replace('## ', '')}</h2>`;
-                if (line.startsWith('### ')) return `<h3 style="font-size: 16px; font-weight: bold; color: #374151; margin-top: 15px; margin-bottom: 8px;">${line.replace('### ', '')}</h3>`;
-                if (line.trim().startsWith('* ') || line.trim().startsWith('- ')) return `<li style="margin-left: 20px; margin-bottom: 4px;">${line.replace(/^[\*\-]\s/, '')}</li>`;
-                if (line.trim() === '') return '<br/>';
-                return `<p style="margin-bottom: 8px; line-height: 1.5;">${line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>`;
-            })
-            .join('');
-
-        printWindow.document.write(`
-            <html>
-            <head>
-                <title>Relatório de Raça - Dog Hotel</title>
-                <style>
-                    body { font-family: sans-serif; padding: 40px; color: #1f2937; }
-                    h1 { text-align: center; color: #1e40af; border-bottom: 2px solid #e5e7eb; padding-bottom: 20px; margin-bottom: 30px; }
-                    .header-info { text-align: center; color: #6b7280; font-size: 14px; margin-bottom: 40px; }
-                    .image-container { text-align: center; margin-bottom: 30px; }
-                    img { max-width: 300px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-                    .content { max-width: 800px; margin: 0 auto; }
-                    @media print {
-                        body { padding: 0; }
-                        button { display: none; }
-                    }
-                </style>
-            </head>
-            <body>
-                <h1>Relatório de Identificação de Raça</h1>
-                <div class="header-info">Gerado em: ${date} • Dog Hotel App</div>
+        // 2. Create content for PDF
+        const element = document.createElement('div');
+        element.innerHTML = `
+            <div style="font-family: sans-serif; padding: 30px; color: #1f2937; width: 100%; max-width: 800px; margin: 0 auto;">
+                <h1 style="text-align: center; color: #1e40af; border-bottom: 2px solid #e5e7eb; padding-bottom: 15px; margin-bottom: 25px; font-size: 24px;">Relatório de Raça</h1>
+                <div style="text-align: center; color: #6b7280; font-size: 12px; margin-bottom: 25px;">Gerado em: ${new Date().toLocaleDateString('pt-BR')} • Dog Hotel App</div>
                 
-                <div class="image-container">
-                    ${selectedImage ? `<img src="${selectedImage}" alt="Cão Analisado" />` : ''}
+                <div style="text-align: center; margin-bottom: 25px;">
+                    ${selectedImage ? `<img src="${selectedImage}" style="max-width: 250px; max-height: 250px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); object-fit: cover;" />` : ''}
                 </div>
 
-                <div class="content">
-                    ${formattedText}
+                <div style="font-size: 14px; line-height: 1.6;">
+                    ${apiResult.split('\n').map(line => {
+            if (line.startsWith('## ')) return `<h2 style="font-size: 18px; font-weight: bold; color: #1e40af; margin-top: 20px; margin-bottom: 10px; border-left: 4px solid #1e40af; padding-left: 10px;">${line.replace('## ', '')}</h2>`;
+            if (line.startsWith('### ')) return `<h3 style="font-size: 15px; font-weight: bold; color: #374151; margin-top: 15px; margin-bottom: 8px;">${line.replace('### ', '')}</h3>`;
+            if (line.trim().startsWith('* ') || line.trim().startsWith('- ')) return `<li style="margin-left: 20px; margin-bottom: 4px;">${line.replace(/^[\*\-]\s/, '')}</li>`;
+            if (line.trim() === '') return '<br/>';
+            return `<p style="margin-bottom: 8px; text-align: justify;">${line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>`;
+        }).join('')}
                 </div>
+                
+                <div style="margin-top: 40px; border-top: 1px solid #e5e7eb; padding-top: 20px; text-align: center; font-size: 10px; color: #9ca3af;">
+                    Relatório gerado por Inteligência Artificial (Gemini AI). As informações são estimativas e não substituem a avaliação de um profissional.
+                </div>
+            </div>
+        `;
 
-                <script>
-                    window.onload = function() {
-                        setTimeout(function() {
-                            window.print();
-                            window.onafterprint = function() { window.close(); }
-                        }, 500);
-                    }
-                </script>
-            </body>
-            </html>
-        `);
-        printWindow.document.close();
+        // 3. Generate PDF
+        const opt = {
+            margin: [10, 10, 10, 10],
+            filename: `analise-raca-${new Date().getTime()}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        // Generate and Open
+        try {
+            const pdfBlob = await window.html2pdf().set(opt).from(element).output('bloburl');
+            window.open(pdfBlob, '_blank');
+        } catch (err) {
+            console.error("Erro ao gerar PDF:", err);
+            alert("Erro ao gerar o arquivo PDF.");
+        } finally {
+            const loadingBtn = document.getElementById('btn-generate-pdf');
+            if (loadingBtn) loadingBtn.innerText = 'PDF';
+        }
     };
-
-    // --- RENDERERS ---
 
     const renderConfig = () => (
         <div className="max-w-md mx-auto bg-white p-6 rounded-xl shadow-md border border-secondary-100">
@@ -264,7 +271,7 @@ export default function BreedIdentifier() {
                     Salvar e Continuar
                 </button>
             </div>
-        </div>
+        </div >
     );
 
     const renderOrientation = () => (
@@ -399,26 +406,26 @@ export default function BreedIdentifier() {
         <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg border border-secondary-100 overflow-hidden print:shadow-none print:border-none print:max-w-none print:w-full">
             <style>
                 {`
-                @media print {
-                    body * {
-                        visibility: hidden;
-                    }
-                    #breed-result-content, #breed-result-content * {
-                        visibility: visible;
-                    }
-                    #breed-result-content {
-                        position: absolute;
-                        left: 0;
-                        top: 0;
-                        width: 100%;
-                        margin: 0;
-                        padding: 0;
-                    }
-                    .no-print {
-                        display: none !important;
-                    }
-                }
-                `}
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        #breed - result - content, #breed - result - content * {
+            visibility: visible;
+        }
+        #breed - result - content {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100 %;
+            margin: 0;
+            padding: 0;
+        }
+                    .no - print {
+            display: none!important;
+        }
+    }
+    `}
             </style>
             <div id="breed-result-content">
                 <div className="bg-primary-600 p-4 flex items-center justify-between text-white print:bg-white print:text-black print:border-b print:border-black">
@@ -427,7 +434,8 @@ export default function BreedIdentifier() {
                     </h2>
                     <div className="flex items-center gap-2 no-print">
                         <button
-                            onClick={handlePrint}
+                            id="btn-generate-pdf"
+                            onClick={generatePDFReport}
                             className="text-xs bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-full transition flex items-center gap-1"
                         >
                             <FileText size={14} /> PDF
