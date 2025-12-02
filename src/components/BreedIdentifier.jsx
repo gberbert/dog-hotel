@@ -28,14 +28,13 @@ export default function BreedIdentifier() {
     useEffect(() => {
         const loadSettings = async () => {
             try {
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'breed_settings');
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'breed_settings', 'config');
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     if (data.apiKey) {
                         setApiKey(data.apiKey);
-                        // Only auto-advance if we have a key
                         setStep('orientation');
                     }
                     if (data.systemPrompt) {
@@ -57,7 +56,7 @@ export default function BreedIdentifier() {
         }
 
         try {
-            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'breed_settings');
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'breed_settings', 'config');
             await setDoc(docRef, {
                 apiKey,
                 systemPrompt
@@ -67,7 +66,7 @@ export default function BreedIdentifier() {
             setStep('orientation');
         } catch (error) {
             console.error("Erro ao salvar:", error);
-            setError("Erro ao salvar configurações no banco de dados.");
+            setError("Erro ao salvar configurações no banco de dados. Verifique sua conexão ou permissões.");
         }
     };
 
