@@ -3,19 +3,37 @@ import { Users, Search, Plus, FileText, Trash2, History, Dog, X, Loader, Message
 import { FaceRating } from './shared/RatingComponents.jsx';
 import { useData } from '../context/DataContext.jsx';
 
-export default function ClientList({ onEdit, onDelete }) {
-    const { clients, fetchClients, loadingClients, hasMore } = useData();
-    
+export default function ClientList({ onEdit, onDelete, clients: propClients }) {
+    const { clients: contextClients, fetchClients, loadingClients, hasMore } = useData();
+
+    // Se recebermos clients via prop (do App.jsx), usamos eles e fazemos filtro local.
+    // Caso contrário, usamos o contexto (paginação server-side).
+    const usingProps = !!propClients;
+    const sourceClients = usingProps ? propClients : contextClients;
+
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedImage, setSelectedImage] = useState(null);
 
+    // Filtro Local (apenas se usar props)
+    const filteredClients = usingProps
+        ? sourceClients.filter(c => {
+            if (!searchTerm) return true;
+            const term = searchTerm.toLowerCase();
+            return (c.dogName || '').toLowerCase().includes(term) ||
+                (c.ownerName || '').toLowerCase().includes(term);
+        })
+        : sourceClients;
+
     const handleSearch = (e) => {
         e.preventDefault();
-        fetchClients(searchTerm);
+        if (!usingProps) {
+            fetchClients(searchTerm);
+        }
+        // Se usar props, o filtro é automático via variável filteredClients
     };
 
     const handleLoadMore = () => {
-        fetchClients(searchTerm, true);
+        if (!usingProps) fetchClients(searchTerm, true);
     };
 
     // Helper para formatar data
@@ -36,7 +54,7 @@ export default function ClientList({ onEdit, onDelete }) {
 
     return (
         <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 min-h-[500px]">
-            {/* ... HEADER DA BUSCA MANTIDO IGUAL ... */}
+            {/* ... HEADER DA BUSCA ... */}
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
                 <h2 className="text-2xl font-bold text-secondary-800 flex items-center gap-2">
                     <Users className="text-primary-600" /> Cadastros
@@ -53,19 +71,19 @@ export default function ClientList({ onEdit, onDelete }) {
                             />
                             <Search className="absolute left-3 top-3.5 text-primary-500" size={18} />
                         </div>
-                        <button type="submit" className="bg-primary-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-primary-700 shadow">Pesquisar</button>
+                        {!usingProps && <button type="submit" className="bg-primary-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-primary-700 shadow">Pesquisar</button>}
                     </form>
                     <button onClick={() => onEdit(null)} className="bg-success text-white px-6 py-3 rounded-lg font-bold flex items-center justify-center gap-2 shadow hover:bg-green-600 whitespace-nowrap w-full sm:w-auto"><Plus size={20} /> Novo Cadastro</button>
                 </div>
             </div>
 
-            {clients.length === 0 && !loadingClients ? (
+            {filteredClients.length === 0 && !loadingClients ? (
                 <div className="text-center py-20 text-secondary-500 border-2 border-dashed rounded-xl bg-secondary-50">
                     {searchTerm ? 'Nenhum cliente encontrado para esta busca.' : 'Nenhum cliente cadastrado.'}
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {clients.map(client => {
+                    {filteredClients.map(client => {
                         const waLink = getWhatsAppLink(client.whatsapp);
                         return (
                             <div key={client.id} className="border rounded-xl p-4 hover:shadow-md transition bg-secondary-50 flex flex-col gap-3">
@@ -83,17 +101,17 @@ export default function ClientList({ onEdit, onDelete }) {
                                     </div>
                                     <div className="min-w-0 flex-1">
                                         <h3 className="font-bold text-lg truncate text-secondary-900">{client.dogName}</h3>
-                                        
+
                                         {/* TUTOR E WHATSAPP */}
                                         <div className="flex items-center gap-2">
                                             <p className="text-sm text-secondary-600 truncate flex-1" title={client.ownerName}>
                                                 {client.ownerName}
                                             </p>
                                             {waLink && (
-                                                <a 
-                                                    href={waLink} 
-                                                    target="_blank" 
-                                                    rel="noopener noreferrer" 
+                                                <a
+                                                    href={waLink}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
                                                     className="bg-green-100 text-green-600 p-1.5 rounded-full hover:bg-green-200 transition-colors flex-shrink-0"
                                                     title={`Conversar com ${client.ownerName}`}
                                                 >
@@ -131,7 +149,7 @@ export default function ClientList({ onEdit, onDelete }) {
                                         <FaceRating rating={client.dogBehaviorRating || 3} readonly size={16} />
                                     </div>
                                     <div className="flex items-center gap-1 text-secondary-500 font-medium">
-                                        <History size={14} className="text-primary-600" /> 
+                                        <History size={14} className="text-primary-600" />
                                         {client.pastBookings?.length || 0}
                                     </div>
                                 </div>
@@ -160,8 +178,8 @@ export default function ClientList({ onEdit, onDelete }) {
                     <img src={selectedImage} alt="Fullscreen Dog" className="max-w-full max-h-full object-contain rounded-lg shadow-2xl" onClick={(e) => e.stopPropagation()} />
                 </div>
             )}
-            
-            {hasMore && (
+
+            {hasMore && !usingProps && (
                 <div className="mt-6 flex justify-center">
                     <button onClick={handleLoadMore} disabled={loadingClients} className="bg-secondary-100 text-secondary-700 px-6 py-3 rounded-lg font-bold hover:bg-secondary-200 flex items-center gap-2 disabled:opacity-50">
                         {loadingClients ? <><Loader className="animate-spin" size={20} /> Carregando...</> : 'Carregar Mais Clientes'}

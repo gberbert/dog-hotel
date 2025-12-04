@@ -8,7 +8,7 @@ import {
 } from 'firebase/firestore';
 import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 
-// Imports Modulares (Com extensões explícitas para evitar erros)
+// Imports Modulares
 import { db, auth, appId } from './utils/firebase.js';
 import { formatDateBR } from './utils/calculations.js';
 import SplashScreen from './components/SplashScreen.jsx';
@@ -40,7 +40,7 @@ export default function DogHotelApp() {
   const [view, setView] = useState('day');
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  // Estados locais para compatibilidade com componentes antigos
+  // Estados locais
   const [bookings, setBookings] = useState([]);
   const [clients, setClients] = useState([]);
   const [races, setRaces] = useState([]);
@@ -105,7 +105,6 @@ export default function DogHotelApp() {
       const client = clients.find(c => c.id === b.clientId);
       return {
         ...b,
-        // ENRIQUECIMENTO DE DADOS PARA O CARD (Agenda)
         clientPhoto: client?.photos?.[0],
         clientDogBehaviorRating: client?.dogBehaviorRating,
         source: client?.source || b.source || 'Particular',
@@ -146,33 +145,43 @@ export default function DogHotelApp() {
       const existingClient = !clientId ?
         clients.find(c => c.dogName.toLowerCase() === formData.dogName.toLowerCase()) : clients.find(c => c.id === clientId);
 
-      // Objeto Seguro (evita undefined)
+      // Helper Conservador: Se o form estiver vazio, mantém o banco.
+      const getVal = (formVal, dbVal) => {
+        if (formVal && formVal.toString().trim() !== '') return formVal;
+        if (existingClient && dbVal) return dbVal;
+        return '';
+      };
+
       const clientData = {
         dogName: formData.dogName || '',
         dogNameLower: (formData.dogName || '').toLowerCase(),
-        dogSize: formData.dogSize || 'Pequeno',
-        dogBreed: formData.dogBreed || 'SRD',
-        source: formData.source || 'Particular',
-        ownerName: formData.ownerName || '',
-        ownerName2: formData.ownerName2 || '',
-        whatsapp: formData.whatsapp || '',
-        whatsapp2: formData.whatsapp2 || '',
-        ownerEmail: formData.ownerEmail || '',
-        ownerDoc: formData.ownerDoc || '',
-        address: formData.address || '',
-        birthYear: formData.birthYear || '',
-        history: formData.history || '',
-        ownerHistory: formData.ownerHistory || '',
-        ownerRating: formData.ownerRating || 3,
-        restrictions: formData.restrictions || '',
-        socialization: formData.socialization || [],
-        medications: formData.medications || [],
-        photos: formData.photos || [],
-        vaccineDocs: formData.vaccineDocs || [],
-        vaccines: formData.vaccines || '',
-        lastAntiRabica: formData.lastAntiRabica || '',
-        lastMultipla: formData.lastMultipla || '',
-        dogBehaviorRating: formData.dogBehaviorRating || 3
+        dogSize: getVal(formData.dogSize, existingClient?.dogSize) || 'Pequeno',
+        dogBreed: getVal(formData.dogBreed, existingClient?.dogBreed) || 'SRD',
+        source: getVal(formData.source, existingClient?.source) || 'Particular',
+        ownerName: getVal(formData.ownerName, existingClient?.ownerName),
+        ownerName2: getVal(formData.ownerName2, existingClient?.ownerName2),
+        whatsapp: getVal(formData.whatsapp, existingClient?.whatsapp),
+        whatsapp2: getVal(formData.whatsapp2, existingClient?.whatsapp2),
+        ownerEmail: getVal(formData.ownerEmail, existingClient?.ownerEmail),
+        ownerDoc: getVal(formData.ownerDoc, existingClient?.ownerDoc),
+        address: getVal(formData.address, existingClient?.address),
+        birthYear: getVal(formData.birthYear, existingClient?.birthYear),
+        history: getVal(formData.history, existingClient?.history),
+        ownerHistory: getVal(formData.ownerHistory, existingClient?.ownerHistory),
+        ownerRating: formData.ownerRating || existingClient?.ownerRating || 3,
+        restrictions: getVal(formData.restrictions, existingClient?.restrictions),
+
+        // Arrays: Prioriza form se tiver itens, senão mantem banco
+        socialization: (formData.socialization && formData.socialization.length > 0) ? formData.socialization : (existingClient?.socialization || []),
+        medications: (formData.medications && formData.medications.length > 0) ? formData.medications : (existingClient?.medications || []),
+        photos: (formData.photos && formData.photos.length > 0) ? formData.photos : (existingClient?.photos || []),
+        vaccineDocs: (formData.vaccineDocs && formData.vaccineDocs.length > 0) ? formData.vaccineDocs : (existingClient?.vaccineDocs || []),
+
+        // Datas de vacina: Usa getVal para evitar limpar acidentalmente
+        vaccines: getVal(formData.vaccines, existingClient?.vaccines),
+        lastAntiRabica: getVal(formData.lastAntiRabica, existingClient?.lastAntiRabica),
+        lastMultipla: getVal(formData.lastMultipla, existingClient?.lastMultipla),
+        dogBehaviorRating: formData.dogBehaviorRating || existingClient?.dogBehaviorRating || 3
       };
 
       let bookingSummary = null;
@@ -186,30 +195,62 @@ export default function DogHotelApp() {
         };
       }
 
+      let finalHistory = [];
       let clientToUpdate = existingClient;
+
       if (clientToUpdate) {
         clientId = clientToUpdate.id;
         const cRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientId);
-        let newHistory = clientToUpdate.pastBookings || [];
+        let history = clientToUpdate.pastBookings || [];
         if (bookingSummary) {
-          newHistory = newHistory.filter(h => !(h.checkIn === bookingSummary.checkIn && h.checkOut === bookingSummary.checkOut));
-          newHistory = [bookingSummary, ...newHistory];
+          history = history.filter(h => !(h.checkIn === bookingSummary.checkIn && h.checkOut === bookingSummary.checkOut));
+          history = [bookingSummary, ...history];
         }
-        await updateDoc(cRef, { ...clientData, pastBookings: newHistory });
+        finalHistory = history;
+        await updateDoc(cRef, { ...clientData, pastBookings: finalHistory });
       } else {
-        const docRef = await addDoc(clientsRef, { ...clientData, pastBookings: bookingSummary ? [bookingSummary] : [] });
+        finalHistory = bookingSummary ? [bookingSummary] : [];
+        const docRef = await addDoc(clientsRef, { ...clientData, pastBookings: finalHistory });
         clientId = docRef.id;
       }
+
+      // Atualização Otimista: Clientes (Merge Seguro)
+      setClients(prev => {
+        const idx = prev.findIndex(c => c.id === clientId);
+        if (idx >= 0) {
+          const newArr = [...prev];
+          newArr[idx] = { ...newArr[idx], ...clientData, pastBookings: finalHistory };
+          return newArr;
+        }
+        return [...prev, { ...clientData, id: clientId, pastBookings: finalHistory }];
+      });
 
       if (isBooking) {
         const bRef = collection(db, 'artifacts', appId, 'public', 'data', 'bookings');
         const bData = { ...formData, clientId: clientId };
-        // Limpeza final de undefined
         Object.keys(bData).forEach(key => bData[key] === undefined && delete bData[key]);
 
-        if (editingData && editingData.id) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'bookings', editingData.id), bData);
-        else await addDoc(bRef, bData);
+        let bookingId = editingData?.id;
+        if (bookingId) {
+          await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'bookings', bookingId), bData);
+        } else {
+          const newBookingRef = await addDoc(bRef, bData);
+          bookingId = newBookingRef.id;
+        }
+
+        // Atualização Otimista: Reservas (Merge Seguro)
+        setBookings(prev => {
+          const idx = prev.findIndex(b => b.id === bookingId);
+          const newBooking = { ...bData, id: bookingId };
+          if (idx >= 0) {
+            const newArr = [...prev];
+            newArr[idx] = { ...newArr[idx], ...newBooking };
+            return newArr;
+          }
+          return [...prev, newBooking];
+        });
       }
+
       setIsModalOpen(false); setEditingData(null);
     } catch (e) {
       console.error("Erro ao salvar:", e);
@@ -403,7 +444,7 @@ export default function DogHotelApp() {
               </div>
             )}
 
-            {activeTab === 'clients' && <ClientList onEdit={(c) => { setEditingData(c); setModalMode(c ? 'client_edit' : 'client_new'); setIsModalOpen(true); }} onDelete={(id) => { if (confirm("Deletar?")) deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'clients', id)) }} />}
+            {activeTab === 'clients' && <ClientList clients={clients} onEdit={(c) => { setEditingData(c); setModalMode(c ? 'client_edit' : 'client_new'); setIsModalOpen(true); }} onDelete={(id) => { if (confirm("Deletar?")) deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'clients', id)) }} />}
             {activeTab === 'financial' && <FinancialPanel bookings={bookings.map(b => ({ ...b, clientName: clients.find(c => c.id === b.clientId)?.dogName }))} />}
             {activeTab === 'breed' && <BreedIdentifier />}
           </div>
