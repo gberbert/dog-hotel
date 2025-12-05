@@ -467,6 +467,35 @@ export default function DogHotelApp() {
               }
             }}
             onCreateClient={() => { setEditingData(null); setModalMode('client_new'); }}
+            onOpenBooking={(historyItem) => {
+              // Tenta encontrar a reserva original
+              let found = bookings.find(b => b.id === historyItem.id);
+
+              // Se não achar pelo ID direto (pode ter sufixo ou ser antigo), tenta por heurística
+              if (!found) {
+                // Remove sufixo _hist se existir
+                const cleanId = historyItem.id.toString().replace('_hist', '');
+                found = bookings.find(b => b.id === cleanId);
+              }
+
+              if (!found) {
+                // Heurística final: Cliente + Datas
+                const clientId = modalMode === 'booking' ? editingData?.clientId : editingData?.id;
+                found = bookings.find(b =>
+                  b.clientId === clientId &&
+                  b.checkIn === historyItem.checkIn &&
+                  b.checkOut === historyItem.checkOut
+                );
+              }
+
+              if (found) {
+                setEditingData(found);
+                setModalMode('booking');
+                // setIsModalOpen(true); // Já está aberto, mas mudamos o conteúdo
+              } else {
+                alert("Reserva original não encontrada no banco de dados.");
+              }
+            }}
           />
         )}
       </div>

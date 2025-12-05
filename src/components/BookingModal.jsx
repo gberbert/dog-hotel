@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Plus, X, CheckCircle, Search, Camera, FilePlus, History, Trash2, Upload, Calendar as CalendarIcon, Syringe } from 'lucide-react';
+import { FileText, Plus, X, CheckCircle, Search, Camera, FilePlus, History, Trash2, Upload, Calendar as CalendarIcon, Syringe, Eye } from 'lucide-react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { updateDoc, doc } from 'firebase/firestore';
 import { db, storage, appId } from '../utils/firebase';
@@ -12,13 +12,13 @@ import PetForm from './booking/PetForm';
 import OwnerForm from './booking/OwnerForm';
 import BookingDetailsForm from './booking/BookingDetailsForm';
 
-export default function BookingModal({ data, mode, clientDatabase, onSave, onClose, races, onAddRace, onDeleteRace, onCreateClient }) {
+export default function BookingModal({ data, mode, clientDatabase, onSave, onClose, races, onAddRace, onDeleteRace, onCreateClient, onOpenBooking }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [showSearchResults, setShowSearchResults] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
-    
+
     const [isSaving, setIsSaving] = useState(false);
-    
+
     const [lightboxIndex, setLightboxIndex] = useState(-1);
     const [vaccineLightboxIndex, setVaccineLightboxIndex] = useState(-1);
 
@@ -74,7 +74,27 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
         }
     }, [formData.checkIn, formData.checkOut, formData.dailyRate, isBookingMode]);
 
-    const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => {
+            const newData = { ...prev, [name]: value };
+
+            // Validação de Datas (Hotel UX)
+            if (name === 'checkIn' && value) {
+                // Se mudou checkIn, garante que checkout seja >= checkin
+                if (newData.checkOut && newData.checkOut < value) {
+                    newData.checkOut = value;
+                }
+            }
+            if (name === 'checkOut' && value) {
+                // Se tentou mudar checkout para antes do checkin, força igual
+                if (newData.checkIn && value < newData.checkIn) {
+                    newData.checkOut = newData.checkIn;
+                }
+            }
+            return newData;
+        });
+    };
 
     // --- MANIPULADOR DE SUBMIT ---
     const handleSubmit = async (e) => {
@@ -190,10 +210,10 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
 
                 {/* FORMULÁRIO */}
                 <form onSubmit={handleSubmit} className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
-                    
-                    <PetForm 
-                        formData={formData} 
-                        handleChange={handleChange} 
+
+                    <PetForm
+                        formData={formData}
+                        handleChange={handleChange}
                         setFormData={setFormData}
                         showReadOnly={showReadOnly}
                         races={races}
@@ -203,16 +223,17 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
                     />
 
                     <div className="space-y-6">
-                        <OwnerForm 
-                            formData={formData} 
-                            handleChange={handleChange} 
+                        <OwnerForm
+                            formData={formData}
+                            handleChange={handleChange}
                             showReadOnly={showReadOnly}
                         />
 
                         {isBookingMode && (
-                            <BookingDetailsForm 
-                                formData={formData} 
-                                handleChange={handleChange} 
+                            <BookingDetailsForm
+                                formData={formData}
+                                handleChange={handleChange}
+                                minCheckOut={formData.checkIn}
                             />
                         )}
 
@@ -239,7 +260,7 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
                             {/* Carteira de Vacinação + Datas */}
                             <div className="bg-secondary-50 p-3 rounded-lg border border-secondary-200">
                                 <label className="text-sm font-bold flex items-center gap-2 mb-2"><FilePlus size={16} /> Carteira de Vacinação</label>
-                                
+
                                 {/* Uploads */}
                                 <div className="flex flex-wrap gap-2 mb-4">
                                     {formData.vaccineDocs.map((url, i) => (
@@ -263,22 +284,22 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
                                             <label className="text-[10px] font-bold text-primary-700 uppercase mb-1 block">Anti-Rábica</label>
-                                            <input 
-                                                type="date" 
-                                                name="lastAntiRabica" 
-                                                value={formData.lastAntiRabica} 
-                                                onChange={handleChange} 
-                                                className="w-full p-2 border border-secondary-300 rounded text-sm bg-white focus:ring-2 focus:ring-primary-500 outline-none" 
+                                            <input
+                                                type="date"
+                                                name="lastAntiRabica"
+                                                value={formData.lastAntiRabica}
+                                                onChange={handleChange}
+                                                className="w-full p-2 border border-secondary-300 rounded text-sm bg-white focus:ring-2 focus:ring-primary-500 outline-none"
                                             />
                                         </div>
                                         <div>
                                             <label className="text-[10px] font-bold text-primary-700 uppercase mb-1 block">Multi V8 / V10</label>
-                                            <input 
-                                                type="date" 
-                                                name="lastMultipla" 
-                                                value={formData.lastMultipla} 
-                                                onChange={handleChange} 
-                                                className="w-full p-2 border border-secondary-300 rounded text-sm bg-white focus:ring-2 focus:ring-primary-500 outline-none" 
+                                            <input
+                                                type="date"
+                                                name="lastMultipla"
+                                                value={formData.lastMultipla}
+                                                onChange={handleChange}
+                                                className="w-full p-2 border border-secondary-300 rounded text-sm bg-white focus:ring-2 focus:ring-primary-500 outline-none"
                                             />
                                         </div>
                                     </div>
@@ -299,7 +320,14 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
                                                 <span className="font-bold">{new Date(h.checkOut).toLocaleDateString('pt-BR')}</span>
                                                 <div className="text-secondary-500">Total: {formatCurrency(h.totalValue)}</div>
                                             </div>
-                                            <button type="button" onClick={() => handleDeleteHistoryItem(h.id)} className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100"><Trash2 size={14} /></button>
+                                            <div className="flex items-center">
+                                                {onOpenBooking && (
+                                                    <button type="button" onClick={() => onOpenBooking(h)} className="text-primary-500 hover:text-primary-700 mr-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition" title="Ver Hospedagem">
+                                                        <Eye size={16} />
+                                                    </button>
+                                                )}
+                                                <button type="button" onClick={() => handleDeleteHistoryItem(h.id)} className="text-red-400 hover:text-red-600 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition"><Trash2 size={14} /></button>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
