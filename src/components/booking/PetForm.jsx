@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Dog, Pill, Plus, X, Search, ChevronDown, Trash2, Lock } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Dog, Pill, Plus, X, Search, ChevronDown, Trash2, Lock, Edit2, Check, AlertCircle } from 'lucide-react';
 import { FaceRating } from '../shared/RatingComponents';
 
 export default function PetForm({
@@ -13,6 +13,8 @@ export default function PetForm({
     const [newRace, setNewRace] = useState('');
 
     const [newMedication, setNewMedication] = useState({ name: '', dosage: '', time: '' });
+    const [editingMedicationIndex, setEditingMedicationIndex] = useState(-1);
+    const medicationInputRef = useRef(null);
 
     const [isSocialDropdownOpen, setIsSocialDropdownOpen] = useState(false);
     const [socialSearchTerm, setSocialSearchTerm] = useState('');
@@ -57,9 +59,38 @@ export default function PetForm({
 
     const handleAddMedication = () => {
         if (newMedication.name && newMedication.dosage && newMedication.time) {
-            setFormData(prev => ({ ...prev, medications: [...prev.medications, newMedication] }));
+            setFormData(prev => {
+                const newList = [...(prev.medications || [])];
+                if (editingMedicationIndex >= 0) {
+                    newList[editingMedicationIndex] = newMedication;
+                } else {
+                    newList.push(newMedication);
+                }
+                return { ...prev, medications: newList };
+            });
             setNewMedication({ name: '', dosage: '', time: '' });
+            setEditingMedicationIndex(-1);
         }
+    };
+
+    const handleEditMedication = (index) => {
+        // Clona o objeto para garantir atualização de estado
+        const item = { ...formData.medications[index] };
+        setNewMedication(item);
+        setEditingMedicationIndex(index);
+
+        // Scroll para os inputs e foca
+        if (medicationInputRef.current) {
+            medicationInputRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Tenta focar no primeiro input
+            const firstInput = medicationInputRef.current.querySelector('input');
+            if (firstInput) firstInput.focus();
+        }
+    };
+
+    const handleCancelMedicationEdit = () => {
+        setNewMedication({ name: '', dosage: '', time: '' });
+        setEditingMedicationIndex(-1);
     };
 
     return (
@@ -180,8 +211,14 @@ export default function PetForm({
                     </div>
 
                     {/* MEDICAÇÕES */}
-                    <div className="bg-red-50 p-3 rounded border border-red-200">
-                        <h4 className="text-red-600 font-bold text-sm mb-2 flex gap-2"><Pill size={16} /> Medicações</h4>
+                    <div className={`p-3 rounded border transition-colors duration-300 ${editingMedicationIndex >= 0 ? 'bg-yellow-50 border-yellow-300 ring-2 ring-yellow-200' : 'bg-red-50 border-red-200'}`} ref={medicationInputRef}>
+                        <div className="flex justify-between items-center mb-2">
+                            <h4 className={`font-bold text-sm flex gap-2 ${editingMedicationIndex >= 0 ? 'text-yellow-700' : 'text-red-600'}`}>
+                                {editingMedicationIndex >= 0 ? <><Edit2 size={16} /> Editando Medicação</> : <><Pill size={16} /> Medicações</>}
+                            </h4>
+                            {editingMedicationIndex >= 0 && <span className="text-xs text-yellow-600 font-medium animate-pulse">Preencha e confirme abaixo</span>}
+                        </div>
+
                         <div className="grid grid-cols-6 gap-2 mb-2">
                             <input name="name" value={newMedication.name} onChange={handleMedicationChange} placeholder="Nome" className="col-span-2 p-1 border rounded text-xs" />
                             <input name="dosage" value={newMedication.dosage} onChange={handleMedicationChange} placeholder="Dose" className="col-span-2 p-1 border rounded text-xs" />
@@ -194,13 +231,26 @@ export default function PetForm({
                                     return <option key={t} value={t}>{t}</option>;
                                 })}
                             </select>
-                            <button type="button" onClick={handleAddMedication} className="col-span-1 bg-red-500 text-white rounded flex items-center justify-center"><Plus size={14} /></button>
+                            {editingMedicationIndex >= 0 ? (
+                                <div className="col-span-1 flex gap-1">
+                                    <button type="button" onClick={(e) => { e.preventDefault(); handleAddMedication(); }} className="flex-1 bg-green-500 text-white rounded flex items-center justify-center hover:bg-green-600 transition" title="Confirmar Edição"><Check size={14} /></button>
+                                    <button type="button" onClick={(e) => { e.preventDefault(); handleCancelMedicationEdit(); }} className="flex-1 bg-red-500 text-white rounded flex items-center justify-center hover:bg-red-600 transition" title="Cancelar"><X size={14} /></button>
+                                </div>
+                            ) : (
+                                <button type="button" onClick={(e) => { e.preventDefault(); handleAddMedication(); }} className="col-span-1 bg-red-500 text-white rounded flex items-center justify-center hover:bg-red-600 transition"><Plus size={14} /></button>
+                            )}
                         </div>
-                        <div className="space-y-1 max-h-32 overflow-y-auto">
+                        <div className="space-y-1 max-h-32 overflow-y-auto bg-white rounded border border-secondary-200 p-1">
                             {formData.medications.map((m, i) => (
-                                <div key={i} className="flex justify-between bg-white p-1 rounded border text-xs">
-                                    <span><b>{m.name}</b> ({m.dosage}) - {m.time}</span>
-                                    <button type="button" onClick={() => setFormData(prev => ({ ...prev, medications: prev.medications.filter((_, idx) => idx !== i) }))} className="text-red-500"><X size={12} /></button>
+                                <div key={i} className={`flex justify-between p-2 rounded border-b last:border-0 text-xs transition-colors ${editingMedicationIndex === i ? 'bg-yellow-50 text-yellow-800' : 'hover:bg-gray-50'}`}>
+                                    <span className="flex items-center gap-1">
+                                        {editingMedicationIndex === i && <Edit2 size={10} className="text-yellow-600" />}
+                                        <b>{m.name}</b> ({m.dosage}) - {m.time}
+                                    </span>
+                                    <div className="flex gap-2">
+                                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleEditMedication(i); }} className="text-blue-500 hover:text-blue-700 p-1 rounded hover:bg-blue-50 transition" title="Editar"><Edit2 size={14} /></button>
+                                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setFormData(prev => ({ ...prev, medications: prev.medications.filter((_, idx) => idx !== i) })) }} className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition" title="Excluir"><Trash2 size={14} /></button>
+                                    </div>
                                 </div>
                             ))}
                         </div>
