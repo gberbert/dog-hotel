@@ -4,7 +4,7 @@ import {
   Plus, ChevronLeft, ChevronRight, Search, Menu, X, PawPrint
 } from 'lucide-react';
 import {
-  collection, onSnapshot, addDoc, updateDoc, doc, deleteDoc, query, where, getDocs
+  collection, onSnapshot, addDoc, updateDoc, doc, deleteDoc, query, where, getDocs, getDoc
 } from 'firebase/firestore';
 import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 
@@ -20,6 +20,7 @@ import ClientList from './components/ClientList.jsx';
 import InstallButton from './components/InstallButton.jsx';
 import UpcomingBookings from './components/UpcomingBookings.jsx';
 import BreedIdentifier from './components/BreedIdentifier.jsx';
+import ConfirmationModal from './components/shared/ConfirmationModal.jsx';
 
 // Import da Versão
 import { appVersion } from './version.js';
@@ -51,6 +52,9 @@ export default function DogHotelApp() {
   const [modalMode, setModalMode] = useState('booking');
 
   const [deferredPrompt, setDeferredPrompt] = useState(null);
+
+  // Estado para confirmação de deleção
+  const [deleteConfirmation, setDeleteConfirmation] = useState({ isOpen: false, bookingId: null });
 
   // --- EFEITOS ---
   useEffect(() => {
@@ -191,7 +195,8 @@ export default function DogHotelApp() {
           checkIn: formData.checkIn, checkOut: formData.checkOut, observation: 'Hospedagem', rating: formData.rating,
           dogBehaviorRating: formData.dogBehaviorRating, ownerRating: formData.ownerRating,
           dailyRate: parseFloat(formData.dailyRate) || 0, totalValue: parseFloat(formData.totalValue) || 0,
-          damageValue: parseFloat(formData.damageValue) || 0, damageDescription: formData.damageDescription || ''
+          damageValue: parseFloat(formData.damageValue) || 0, damageDescription: formData.damageDescription || '',
+          source: formData.source || 'Particular'
         };
       }
 
@@ -258,9 +263,44 @@ export default function DogHotelApp() {
     }
   };
 
-  const handleDeleteBooking = async (id) => {
-    if (window.prompt("Digite 'DELETAR':") === 'DELETAR') {
-      await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'bookings', id));
+  const requestDeleteBooking = (id) => {
+    setDeleteConfirmation({ isOpen: true, bookingId: id });
+  };
+
+  const confirmDeleteBooking = async () => {
+    const id = deleteConfirmation.bookingId;
+    if (!id) return;
+
+    try {
+      // 1. Busca a reserva para identificar o cliente
+      const bookingRef = doc(db, 'artifacts', appId, 'public', 'data', 'bookings', id);
+      const bookingSnap = await getDoc(bookingRef);
+
+      if (bookingSnap.exists()) {
+        const bookingData = bookingSnap.data();
+        const clientId = bookingData.clientId;
+
+        if (clientId) {
+          const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientId);
+          const clientSnap = await getDoc(clientRef);
+
+          if (clientSnap.exists()) {
+            const clientData = clientSnap.data();
+            // Remove do histórico
+            const newHistory = (clientData.pastBookings || []).filter(h => {
+              if (h.id === id || h.id === id + '_hist') return false;
+              return !(h.checkIn === bookingData.checkIn && h.checkOut === bookingData.checkOut);
+            });
+            await updateDoc(clientRef, { pastBookings: newHistory });
+          }
+        }
+      }
+
+      // 2. Deleta a reserva
+      await deleteDoc(bookingRef);
+    } catch (e) {
+      console.error("Erro ao deletar:", e);
+      alert("Erro ao deletar: " + e.message);
     }
   };
 
@@ -412,7 +452,7 @@ export default function DogHotelApp() {
                 bookings={bookings}
                 clients={clients}
                 onEdit={(b) => { setEditingData(b); setModalMode('booking'); setIsModalOpen(true); }}
-                onDelete={(id) => handleDeleteBooking(id)}
+                onDelete={(id) => requestDeleteBooking(id)}
               />
             )}
 
@@ -436,7 +476,7 @@ export default function DogHotelApp() {
                   getBookingsForDate(currentDate).length === 0 ?
                     <div className="text-center py-12 bg-white rounded-2xl border-2 border-dashed border-secondary-200 text-secondary-400">Nenhuma hospedagem.</div> :
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                      {getBookingsForDate(currentDate).map(b => <BookingCard key={b.id} booking={b} onEdit={() => { setEditingData(b); setModalMode('booking'); setIsModalOpen(true); }} onDelete={() => handleDeleteBooking(b.id)} />)}
+                      {getBookingsForDate(currentDate).map(b => <BookingCard key={b.id} booking={b} onEdit={() => { setEditingData(b); setModalMode('booking'); setIsModalOpen(true); }} onDelete={() => requestDeleteBooking(b.id)} />)}
                     </div>
                 )}
                 {view === 'week' && renderWeekView()}
@@ -445,7 +485,7 @@ export default function DogHotelApp() {
             )}
 
             {activeTab === 'clients' && <ClientList clients={clients} onEdit={(c) => { setEditingData(c); setModalMode(c ? 'client_edit' : 'client_new'); setIsModalOpen(true); }} onDelete={(id) => { if (confirm("Deletar?")) deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'clients', id)) }} />}
-            {activeTab === 'financial' && <FinancialPanel bookings={bookings.map(b => ({ ...b, clientName: clients.find(c => c.id === b.clientId)?.dogName }))} />}
+            {activeTab === 'financial' && <FinancialPanel bookings={bookings.map(b => ({ ...b, clientName: clients.find(c => c.id === b.clientId)?.dogName }))} onDelete={requestDeleteBooking} />}
             {activeTab === 'breed' && <BreedIdentifier />}
           </div>
         </main>
@@ -454,6 +494,7 @@ export default function DogHotelApp() {
           <BookingModal
             data={editingData}
             mode={modalMode}
+            bookings={bookings}
             clientDatabase={clients}
             onSave={handleSave}
             onClose={() => setIsModalOpen(false)}
@@ -499,6 +540,15 @@ export default function DogHotelApp() {
           />
         )}
       </div>
+      <ConfirmationModal
+        isOpen={deleteConfirmation.isOpen}
+        onClose={() => setDeleteConfirmation({ ...deleteConfirmation, isOpen: false })}
+        onConfirm={confirmDeleteBooking}
+        title="Confirmar Exclusão"
+        message="Tem certeza que deseja excluir esta reserva? Esta ação também removerá o registro do histórico do cliente."
+        confirmText="Sim, Excluir"
+        isDanger={true}
+      />
     </DataProvider>
   );
 }

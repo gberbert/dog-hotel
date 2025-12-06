@@ -2,18 +2,18 @@ import React, { useState } from 'react';
 import { Dog, Pill, Plus, X, Search, ChevronDown, Trash2, Lock } from 'lucide-react';
 import { FaceRating } from '../shared/RatingComponents';
 
-export default function PetForm({ 
-  formData, handleChange, setFormData, showReadOnly, 
-  races, onAddRace, onDeleteRace, clientDatabase 
+export default function PetForm({
+    formData, handleChange, setFormData, showReadOnly,
+    races, onAddRace, onDeleteRace, clientDatabase
 }) {
     // Estados locais de UI (movidos do Modal Principal para cá)
     const [isRaceDropdownOpen, setIsRaceDropdownOpen] = useState(false);
     const [raceSearchTerm, setRaceSearchTerm] = useState('');
     const [raceToDelete, setRaceToDelete] = useState(null);
     const [newRace, setNewRace] = useState('');
-    
+
     const [newMedication, setNewMedication] = useState({ name: '', dosage: '', time: '' });
-    
+
     const [isSocialDropdownOpen, setIsSocialDropdownOpen] = useState(false);
     const [socialSearchTerm, setSocialSearchTerm] = useState('');
 
@@ -22,7 +22,7 @@ export default function PetForm({
         if (!birthYear) return 0;
         return Math.max(0, new Date().getFullYear() - parseInt(birthYear));
     };
-    
+
     const calculateHumanAge = (ageInYears, size) => {
         const age = ageInYears;
         const humanAgeMap = {
@@ -40,7 +40,7 @@ export default function PetForm({
 
     const realAgeYears = calculateAge(formData.birthYear);
     const humanAge = calculateHumanAge(realAgeYears, formData.dogSize);
-    
+
     // Filtros
     const availableDogs = clientDatabase ? clientDatabase.map(c => c.dogName).filter(n => n !== formData.dogName) : [];
 
@@ -48,13 +48,13 @@ export default function PetForm({
     const handleAddRaceClick = async () => {
         if (newRace && !races.map(r => r.name.toLowerCase()).includes(newRace.toLowerCase())) {
             await onAddRace(newRace);
-            setFormData(prev => ({ ...prev, dogBreed: newRace })); 
+            setFormData(prev => ({ ...prev, dogBreed: newRace }));
             setNewRace('');
         }
     };
 
     const handleMedicationChange = (e) => setNewMedication(prev => ({ ...prev, [e.target.name]: e.target.value }));
-    
+
     const handleAddMedication = () => {
         if (newMedication.name && newMedication.dosage && newMedication.time) {
             setFormData(prev => ({ ...prev, medications: [...prev.medications, newMedication] }));
@@ -69,7 +69,7 @@ export default function PetForm({
             {showReadOnly ? (
                 <div className="grid grid-cols-2 gap-4 bg-secondary-50 p-3 rounded-lg border border-secondary-200 relative">
                     <div className="absolute top-2 right-2 text-secondary-300"><Lock size={14} /></div>
-                    
+
                     <div className="mb-3">
                         <span className="text-xs font-bold text-secondary-400 uppercase block">Nome</span>
                         <div className="text-sm font-medium">{formData.dogName}</div>
@@ -119,7 +119,7 @@ export default function PetForm({
                             </select>
                         </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-3 gap-4">
                         <div>
                             <label className="text-sm font-medium">Nasc.</label>
@@ -187,7 +187,12 @@ export default function PetForm({
                             <input name="dosage" value={newMedication.dosage} onChange={handleMedicationChange} placeholder="Dose" className="col-span-2 p-1 border rounded text-xs" />
                             <select name="time" value={newMedication.time} onChange={handleMedicationChange} className="col-span-1 p-1 border rounded text-xs bg-white">
                                 <option value="">Hr</option>
-                                {Array.from({ length: 24 }, (_, i) => <option key={i} value={`${i.toString().padStart(2, '0')}:00`}>{`${i.toString().padStart(2, '0')}:00`}</option>)}
+                                {Array.from({ length: 48 }, (_, i) => {
+                                    const h = Math.floor(i / 2).toString().padStart(2, '0');
+                                    const m = i % 2 === 0 ? '00' : '30';
+                                    const t = `${h}:${m}`;
+                                    return <option key={t} value={t}>{t}</option>;
+                                })}
                             </select>
                             <button type="button" onClick={handleAddMedication} className="col-span-1 bg-red-500 text-white rounded flex items-center justify-center"><Plus size={14} /></button>
                         </div>
@@ -215,7 +220,7 @@ export default function PetForm({
                     <label className="text-sm font-bold text-primary-800 block mb-1">Avaliação Geral do Cão</label>
                     <FaceRating rating={formData.dogBehaviorRating} setRating={(r) => setFormData(prev => ({ ...prev, dogBehaviorRating: r }))} />
                 </div>
-                
+
                 {/* SOCIALIZAÇÃO */}
                 <div className="mb-3">
                     <label className="text-sm font-medium block mb-1">Socialização</label>

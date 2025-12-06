@@ -12,7 +12,7 @@ import PetForm from './booking/PetForm';
 import OwnerForm from './booking/OwnerForm';
 import BookingDetailsForm from './booking/BookingDetailsForm';
 
-export default function BookingModal({ data, mode, clientDatabase, onSave, onClose, races, onAddRace, onDeleteRace, onCreateClient, onOpenBooking }) {
+export default function BookingModal({ data, mode, bookings, clientDatabase, onSave, onClose, races, onAddRace, onDeleteRace, onCreateClient, onOpenBooking }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [showSearchResults, setShowSearchResults] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
@@ -312,24 +312,38 @@ export default function BookingModal({ data, mode, clientDatabase, onSave, onClo
                             <div className="mt-6 border-t pt-4">
                                 <h4 className="text-sm font-bold flex items-center gap-2 mb-3"><History size={16} /> Histórico de Estadias</h4>
                                 <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
-                                    {formData.pastBookings.map((h) => (
-                                        <div key={h.id} className="text-xs bg-secondary-50 p-2 rounded border flex justify-between items-center group">
-                                            <div>
-                                                <span className="font-bold">{new Date(h.checkIn).toLocaleDateString('pt-BR')}</span>
-                                                <span className="mx-1">à</span>
-                                                <span className="font-bold">{new Date(h.checkOut).toLocaleDateString('pt-BR')}</span>
-                                                <div className="text-secondary-500">Total: {formatCurrency(h.totalValue)}</div>
+                                    {formData.pastBookings.map((h) => {
+                                        // Tenta encontrar a reserva real para dados atualizados
+                                        const cleanId = h.id ? h.id.toString().replace('_hist', '') : '';
+                                        const realBooking = bookings ? bookings.find(b =>
+                                            b.id === cleanId ||
+                                            (b.checkIn === h.checkIn && b.checkOut === h.checkOut && b.clientId === formData.clientId)
+                                        ) : null;
+
+                                        // Usa dados reais se disponiveis, senão histórico
+                                        const sourceDisplay = realBooking?.source || h.source || 'Particular';
+                                        const valueDisplay = realBooking ? ((parseFloat(realBooking.totalValue) || 0) - (parseFloat(realBooking.damageValue) || 0)) : ((parseFloat(h.totalValue) || 0) - (parseFloat(h.damageValue) || 0));
+
+                                        return (
+                                            <div key={h.id} className="text-xs bg-secondary-50 p-2 rounded border flex justify-between items-center group">
+                                                <div>
+                                                    <span className="font-bold">{new Date(h.checkIn).toLocaleDateString('pt-BR')}</span>
+                                                    <span className="mx-1">à</span>
+                                                    <span className="font-bold">{new Date(h.checkOut).toLocaleDateString('pt-BR')}</span>
+                                                    <div className="text-secondary-500">Total: {formatCurrency(valueDisplay)}</div>
+                                                    <div className="text-[10px] font-bold uppercase text-primary-600 mt-0.5">{sourceDisplay}</div>
+                                                </div>
+                                                <div className="flex items-center">
+                                                    {onOpenBooking && (
+                                                        <button type="button" onClick={() => onOpenBooking(h)} className="text-primary-500 hover:text-primary-700 mr-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition" title="Ver Hospedagem">
+                                                            <Eye size={16} />
+                                                        </button>
+                                                    )}
+                                                    <button type="button" onClick={() => handleDeleteHistoryItem(h.id)} className="text-red-400 hover:text-red-600 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition"><Trash2 size={14} /></button>
+                                                </div>
                                             </div>
-                                            <div className="flex items-center">
-                                                {onOpenBooking && (
-                                                    <button type="button" onClick={() => onOpenBooking(h)} className="text-primary-500 hover:text-primary-700 mr-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition" title="Ver Hospedagem">
-                                                        <Eye size={16} />
-                                                    </button>
-                                                )}
-                                                <button type="button" onClick={() => handleDeleteHistoryItem(h.id)} className="text-red-400 hover:text-red-600 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition"><Trash2 size={14} /></button>
-                                            </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                                 <div className="mt-2 text-right text-xs font-bold text-primary-700">
                                     Total Gasto: {formatCurrency(totalPaidValue)}

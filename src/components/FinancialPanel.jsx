@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { PieChart, DollarSign, ChevronDown, ChevronUp, Calendar, TrendingUp } from 'lucide-react';
+import { PieChart, DollarSign, ChevronDown, ChevronUp, Calendar, TrendingUp, Edit, XCircle, Trash2 } from 'lucide-react';
 import { formatCurrency } from '../utils/calculations';
 
-export default function FinancialPanel({ bookings }) {
+export default function FinancialPanel({ bookings, onDelete }) {
+  const [isEditing, setIsEditing] = useState(false);
   const [view, setView] = useState('monthly');
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -47,8 +48,8 @@ export default function FinancialPanel({ bookings }) {
           <PieChart className="text-primary-600" /> Painel Financeiro
         </h2>
         <div className="flex bg-secondary-100 p-1 rounded-lg w-full md:w-auto h-10">
-          <button onClick={() => setView('monthly')} className={`flex-1 md:flex-none px-6 rounded-md text-sm font-medium transition flex items-center justify-center ${view === 'monthly' ? 'bg-white shadow text-primary-600' : 'text-secondary-600'}`}>Mensal</button>
-          <button onClick={() => setView('annual')} className={`flex-1 md:flex-none px-6 rounded-md text-sm font-medium transition flex items-center justify-center ${view === 'annual' ? 'bg-white shadow text-primary-600' : 'text-secondary-600'}`}>Anual</button>
+          <button onClick={() => { setView('monthly'); setIsEditing(false); }} className={`flex-1 md:flex-none px-6 rounded-md text-sm font-medium transition flex items-center justify-center ${view === 'monthly' ? 'bg-white shadow text-primary-600' : 'text-secondary-600'}`}>Mensal</button>
+          <button onClick={() => { setView('annual'); setIsEditing(false); }} className={`flex-1 md:flex-none px-6 rounded-md text-sm font-medium transition flex items-center justify-center ${view === 'annual' ? 'bg-white shadow text-primary-600' : 'text-secondary-600'}`}>Anual</button>
         </div>
       </div>
 
@@ -67,6 +68,14 @@ export default function FinancialPanel({ bookings }) {
               <select value={selectedMonth} onChange={(e) => setSelectedMonth(parseInt(e.target.value))} className="w-full p-2 border rounded-lg bg-white outline-none focus:ring-2 focus:ring-primary-500 text-sm">
                 {monthNames.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}
               </select>
+            </div>
+            <div className="flex-1 flex justify-end">
+              <button
+                onClick={() => setIsEditing(!isEditing)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition ${isEditing ? 'bg-red-100 text-red-600' : 'bg-secondary-100 text-secondary-600 hover:bg-secondary-200'}`}
+              >
+                {isEditing ? <><XCircle size={16} /> Sair da Edição</> : <><Edit size={16} /> Editar Registros</>}
+              </button>
             </div>
           </div>
 
@@ -93,6 +102,7 @@ export default function FinancialPanel({ bookings }) {
                     <th className="p-3 font-semibold text-secondary-700 text-right">Bruto</th>
                     <th className="p-3 font-semibold text-error text-right">Prej.</th>
                     <th className="p-3 font-semibold text-success text-right">Líquido</th>
+                    {isEditing && <th className="p-3 w-10"></th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -109,6 +119,13 @@ export default function FinancialPanel({ bookings }) {
                           <td className="p-3 text-right text-secondary-700">R$ {booking.totalValue}</td>
                           <td className="p-3 text-right text-error font-medium">{damage > 0 ? `- R$ ${damage}` : '-'}</td>
                           <td className="p-3 text-right font-bold text-success">{formatCurrency(realValue)}</td>
+                          {isEditing && (
+                            <td className="p-3 text-center">
+                              <button onClick={() => onDelete && onDelete(booking.id)} className="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded transition">
+                                <Trash2 size={16} />
+                              </button>
+                            </td>
+                          )}
                         </tr>
                       )
                     })
