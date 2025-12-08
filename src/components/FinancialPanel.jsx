@@ -198,54 +198,56 @@ export default function FinancialPanel({ bookings, onDelete }) {
 
           {/* Tabela Anual Otimizada para Mobile */}
           <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
-            <table className="w-full text-left table-fixed">
-              <thead className="bg-secondary-50 border-b text-xs md:text-sm uppercase tracking-wider">
-                <tr>
-                  <th className="w-[20%] p-3 pl-4 font-bold text-secondary-600">Mês</th>
-                  <th className="w-[15%] p-3 text-center font-bold text-secondary-600" title="Quantidade">Qtd.</th>
-                  <th className="w-[20%] p-3 text-right font-bold text-[#ff4057]">DogHero</th>
-                  <th className="w-[20%] p-3 text-right font-bold text-primary-600">Particular</th>
-                  <th className="w-[25%] p-3 pr-4 text-right font-bold text-secondary-600">Lucro</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y text-sm md:text-base">
-                {annualData.map(({ month, shortMonth, netTotal, dogHero, particular, count }) => (
-                  <tr key={month} className="hover:bg-secondary-50 transition">
-                    <td className="p-3 pl-4 font-medium text-secondary-800 truncate">
-                      <span className="md:hidden">{shortMonth}</span>
-                      <span className="hidden md:inline">{month}</span>
-                    </td>
-                    <td className="p-3 text-center">
-                      {count > 0 ? (
-                        <span className="inline-flex items-center justify-center bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-bold min-w-[24px]">
-                          {count}
-                        </span>
-                      ) : <span className="text-secondary-300">-</span>}
-                    </td>
-                    <td className="p-3 text-right text-[#ff4057] font-medium text-xs md:text-sm">
-                      {dogHero > 0 ? formatCurrency(dogHero) : '-'}
-                    </td>
-                    <td className="p-3 text-right text-primary-600 font-medium text-xs md:text-sm">
-                      {particular > 0 ? formatCurrency(particular) : '-'}
-                    </td>
-                    <td className={`p-3 pr-4 text-right font-bold truncate ${netTotal > 0 ? 'text-success' : 'text-secondary-400'}`}>
-                      {netTotal > 0 ? formatCurrency(netTotal) : 'R$ 0,00'}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left table-fixed min-w-[600px]">
+                <thead className="bg-secondary-50 border-b text-xs md:text-sm uppercase tracking-wider">
+                  <tr>
+                    <th className="w-[20%] p-3 pl-4 font-bold text-secondary-600">Mês</th>
+                    <th className="w-[15%] p-3 text-center font-bold text-secondary-600" title="Quantidade">Qtd.</th>
+                    <th className="w-[20%] p-3 text-right font-bold text-[#ff4057]">DogHero</th>
+                    <th className="w-[20%] p-3 text-right font-bold text-primary-600">Particular</th>
+                    <th className="w-[25%] p-3 pr-4 text-right font-bold text-secondary-600">Lucro</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y text-sm md:text-base">
+                  {annualData.map(({ month, shortMonth, netTotal, dogHero, particular, count }) => (
+                    <tr key={month} className="hover:bg-secondary-50 transition">
+                      <td className="p-3 pl-4 font-medium text-secondary-800 truncate">
+                        <span className="md:hidden">{shortMonth}</span>
+                        <span className="hidden md:inline">{month}</span>
+                      </td>
+                      <td className="p-3 text-center">
+                        {count > 0 ? (
+                          <span className="inline-flex items-center justify-center bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-bold min-w-[24px]">
+                            {count}
+                          </span>
+                        ) : <span className="text-secondary-300">-</span>}
+                      </td>
+                      <td className="p-3 text-right text-[#ff4057] font-medium text-xs md:text-sm">
+                        {dogHero > 0 ? formatCurrency(dogHero) : '-'}
+                      </td>
+                      <td className="p-3 text-right text-primary-600 font-medium text-xs md:text-sm">
+                        {particular > 0 ? formatCurrency(particular) : '-'}
+                      </td>
+                      <td className={`p-3 pr-4 text-right font-bold truncate ${netTotal > 0 ? 'text-success' : 'text-secondary-400'}`}>
+                        {netTotal > 0 ? formatCurrency(netTotal) : 'R$ 0,00'}
+                      </td>
+                    </tr>
+                  ))}
+
+                  {/* TOTALIZADOR */}
+                  <tr className="bg-secondary-100 border-t-2 border-secondary-300">
+                    <td className="p-3 pl-4 font-extrabold text-secondary-800 text-xs md:text-sm">TOTAL</td>
+                    <td className="p-3 text-center font-bold text-secondary-800 text-xs md:text-sm">{annualBookingsCount}</td>
+                    <td className="p-3 text-right font-bold text-[#ff4057] text-xs md:text-sm">{formatCurrency(annualDogHero)}</td>
+                    <td className="p-3 text-right font-bold text-primary-600 text-xs md:text-sm">{formatCurrency(annualParticular)}</td>
+                    <td className={`p-3 pr-4 text-right font-extrabold text-sm md:text-base ${annualNetTotal > 0 ? 'text-success' : 'text-secondary-500'}`}>
+                      {formatCurrency(annualNetTotal)}
                     </td>
                   </tr>
-                ))}
-
-                {/* TOTALIZADOR */}
-                <tr className="bg-secondary-100 border-t-2 border-secondary-300">
-                  <td className="p-3 pl-4 font-extrabold text-secondary-800 text-xs md:text-sm">TOTAL</td>
-                  <td className="p-3 text-center font-bold text-secondary-800 text-xs md:text-sm">{annualBookingsCount}</td>
-                  <td className="p-3 text-right font-bold text-[#ff4057] text-xs md:text-sm">{formatCurrency(annualDogHero)}</td>
-                  <td className="p-3 text-right font-bold text-primary-600 text-xs md:text-sm">{formatCurrency(annualParticular)}</td>
-                  <td className={`p-3 pr-4 text-right font-extrabold text-sm md:text-base ${annualNetTotal > 0 ? 'text-success' : 'text-secondary-500'}`}>
-                    {formatCurrency(annualNetTotal)}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}

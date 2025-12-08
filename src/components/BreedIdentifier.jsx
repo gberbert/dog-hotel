@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
     Camera, Upload, CheckCircle, Settings, RefreshCw,
-    AlertCircle, ChevronLeft, Image as ImageIcon, FileText
+    AlertCircle, ChevronLeft, Image as ImageIcon, Share2
 } from 'lucide-react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db, appId } from '../utils/firebase';
@@ -156,11 +156,11 @@ export default function BreedIdentifier() {
         setStep('camera');
     };
 
-    const generatePDFReport = async () => {
+    const handleShare = async () => {
         // 1. Load html2pdf library dynamically if not present
         if (!window.html2pdf) {
-            const loadingBtn = document.getElementById('btn-generate-pdf');
-            if (loadingBtn) loadingBtn.innerText = 'Carregando...';
+            const shareBtn = document.getElementById('btn-share-pdf');
+            if (shareBtn) shareBtn.innerText = 'Gerando...';
 
             try {
                 await new Promise((resolve, reject) => {
@@ -173,7 +173,7 @@ export default function BreedIdentifier() {
             } catch (err) {
                 console.error("Erro ao carregar biblioteca de PDF", err);
                 alert("Erro ao carregar gerador de PDF. Verifique sua conexão.");
-                if (loadingBtn) loadingBtn.innerText = 'Gerar PDF';
+                if (shareBtn) shareBtn.innerText = 'Compartilhar';
                 return;
             }
         }
@@ -214,16 +214,47 @@ export default function BreedIdentifier() {
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
-        // Generate and Open
+        // Generate and Share
         try {
-            const pdfBlob = await window.html2pdf().set(opt).from(element).output('bloburl');
-            window.open(pdfBlob, '_blank');
+            const shareBtn = document.getElementById('btn-share-pdf');
+            if (shareBtn) shareBtn.innerText = 'Gerando PDF...';
+
+            // Generate Blob directly
+            const pdfBlob = await window.html2pdf().set(opt).from(element).output('blob');
+
+            // Create File object
+            const file = new File([pdfBlob], opt.filename, { type: 'application/pdf' });
+
+            // Check if sharing is supported
+            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                if (shareBtn) shareBtn.innerText = 'Compartilhando...';
+                await navigator.share({
+                    files: [file],
+                    title: 'Resultado da Análise de Raça',
+                    text: 'Confira a análise de raça do meu cão que fiz no Dog Hotel App!',
+                });
+            } else {
+                // Fallback: Open/Download
+                const pdfUrl = URL.createObjectURL(pdfBlob);
+                window.open(pdfUrl, '_blank');
+            }
         } catch (err) {
-            console.error("Erro ao gerar PDF:", err);
-            alert("Erro ao gerar o arquivo PDF.");
+            console.error("Erro ao compartilhar PDF:", err);
+            // Don't alert if it's just a user cancellation of the share dialog
+            if (err.name !== 'AbortError') {
+                alert("Erro ao compartilhar o arquivo PDF. Tentando abrir...");
+                // Try one last time to just open it if possible
+                try {
+                    const pdfBlob = await window.html2pdf().set(opt).from(element).output('blob');
+                    const pdfUrl = URL.createObjectURL(pdfBlob);
+                    window.open(pdfUrl, '_blank');
+                } catch (e) {
+                    // ignore
+                }
+            }
         } finally {
-            const loadingBtn = document.getElementById('btn-generate-pdf');
-            if (loadingBtn) loadingBtn.innerText = 'PDF';
+            const shareBtn = document.getElementById('btn-share-pdf');
+            if (shareBtn) shareBtn.innerText = 'Compartilhar';
         }
     };
 
@@ -434,11 +465,11 @@ export default function BreedIdentifier() {
                     </h2>
                     <div className="flex items-center gap-2 no-print">
                         <button
-                            id="btn-generate-pdf"
-                            onClick={generatePDFReport}
+                            id="btn-share-pdf"
+                            onClick={handleShare}
                             className="text-xs bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-full transition flex items-center gap-1"
                         >
-                            <FileText size={14} /> PDF
+                            <Share2 size={14} /> Compartilhar
                         </button>
                         <button
                             onClick={handleNewAnalysis}
