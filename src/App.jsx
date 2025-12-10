@@ -38,7 +38,7 @@ export default function DogHotelApp() {
   const [activeTab, setActiveTab] = useState('home');
 
   const [userName, setUserName] = useState('Recepcionista');
-  const [view, setView] = useState('day');
+  const [view, setView] = useState('month');
   const [currentDate, setCurrentDate] = useState(new Date());
 
   // Estados locais
@@ -306,6 +306,7 @@ export default function DogHotelApp() {
 
   const handleMobileNav = (tab) => {
     setActiveTab(tab);
+    if (tab === 'agenda') setView('month');
     setIsMobileMenuOpen(false);
   };
 
@@ -341,12 +342,12 @@ export default function DogHotelApp() {
         <div className="grid grid-cols-7 gap-px bg-secondary-200 border border-secondary-200 rounded-lg overflow-hidden min-w-[800px]">
           {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map(d => <div key={d} className="bg-secondary-100 p-2 text-center font-bold text-secondary-600">{d}</div>)}
           {days.map((day, i) => (
-            !day ? <div key={i} className="bg-white h-32"></div> :
-              <div key={i} className={`bg-white h-32 p-1 flex flex-col hover:bg-secondary-50 ${day.getDate() === new Date().getDate() && day.getMonth() === new Date().getMonth() ? 'bg-primary-50' : ''}`}>
+            !day ? <div key={i} className="bg-white h-48"></div> :
+              <div key={i} onClick={() => { setView('day'); setCurrentDate(day); }} className={`bg-white h-48 p-1 flex flex-col hover:bg-secondary-50 cursor-pointer ${day.getDate() === new Date().getDate() && day.getMonth() === new Date().getMonth() ? 'bg-primary-50' : ''}`}>
                 <span className="text-sm font-medium self-end px-1">{day.getDate()}</span>
                 <div className="flex-1 overflow-y-auto space-y-1">
-                  {getBookingsForDate(day).slice(0, 3).map(b => <div key={b.id} onClick={() => { setEditingData(b); setModalMode('booking'); setIsModalOpen(true); }} className="text-xs truncate bg-primary-100 text-primary-800 px-1 rounded cursor-pointer">{b.dogName}</div>)}
-                  {getBookingsForDate(day).length > 3 && <div className="text-xs text-secondary-400 text-center">+{getBookingsForDate(day).length - 3}</div>}
+                  {getBookingsForDate(day).slice(0, 6).map(b => <div key={b.id} className="text-xs truncate bg-primary-100 text-primary-800 px-1 rounded">{b.dogName}</div>)}
+                  {getBookingsForDate(day).length > 6 && <div className="text-xs text-secondary-400 text-center">+{getBookingsForDate(day).length - 6}</div>}
                 </div>
               </div>
           ))}
@@ -376,7 +377,7 @@ export default function DogHotelApp() {
           <nav className="flex-1 py-6 space-y-2 px-3">
             <button onClick={() => setActiveTab('home')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${activeTab === 'home' ? 'bg-primary-700 shadow' : 'hover:bg-primary-700'}`}><Home size={20} /> Início</button>
             <button onClick={() => setActiveTab('financial')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${activeTab === 'financial' ? 'bg-primary-700 shadow' : 'hover:bg-primary-700'}`}><PieChart size={20} /> Financeiro</button>
-            <button onClick={() => setActiveTab('agenda')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${activeTab === 'agenda' ? 'bg-primary-700 shadow' : 'hover:bg-primary-700'}`}><Calendar size={20} /> Agenda</button>
+            <button onClick={() => { setActiveTab('agenda'); setView('month'); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${activeTab === 'agenda' ? 'bg-primary-700 shadow' : 'hover:bg-primary-700'}`}><Calendar size={20} /> Agenda</button>
             <button onClick={() => setActiveTab('clients')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${activeTab === 'clients' ? 'bg-primary-700 shadow' : 'hover:bg-primary-700'}`}><User size={20} /> Cadastros</button>
             <button onClick={() => setActiveTab('breed')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${activeTab === 'breed' ? 'bg-primary-700 shadow' : 'hover:bg-primary-700'}`}><PawPrint size={20} /> Minha Raça</button>
           </nav>
