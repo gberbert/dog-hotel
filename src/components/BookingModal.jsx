@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Plus, X, CheckCircle, Search, Camera, FilePlus, History, Trash2, Upload, Calendar as CalendarIcon, Syringe, Eye } from 'lucide-react';
+import { FileText, Plus, X, CheckCircle, Search, Camera, FilePlus, History, Trash2, Upload, Calendar as CalendarIcon, Syringe, Eye, Printer } from 'lucide-react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { updateDoc, doc } from 'firebase/firestore';
 import { db, storage, appId } from '../utils/firebase';
@@ -11,6 +11,7 @@ import ImageLightbox from './shared/ImageLightbox';
 import PetForm from './booking/PetForm';
 import OwnerForm from './booking/OwnerForm';
 import BookingDetailsForm from './booking/BookingDetailsForm';
+import PDFHeader from './shared/PDFHeader';
 
 export default function BookingModal({ data, mode, bookings, clientDatabase, onSave, onClose, races, onAddRace, onDeleteRace, onCreateClient, onOpenBooking }) {
     const [searchQuery, setSearchQuery] = useState('');
@@ -177,15 +178,25 @@ export default function BookingModal({ data, mode, bookings, clientDatabase, onS
             {vaccineLightboxIndex >= 0 && <ImageLightbox images={formData.vaccineDocs} currentIndex={vaccineLightboxIndex} setIndex={setVaccineLightboxIndex} onClose={() => setVaccineLightboxIndex(-1)} />}
 
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[95vh] overflow-y-auto flex flex-col">
-                <div className="bg-primary-800 px-6 py-4 flex justify-between items-center sticky top-0 z-10">
+                <div className="bg-primary-800 px-6 py-4 flex justify-between items-center sticky top-0 z-10 print:hidden">
                     <h2 className="text-xl font-bold text-white flex items-center gap-2">
                         <FileText /> {mode === 'client_new' ? 'Novo Cadastro' : (isBookingMode ? 'Hospedagem' : 'Editar Cliente')}
                     </h2>
-                    <button onClick={onClose} className="text-white hover:bg-primary-700 rounded-full p-1"><X size={24} /></button>
+                    <div className="flex items-center gap-2">
+                        <button type="button" onClick={() => window.print()} className="text-white hover:bg-primary-700 rounded-full p-2" title="Imprimir / Salvar PDF">
+                            <Printer size={24} />
+                        </button>
+                        <button onClick={onClose} className="text-white hover:bg-primary-700 rounded-full p-1"><X size={24} /></button>
+                    </div>
+                </div>
+
+                {/* CABEÇALHO APENAS PARA IMPRESSÃO */}
+                <div className="hidden print:block">
+                    <PDFHeader />
                 </div>
 
                 {isBookingMode && !data && (
-                    <div className="bg-secondary-50 px-6 py-3 border-b border-secondary-100 relative">
+                    <div className="bg-secondary-50 px-6 py-3 border-b border-secondary-100 relative print:hidden">
                         <label className="text-sm font-bold text-primary-800 flex items-center gap-2 mb-1">
                             <Search size={16} /> Buscar Cliente Cadastrado
                         </label>
@@ -352,7 +363,7 @@ export default function BookingModal({ data, mode, bookings, clientDatabase, onS
                         )}
                     </div>
 
-                    <div className="col-span-1 md:col-span-2 flex justify-end gap-3 pt-6 border-t mt-4">
+                    <div className="col-span-1 md:col-span-2 flex justify-end gap-3 pt-6 border-t mt-4 print:hidden">
                         <button type="button" onClick={onClose} className="px-6 py-2 rounded-lg border border-secondary-300 text-secondary-600 font-bold hover:bg-secondary-50">Cancelar</button>
                         <button type="submit" disabled={isSaving} className="px-8 py-2 rounded-lg bg-primary-600 text-white font-bold hover:bg-primary-700 shadow-lg flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed">
                             {isSaving ? 'Salvando...' : <><CheckCircle size={20} /> Salvar</>}

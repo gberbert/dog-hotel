@@ -6,6 +6,7 @@ import {
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db, appId } from '../utils/firebase';
 import { compressImage } from '../utils/fileHelpers';
+import PDFHeader from './shared/PDFHeader';
 
 const DEFAULT_PROMPT = "Atue como um especialista em cinologia. Identifique a raça do cão na imagem, descreva seu temperamento, nível de energia e cuidados. Responda em Português do Brasil com formatação rica.";
 
@@ -181,9 +182,40 @@ export default function BreedIdentifier() {
         // 2. Create content for PDF
         const element = document.createElement('div');
         element.innerHTML = `
-            <div style="font-family: sans-serif; padding: 30px; color: #1f2937; width: 100%; max-width: 800px; margin: 0 auto;">
-                <h1 style="text-align: center; color: #1e40af; border-bottom: 2px solid #e5e7eb; padding-bottom: 15px; margin-bottom: 25px; font-size: 24px;">Relatório de Raça</h1>
-                <div style="text-align: center; color: #6b7280; font-size: 12px; margin-bottom: 25px;">Gerado em: ${new Date().toLocaleDateString('pt-BR')} • Dog Hotel App</div>
+            <div style="font-family: sans-serif; color: #1f2937; width: 100%; max-width: 800px; margin: 0 auto; background: white;">
+                
+                <!-- CABEÇALHO PERSONALIZADO (REPLICA DO PDFHeader.jsx) -->
+                <div style="background-color: #1e293b; color: white; padding: 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid #0284c7; margin-bottom: 24px;">
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <div style="background: white; padding: 8px; border-radius: 9999px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                            <img src="/logo.png" style="width: 56px; height: 56px; border-radius: 9999px; object-fit: cover; display: block;" />
+                        </div>
+                        <div>
+                            <h1 style="font-size: 24px; font-weight: bold; line-height: 1; margin: 0; color: white;">Uma Casa Boa</h1>
+                            <p style="font-size: 12px; font-weight: bold; color: #e0f2fe; text-transform: uppercase; letter-spacing: 0.2em; margin-top: 4px; margin-bottom: 0;">Pra Cachorro</p>
+                        </div>
+                    </div>
+                    <div style="text-align: right; font-size: 14px; font-weight: 500; color: #f0f9ff;">
+                        <div style="margin-bottom: 6px; display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
+                            <!-- Instagram Icon SVG -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                            <span>@1casaboapracachorro</span>
+                        </div>
+                        <div style="margin-bottom: 6px; display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
+                             <!-- MessageCircle Icon SVG -->
+                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                             <span>(21) 99277 1596</span>
+                        </div>
+                        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
+                             <!-- MessageCircle Icon SVG -->
+                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                             <span>(21) 99511 8908</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="padding: 0 30px;">
+                    <div style="text-align: center; color: #6b7280; font-size: 12px; margin-bottom: 25px;">Relatório gerado em: ${new Date().toLocaleDateString('pt-BR')}</div>
                 
                 <div style="text-align: center; margin-bottom: 25px;">
                     ${selectedImage ? `<img src="${selectedImage}" style="max-width: 250px; max-height: 250px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); object-fit: cover;" />` : ''}
@@ -199,8 +231,9 @@ export default function BreedIdentifier() {
         }).join('')}
                 </div>
                 
-                <div style="margin-top: 40px; border-top: 1px solid #e5e7eb; padding-top: 20px; text-align: center; font-size: 10px; color: #9ca3af;">
+                <div style="margin-top: 40px; border-top: 1px solid #e5e7eb; padding-top: 20px; text-align: center; font-size: 10px; color: #9ca3af; padding-bottom: 30px;">
                     Relatório gerado por Inteligência Artificial (Gemini AI). As informações são estimativas e não substituem a avaliação de um profissional.
+                </div>
                 </div>
             </div>
         `;
@@ -459,7 +492,12 @@ export default function BreedIdentifier() {
     `}
             </style>
             <div id="breed-result-content">
-                <div className="bg-primary-600 p-4 flex items-center justify-between text-white print:bg-white print:text-black print:border-b print:border-black">
+                {/* CABEÇALHO DE IMPRESSÃO - Visível apenas na impressora */}
+                <div className="hidden print:block mb-6">
+                    <PDFHeader />
+                </div>
+
+                <div className="bg-primary-600 p-4 flex items-center justify-between text-white print:hidden">
                     <h2 className="font-bold text-lg flex items-center gap-2">
                         <CheckCircle size={20} /> Resultado da Análise
                     </h2>
@@ -469,7 +507,7 @@ export default function BreedIdentifier() {
                             onClick={handleShare}
                             className="text-xs bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-full transition flex items-center gap-1"
                         >
-                            <Share2 size={14} /> Compartilhar
+                            <Share2 size={14} /> Baixar PDF
                         </button>
                         <button
                             onClick={handleNewAnalysis}
