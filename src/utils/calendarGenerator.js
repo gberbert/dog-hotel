@@ -44,14 +44,21 @@ export const generateMedicationICS = (booking) => {
         icsContent.push(
             'BEGIN:VEVENT',
             `UID:med_${booking.id || Date.now()}_${index}_${Math.floor(Math.random() * 10000)}@doghotel`,
-            `SUMMARY:💊 ${dogName}: ${med.name}`,
+            `SUMMARY:🚨 ${dogName} - REMÉDIO: ${med.name}`,
             `DESCRIPTION:Dose: ${med.dosage}\\nHorário: ${med.time}`,
             `DTSTART:${dtStart}`,
             `RRULE:FREQ=DAILY;UNTIL=${dtUntil}`,
+            // Alerta 1: 15 minutos antes (Aviso prévio ideal para soneca)
+            'BEGIN:VALARM',
+            'TRIGGER:-PT15M',
+            'ACTION:DISPLAY',
+            'DESCRIPTION:⚠️ Preparar Remédio em 15min',
+            'END:VALARM',
+            // Alerta 2: Na hora exata (Prioridade)
             'BEGIN:VALARM',
             'TRIGGER:-PT0M',
             'ACTION:DISPLAY',
-            'DESCRIPTION:Hora do Remédio',
+            'DESCRIPTION:💊 HORA DO REMÉDIO AGORA!',
             'END:VALARM',
             'END:VEVENT'
         );
@@ -76,4 +83,9 @@ export const downloadICS = (booking) => {
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
+
+    // Instrução visual para garantir que o usuário configure o som
+    setTimeout(() => {
+        alert("📅 Arquivo Gerado!\n\n1. Abra o arquivo para adicionar ao Calendário.\n2. IMPORTANTE (iOS): Ajustes > Notificações > Calendário > ATIVE SONS e avisos persistentes para garantir que ouça!");
+    }, 500);
 };
