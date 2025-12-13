@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Plus, X, CheckCircle, Search, Camera, FilePlus, History, Trash2, Upload, Calendar as CalendarIcon, Syringe, Eye, Printer } from 'lucide-react';
+import { FileText, Plus, X, CheckCircle, Search, Camera, FilePlus, History, Trash2, Upload, Calendar as CalendarIcon, Syringe, Eye, Printer, RefreshCcw } from 'lucide-react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { updateDoc, doc } from 'firebase/firestore';
 import { db, storage, appId } from '../utils/firebase';
@@ -39,32 +39,61 @@ export default function BookingModal({ data, mode, bookings, clientDatabase, onS
         lastAntiRabica: '', lastMultipla: ''
     });
 
-    // Carga de dados inicial
+    // Carga de dados inicial (Com sincronização automática do cadastro)
     useEffect(() => {
+        // Se estiver em modo hospedagem, busca o cliente mais atual no banco de dados
+        // para garantir que os dados mostrados (Nome, Remédios, Dono) sejam os mais recentes
+        const currentClient = (isBookingMode && data?.clientId && clientDatabase)
+            ? clientDatabase.find(c => c.id === data.clientId)
+            : null;
+
+        // Fonte da verdade para dados do PET/CLIENTE:
+        // 1. CurrentClient (Cadastro Atualizado) - Prioridade Máxima
+        // 2. Data (Dados salvos na reserva) - Fallback
+        const sourceData = currentClient || data;
+
         setFormData(prev => ({
             ...prev,
             clientId: data?.clientId || (mode.startsWith('client') && data?.id ? data.id : '') || '',
-            dogName: data?.dogName || '', dogSize: data?.dogSize || 'Pequeno',
-            dogBreed: data?.dogBreed || 'Sem Raça Definida (SRD)', source: data?.source || 'Particular',
-            ownerName: data?.ownerName || '', whatsapp: data?.whatsapp || '',
-            ownerName2: data?.ownerName2 || '', whatsapp2: data?.whatsapp2 || '',
-            ownerEmail: data?.ownerEmail || '', ownerDoc: data?.ownerDoc || '',
-            address: data?.address || '', birthYear: data?.birthYear || '',
-            history: data?.history || '', ownerHistory: data?.ownerHistory || '',
-            ownerRating: data?.ownerRating || 3, restrictions: data?.restrictions || '',
-            socialization: data?.socialization || [], medications: data?.medications || [],
-            checkIn: data?.checkIn || '', checkOut: data?.checkOut || '',
-            rating: data?.rating || 5, dailyRate: data?.dailyRate || 80,
+
+            // DADOS DO CADASTRO (Sempre puxar o mais recente se existir vínculo)
+            dogName: sourceData?.dogName || '',
+            dogSize: sourceData?.dogSize || 'Pequeno',
+            dogBreed: sourceData?.dogBreed || 'Sem Raça Definida (SRD)',
+            source: sourceData?.source || 'Particular',
+            ownerName: sourceData?.ownerName || '',
+            whatsapp: sourceData?.whatsapp || '',
+            ownerName2: sourceData?.ownerName2 || '',
+            whatsapp2: sourceData?.whatsapp2 || '',
+            ownerEmail: sourceData?.ownerEmail || '',
+            ownerDoc: sourceData?.ownerDoc || '',
+            address: sourceData?.address || '',
+            birthYear: sourceData?.birthYear || '',
+            history: sourceData?.history || '',
+            ownerHistory: sourceData?.ownerHistory || '',
+            ownerRating: sourceData?.ownerRating || 3,
+            restrictions: sourceData?.restrictions || '',
+            socialization: sourceData?.socialization || [],
+            medications: sourceData?.medications || [],
+            lastAntiRabica: sourceData?.lastAntiRabica || '',
+            lastMultipla: sourceData?.lastMultipla || '',
+            vaccineDocs: sourceData?.vaccineDocs || [],
+            // Fotos: Se a reserva não tiver fotos específicas, usa as do perfil
+            photos: (data?.photos && data.photos.length > 0) ? data.photos : (sourceData?.photos || []),
+
+            // DADOS ESPECÍFICOS DA HOSPEDAGEM (Sempre usar do 'data')
+            checkIn: data?.checkIn || '',
+            checkOut: data?.checkOut || '',
+            rating: data?.rating || 5,
+            dailyRate: data?.dailyRate || 80,
             dogBehaviorRating: data?.dogBehaviorRating || 3,
             totalValue: data?.totalValue || 0,
-            damageValue: data?.damageValue || '', damageDescription: data?.damageDescription || '',
-            photos: data?.photos || [], vaccineDocs: data?.vaccineDocs || [],
-            pastBookings: data?.pastBookings || [],
-            // Carrega datas salvas ou vazio
-            lastAntiRabica: data?.lastAntiRabica || '',
-            lastMultipla: data?.lastMultipla || ''
+            damageValue: data?.damageValue || '',
+            damageDescription: data?.damageDescription || '',
+
+            pastBookings: data?.pastBookings || []
         }));
-    }, [data, mode]);
+    }, [data, mode, clientDatabase]);
 
     // Cálculo automático do total
     useEffect(() => {
@@ -184,6 +213,47 @@ export default function BookingModal({ data, mode, bookings, clientDatabase, onS
                         <FileText /> {mode === 'client_new' ? 'Novo Cadastro' : (isBookingMode ? 'Hospedagem' : 'Editar Cliente')}
                     </h2>
                     <div className="flex items-center gap-2">
+                        {isBookingMode && formData.clientId && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (!clientDatabase) return;
+                                    const client = clientDatabase.find(c => c.id === formData.clientId);
+                                    if (!client) return alert("Cadastro original não encontrado.");
+
+                                    if (window.confirm("Atualizar dados da hospedagem com as informações mais recentes do Cadastro? (Isso atualizará nome, raça, medicamentos, dono, etc)")) {
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            dogName: client.dogName,
+                                            dogSize: client.dogSize || 'Pequeno',
+                                            dogBreed: client.dogBreed || 'SRD',
+                                            source: client.source || 'Particular',
+                                            ownerName: client.ownerName,
+                                            whatsapp: client.whatsapp,
+                                            ownerName2: client.ownerName2 || '',
+                                            whatsapp2: client.whatsapp2 || '',
+                                            ownerEmail: client.ownerEmail || '',
+                                            ownerDoc: client.ownerDoc,
+                                            address: client.address,
+                                            birthYear: client.birthYear || '',
+                                            history: client.history,
+                                            ownerHistory: client.ownerHistory,
+                                            restrictions: client.restrictions,
+                                            medications: client.medications || [],
+                                            socialization: client.socialization || [],
+                                            // Preservar campos específicos da reserva
+                                            photos: [...prev.photos],
+                                            vaccineDocs: [...prev.vaccineDocs]
+                                        }));
+                                        alert("Dados Sincronizados!");
+                                    }
+                                }}
+                                className="text-white hover:bg-primary-700 rounded-full p-2"
+                                title="Sincronizar com Cadastro (Atualizar Dados)"
+                            >
+                                <RefreshCcw size={20} />
+                            </button>
+                        )}
                         <button type="button" onClick={() => window.print()} className="text-white hover:bg-primary-700 rounded-full p-2" title="Imprimir / Salvar PDF">
                             <Printer size={24} />
                         </button>
