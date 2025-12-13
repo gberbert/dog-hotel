@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import {
-  Clock, User, MessageCircle, Trash2, Edit, AlertTriangle, Dog, Syringe, MapPin
+  Clock, User, MessageCircle, Trash2, Edit, AlertTriangle, Dog, Syringe, MapPin, BellRing
 } from 'lucide-react';
 import { formatCurrency, getBookingStatus } from '../utils/calculations.js';
 import { FaceRating } from './shared/RatingComponents.jsx';
 import ImageLightbox from './shared/ImageLightbox.jsx';
+import { downloadICS } from '../utils/calendarGenerator.js';
 
 export default function BookingCard({ booking, onEdit, onDelete }) {
   const [lightboxIndex, setLightboxIndex] = useState(-1);
@@ -98,18 +99,18 @@ export default function BookingCard({ booking, onEdit, onDelete }) {
 
           {/* INFO DE VACINAS */}
           <div className="bg-blue-50/50 rounded-lg p-2 mb-3 border border-blue-100 text-[10px] grid grid-cols-2 gap-2">
-             <div className="flex flex-col">
-                <span className="text-secondary-400 font-bold flex items-center gap-1"><Syringe size={10}/> ANTI-RÁBICA</span>
-                <span className={`font-medium ${booking.lastAntiRabica ? 'text-secondary-700' : 'text-red-400'}`}>
-                   {booking.lastAntiRabica ? formatDateSimple(booking.lastAntiRabica) : 'Pendente'}
-                </span>
-             </div>
-             <div className="flex flex-col border-l border-blue-100 pl-2">
-                <span className="text-secondary-400 font-bold flex items-center gap-1"><Syringe size={10}/> V8 / V10</span>
-                <span className={`font-medium ${booking.lastMultipla ? 'text-secondary-700' : 'text-red-400'}`}>
-                   {booking.lastMultipla ? formatDateSimple(booking.lastMultipla) : 'Pendente'}
-                </span>
-             </div>
+            <div className="flex flex-col">
+              <span className="text-secondary-400 font-bold flex items-center gap-1"><Syringe size={10} /> ANTI-RÁBICA</span>
+              <span className={`font-medium ${booking.lastAntiRabica ? 'text-secondary-700' : 'text-red-400'}`}>
+                {booking.lastAntiRabica ? formatDateSimple(booking.lastAntiRabica) : 'Pendente'}
+              </span>
+            </div>
+            <div className="flex flex-col border-l border-blue-100 pl-2">
+              <span className="text-secondary-400 font-bold flex items-center gap-1"><Syringe size={10} /> V8 / V10</span>
+              <span className={`font-medium ${booking.lastMultipla ? 'text-secondary-700' : 'text-red-400'}`}>
+                {booking.lastMultipla ? formatDateSimple(booking.lastMultipla) : 'Pendente'}
+              </span>
+            </div>
           </div>
 
           {/* AVALIAÇÃO E PREJUÍZO */}
@@ -131,6 +132,15 @@ export default function BookingCard({ booking, onEdit, onDelete }) {
               <span className="text-xl font-bold text-primary-600 truncate block">{formatCurrency(totalNetValue)}</span>
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
+              {booking.medications && booking.medications.length > 0 && (
+                <button
+                  onClick={() => downloadICS(booking)}
+                  className="p-1.5 text-orange-500 hover:bg-orange-50 rounded-lg transition"
+                  title="Baixar Alarmes de Remédios"
+                >
+                  <BellRing size={18} />
+                </button>
+              )}
               {waLink && (
                 <a href={waLink} target="_blank" rel="noopener noreferrer" className="p-1.5 text-success hover:bg-green-50 rounded-lg transition" title="Whatsapp">
                   <MessageCircle size={18} />

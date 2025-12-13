@@ -11,15 +11,47 @@ export default function FinancialPanel({ bookings, onDelete }) {
   const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
   // Abreviação para mobile
   const shortMonthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-  const years = [2023, 2024, 2025, 2026];
+  const years = [2023, 2024, 2025, 2026, 2027, 2028, 2029];
 
+  // Helpers internos para filtrar os bookings recebidos via props
   // Helpers internos para filtrar os bookings recebidos via props
   const getBookingsByMonth = (month, year) => {
     return bookings.filter(b => {
       if (!b.checkIn) return false;
-      const d = new Date(b.checkIn);
-      return d.getMonth() === month && d.getFullYear() === year;
-    }).sort((a, b) => new Date(a.checkIn) - new Date(b.checkIn));
+
+      let dateY, dateM;
+
+      // Se for string, tenta parsing manual para evitar problemas de Timezone
+      if (typeof b.checkIn === 'string') {
+        // Remove timestamp extra se houver, foca na data
+        const cleanDate = b.checkIn.split('T')[0].trim();
+        const parts = cleanDate.split(/[-/]/); // Aceita hífen ou barra
+
+        if (parts.length >= 3) {
+          // Caso 1: ISO (YYYY-MM-DD)
+          if (parts[0].length === 4) {
+            dateY = parseInt(parts[0]);
+            dateM = parseInt(parts[1]) - 1;
+          }
+          // Caso 2: BR (DD/MM/YYYY)
+          else if (parts[2].length === 4) {
+            dateY = parseInt(parts[2]);
+            dateM = parseInt(parts[1]) - 1;
+          }
+        }
+      }
+
+      // Fallback para objeto Date padrão se o parsing manual falhar
+      if (dateY === undefined || isNaN(dateY)) {
+        const d = new Date(b.checkIn);
+        if (!isNaN(d.getTime())) {
+          dateY = d.getFullYear();
+          dateM = d.getMonth();
+        }
+      }
+
+      return dateM === month && dateY === year;
+    }).sort((a, b) => (a.checkIn || '').localeCompare(b.checkIn || ''));
   };
 
   const calculateMonthlyNetTotal = (month, year) => {
@@ -194,6 +226,18 @@ export default function FinancialPanel({ bookings, onDelete }) {
             <select value={selectedYear} onChange={(e) => setSelectedYear(parseInt(e.target.value))} className="p-2 pr-8 border rounded-lg bg-white outline-none focus:ring-2 focus:ring-primary-500 text-sm font-bold">
               {years.map(y => <option key={y} value={y}>{y}</option>)}
             </select>
+          </div>
+
+          {/* Card de Lucro Anual */}
+          <div className="bg-gradient-to-r from-success to-green-400 rounded-2xl p-6 text-white shadow-lg">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-green-100 text-xs font-medium uppercase tracking-wider">Lucro Líquido (Real)</p>
+                <p className="text-white/80 text-xs mb-1">Acumulado {selectedYear}</p>
+                <h3 className="text-3xl md:text-4xl font-bold tracking-tight">{formatCurrency(annualNetTotal)}</h3>
+              </div>
+              <div className="bg-white bg-opacity-20 p-3 rounded-full"><DollarSign size={28} className="text-white" /></div>
+            </div>
           </div>
 
           {/* Tabela Anual Otimizada para Mobile */}

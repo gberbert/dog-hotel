@@ -71,7 +71,8 @@ export default function BookingModal({ data, mode, bookings, clientDatabase, onS
         if (isBookingMode && formData.checkIn && formData.checkOut && formData.dailyRate) {
             const days = calculateTotalDays(formData.checkIn, formData.checkOut);
             const dailyRateFloat = parseFloat(formData.dailyRate) || 0;
-            setFormData(prev => ({ ...prev, totalValue: days * dailyRateFloat }));
+            const total = days * dailyRateFloat;
+            setFormData(prev => ({ ...prev, totalValue: Number(total.toFixed(2)) }));
         }
     }, [formData.checkIn, formData.checkOut, formData.dailyRate, isBookingMode]);
 

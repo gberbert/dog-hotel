@@ -60,7 +60,7 @@ export default function BookingDetailsForm({ formData, handleChange, minCheckOut
                 </div>
                 <div>
                     <label className="text-sm font-bold text-success-700">Total (R$)</label>
-                    <input type="number" name="totalValue" value={formData.totalValue} readOnly className="w-full p-2 border rounded bg-success-50 font-bold text-success-800" />
+                    <input type="text" name="totalValue" value={formData.totalValue ? parseFloat(formData.totalValue).toFixed(2) : '0.00'} readOnly className="w-full p-2 border rounded bg-success-50 font-bold text-success-800" />
                 </div>
             </div>
         </div>

@@ -81,12 +81,25 @@ export default function DogHotelApp() {
   }, []);
 
   useEffect(() => {
-    if (!user) return;
-    const unsubClients = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'clients'), (s) => setClients(s.docs.map(d => ({ id: d.id, ...d.data() }))));
-    const unsubBookings = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'bookings'), (s) => setBookings(s.docs.map(d => ({ id: d.id, ...d.data() }))));
-    const unsubRaces = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'races'), (s) => setRaces(s.docs.map(d => ({ id: d.id, ...d.data() }))));
-    return () => { unsubClients(); unsubBookings(); unsubRaces(); };
+    if (user) {
+      const unsubClients = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'clients'), (s) => setClients(s.docs.map(d => ({ id: d.id, ...d.data() }))));
+      const unsubBookings = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'bookings'), (s) => setBookings(s.docs.map(d => ({ id: d.id, ...d.data() }))));
+      const unsubRaces = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'races'), (s) => setRaces(s.docs.map(d => ({ id: d.id, ...d.data() }))));
+      return () => { unsubClients(); unsubBookings(); unsubRaces(); };
+    }
   }, [user]);
+
+  // Scroll para o dia atual na visualização mensal
+  useEffect(() => {
+    if (activeTab === 'agenda' && view === 'month') {
+      setTimeout(() => {
+        const el = document.getElementById('today-cell');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+        }
+      }, 500); // Delay para garantir renderização
+    }
+  }, [activeTab, view, currentDate]);
 
   // --- HELPERS ---
   const startOfWeek = (d) => {
@@ -341,16 +354,27 @@ export default function DogHotelApp() {
       <div className="w-full overflow-x-auto pb-4">
         <div className="grid grid-cols-7 gap-px bg-secondary-200 border border-secondary-200 rounded-lg overflow-hidden min-w-[800px]">
           {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map(d => <div key={d} className="bg-secondary-100 p-2 text-center font-bold text-secondary-600">{d}</div>)}
-          {days.map((day, i) => (
-            !day ? <div key={i} className="bg-white h-48"></div> :
-              <div key={i} onClick={() => { setView('day'); setCurrentDate(day); }} className={`bg-white h-48 p-1 flex flex-col hover:bg-secondary-50 cursor-pointer ${day.getDate() === new Date().getDate() && day.getMonth() === new Date().getMonth() ? 'bg-primary-50' : ''}`}>
-                <span className="text-sm font-medium self-end px-1">{day.getDate()}</span>
-                <div className="flex-1 overflow-y-auto space-y-1">
-                  {getBookingsForDate(day).slice(0, 6).map(b => <div key={b.id} className="text-xs truncate bg-primary-100 text-primary-800 px-1 rounded">{b.dogName}</div>)}
+          {days.map((day, i) => {
+            if (!day) return <div key={i} className="bg-white h-48"></div>;
+            const isToday = day.getDate() === new Date().getDate() && day.getMonth() === new Date().getMonth() && day.getFullYear() === new Date().getFullYear();
+            return (
+              <div
+                key={i}
+                id={isToday ? 'today-cell' : undefined}
+                onClick={() => { setView('day'); setCurrentDate(day); }}
+                className={`bg-white h-48 p-1 flex flex-col hover:bg-secondary-50 cursor-pointer transition-colors duration-300 ${isToday ? 'bg-yellow-50 border-2 border-yellow-400 shadow-inner' : ''}`}
+              >
+                <div className="flex justify-between items-center px-1">
+                  <span className={`text-sm font-medium ${isToday ? 'text-yellow-700 font-bold' : ''}`}>{day.getDate()}</span>
+                  {isToday && <span className="text-[10px] bg-yellow-400 text-yellow-900 px-1 rounded font-bold uppercase">Hoje</span>}
+                </div>
+                <div className="flex-1 overflow-y-auto space-y-1 mt-1">
+                  {getBookingsForDate(day).slice(0, 6).map(b => <div key={b.id} className="text-xs truncate bg-primary-100 text-primary-800 px-1 rounded border border-primary-200">{b.dogName}</div>)}
                   {getBookingsForDate(day).length > 6 && <div className="text-xs text-secondary-400 text-center">+{getBookingsForDate(day).length - 6}</div>}
                 </div>
               </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     );
