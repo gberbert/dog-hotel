@@ -1,0 +1,2584 @@
+ESTRUTURA DE ARQUIVOS E CÓDIGO FONTE DO PROJETO:
+
+--- LISTA DE ARQUIVOS ---
+\eslint.config.js
+\index.html
+\package.json
+\postcss.config.js
+\public\manifest.json
+\public\sw.js
+\README.md
+\src\App.css
+\src\App.jsx
+\src\components\AppIcon.jsx
+\src\components\BookingCard.jsx
+\src\components\BookingModal.jsx
+\src\components\ClientList.jsx
+\src\components\ErrorBoundary.jsx
+\src\components\FinancialPanel.jsx
+\src\components\InstallButton.jsx
+\src\components\LoginScreen.jsx
+\src\components\shared\ImageLightbox.jsx
+\src\components\shared\RatingComponents.jsx
+\src\components\SplashScreen.jsx
+\src\index.css
+\src\main.jsx
+\src\utils\calculations.js
+\src\utils\fileHelpers.js
+\src\utils\firebase.js
+\tailwind.config.js
+\vite.config.js
+
+
+
+
+==================================================================
+ARQUIVO: \eslint.config.js
+==================================================================
+
+import js from '@eslint/js'
+import globals from 'globals'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+import { defineConfig, globalIgnores } from 'eslint/config'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{js,jsx}'],
+    extends: [
+      js.configs.recommended,
+      reactHooks.configs.flat.recommended,
+      reactRefresh.configs.vite,
+    ],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: globals.browser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        ecmaFeatures: { jsx: true },
+        sourceType: 'module',
+      },
+    },
+    rules: {
+      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+    },
+  },
+])
+
+
+==================================================================
+ARQUIVO: \index.html
+==================================================================
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Uma Casa Boa Pra Cachorro</title>
+    
+
+    <link rel="manifest" href="/manifest.json">
+
+    <meta name="theme-color" content="#000099">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <meta name="apple-mobile-web-app-title" content="Casa Boa">
+    
+    <link rel="apple-touch-icon" href="/logo.png">
+
+    </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+	<script>
+	  if ('serviceWorker' in navigator) {
+		window.addEventListener('load', () => {
+		  navigator.serviceWorker.register('/sw.js');
+		});
+	  }
+	</script>
+  </body>
+</html>
+
+==================================================================
+ARQUIVO: \package.json
+==================================================================
+
+{
+  "name": "dog-hotel",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "firebase": "^12.6.0",
+    "lucide-react": "^0.554.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@tailwindcss/postcss": "^4.1.17",
+    "@types/react": "^19.2.5",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "autoprefixer": "^10.4.22",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17",
+    "vite": "npm:rolldown-vite@7.2.5"
+  },
+  "overrides": {
+    "vite": "npm:rolldown-vite@7.2.5"
+  }
+}
+
+
+==================================================================
+ARQUIVO: \postcss.config.js
+==================================================================
+
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}
+
+==================================================================
+ARQUIVO: \public\manifest.json
+==================================================================
+
+{
+  "name": "Uma Casa Boa Pra Cachorro",
+  "short_name": "Casa Boa",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000099",
+  "theme_color": "#000099",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
+
+==================================================================
+ARQUIVO: \public\sw.js
+==================================================================
+
+// public/sw.js
+self.addEventListener('install', (e) => {
+  console.log('[Service Worker] Install');
+});
+
+self.addEventListener('fetch', (e) => {
+  // Básico para PWA funcionar
+});
+
+==================================================================
+ARQUIVO: \README.md
+==================================================================
+
+# React + Vite
+
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+
+Currently, two official plugins are available:
+
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+
+## React Compiler
+
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+
+## Expanding the ESLint configuration
+
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+
+==================================================================
+ARQUIVO: \src\App.css
+==================================================================
+
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+
+==================================================================
+ARQUIVO: \src\App.jsx
+==================================================================
+
+import React, { useState, useEffect } from 'react';
+import {
+  Calendar, User, PieChart, LogOut,
+  Plus, ChevronLeft, ChevronRight, Search, Menu, X
+} from 'lucide-react';
+import {
+  collection, onSnapshot, addDoc, updateDoc, doc, deleteDoc, query, where, getDocs
+} from 'firebase/firestore';
+import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+
+// Imports Modulares (A estrutura correta)
+import { db, auth, appId } from './utils/firebase';
+import { formatDateBR } from './utils/calculations';
+import SplashScreen from './components/SplashScreen';
+import LoginScreen from './components/LoginScreen';
+import BookingCard from './components/BookingCard';
+import BookingModal from './components/BookingModal';
+import FinancialPanel from './components/FinancialPanel';
+import ClientList from './components/ClientList';
+import InstallButton from './components/InstallButton';
+
+export default function DogHotelApp() {
+  // --- ESTADOS ---
+  const [showSplash, setShowSplash] = useState(true);
+  const [user, setUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [activeTab, setActiveTab] = useState('financial');
+  const [userName, setUserName] = useState('Recepcionista');
+  const [view, setView] = useState('day');
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [bookings, setBookings] = useState([]);
+  const [clients, setClients] = useState([]);
+  const [races, setRaces] = useState([]);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingData, setEditingData] = useState(null);
+  const [modalMode, setModalMode] = useState('booking');
+
+  // --- ESTADO DO PWA ---
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+
+  // --- CAPTURA EVENTO DE INSTALAÇÃO ---
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  // --- AUTH & DATA ---
+  useEffect(() => {
+    const initAuth = async () => { try { await signInAnonymously(auth); } catch (e) { console.error(e); } };
+    initAuth();
+    return onAuthStateChanged(auth, async (u) => {
+      setUser(u);
+      if (u) {
+        setIsAuthenticated(true);
+        const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'logins'), where("email", "==", "lyoni.berbert@gmail.com"));
+        const snap = await getDocs(q);
+        if (!snap.empty && snap.docs[0].data().name) setUserName(snap.docs[0].data().name);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    const unsubClients = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'clients'), (s) => setClients(s.docs.map(d => ({ id: d.id, ...d.data() }))));
+    const unsubBookings = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'bookings'), (s) => setBookings(s.docs.map(d => ({ id: d.id, ...d.data() }))));
+    const unsubRaces = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'races'), (s) => setRaces(s.docs.map(d => ({ id: d.id, ...d.data() }))));
+    return () => { unsubClients(); unsubBookings(); unsubRaces(); };
+  }, [user]);
+
+  // --- HELPERS ---
+  const startOfWeek = (d) => { const date = new Date(d); const day = date.getDay(); const diff = date.getDate() - day; return new Date(date.setDate(diff)); };
+  const getDaysInMonth = (d) => new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  const navigateDate = (dir) => {
+    const newDate = new Date(currentDate);
+    if (view === 'day') newDate.setDate(newDate.getDate() + dir);
+    if (view === 'week') newDate.setDate(newDate.getDate() + (dir * 7));
+    if (view === 'month') newDate.setMonth(newDate.getMonth() + dir);
+    setCurrentDate(newDate);
+  };
+  const getBookingsForDate = (date) => {
+    const start = new Date(date).setHours(0, 0, 0, 0);
+    const end = new Date(date).setHours(23, 59, 59, 999);
+    return bookings.map(b => {
+      const client = clients.find(c => c.id === b.clientId);
+      return {
+        ...b,
+        clientPhoto: client?.photos?.[0],
+        clientDogBehaviorRating: client?.dogBehaviorRating
+      };
+    }).filter(b => {
+      if (!b.checkIn || !b.checkOut) return false;
+      return (new Date(b.checkIn).getTime() <= end && new Date(b.checkOut).getTime() >= start);
+    });
+  };
+  const handleSave = async (formData) => {
+    if (!user) return alert("Sem conexão.");
+    const isNewClient = !formData.clientId;
+    const isBooking = modalMode === 'booking';
+    const isEditingBooking = isBooking && formData.id;
+
+    if (isNewClient && (modalMode === 'client_new' || isBooking)) {
+      const dogName = (formData.dogName || '').trim().toLowerCase();
+      const w1 = (formData.whatsapp || '').replace(/\D/g, '').trim();
+      const w2 = (formData.whatsapp2 || '').replace(/\D/g, '').trim();
+      const isDuplicate = clients.some(c => {
+        const cName = (c.dogName || '').trim().toLowerCase();
+        if (cName !== dogName) return false;
+        const cw1 = (c.whatsapp || '').replace(/\D/g, '').trim();
+        const cw2 = (c.whatsapp2 || '').replace(/\D/g, '').trim();
+        return (w1 && (w1 === cw1 || w1 === cw2)) || (w2 && (w2 === cw1 || w2 === cw2));
+      });
+      if (isDuplicate) return alert(`ERRO: Já existe um pet "${formData.dogName}" vinculado a este WhatsApp.`);
+    }
+
+    try {
+      let clientId = formData.clientId;
+      const clientsRef = collection(db, 'artifacts', appId, 'public', 'data', 'clients');
+      const existingClient = !clientId ? clients.find(c => c.dogName.toLowerCase() === formData.dogName.toLowerCase()) : clients.find(c => c.id === clientId);
+
+      const clientData = {
+        dogName: formData.dogName, dogSize: formData.dogSize, dogBreed: formData.dogBreed, source: formData.source,
+        ownerName: formData.ownerName, ownerName2: formData.ownerName2, whatsapp: formData.whatsapp, whatsapp2: formData.whatsapp2,
+        ownerEmail: formData.ownerEmail, ownerDoc: formData.ownerDoc, address: formData.address, birthYear: formData.birthYear,
+        history: formData.history, ownerHistory: formData.ownerHistory, ownerRating: formData.ownerRating,
+        restrictions: formData.restrictions, socialization: formData.socialization, medications: formData.medications,
+        photos: formData.photos, vaccineDocs: formData.vaccineDocs, vaccines: formData.vaccines,
+        lastAntiRabica: formData.lastAntiRabica, lastMultipla: formData.lastMultipla, dogBehaviorRating: formData.dogBehaviorRating
+      };
+
+      let bookingSummary = null;
+      if (isBooking) {
+        bookingSummary = {
+          id: isEditingBooking ? formData.id + '_hist' : Date.now() + '_hist',
+          checkIn: formData.checkIn, checkOut: formData.checkOut, observation: 'Hospedagem', rating: formData.rating,
+          dogBehaviorRating: formData.dogBehaviorRating, ownerRating: formData.ownerRating,
+          dailyRate: parseFloat(formData.dailyRate) || 0, totalValue: parseFloat(formData.totalValue) || 0,
+          damageValue: parseFloat(formData.damageValue) || 0, damageDescription: formData.damageDescription || ''
+        };
+      }
+
+      let clientToUpdate = existingClient;
+      if (clientToUpdate) {
+        clientId = clientToUpdate.id;
+        const cRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientId);
+        let newHistory = clientToUpdate.pastBookings || [];
+        if (bookingSummary) {
+          newHistory = newHistory.filter(h => !(h.checkIn === bookingSummary.checkIn && h.checkOut === bookingSummary.checkOut));
+          newHistory = [bookingSummary, ...newHistory];
+        }
+        await updateDoc(cRef, { ...clientData, pastBookings: newHistory });
+      } else {
+        const docRef = await addDoc(clientsRef, { ...clientData, pastBookings: bookingSummary ? [bookingSummary] : [] });
+        clientId = docRef.id;
+      }
+
+      if (isBooking) {
+        const bRef = collection(db, 'artifacts', appId, 'public', 'data', 'bookings');
+        const bData = { ...formData, clientId: clientId };
+        if (editingData && editingData.id) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'bookings', editingData.id), bData);
+        else await addDoc(bRef, bData);
+      }
+      setIsModalOpen(false); setEditingData(null);
+    } catch (e) { alert(e.message); }
+  };
+
+  const handleDeleteBooking = async (id) => {
+    if (window.prompt("Digite 'DELETAR':") === 'DELETAR') {
+      await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'bookings', id));
+    }
+  };
+
+  const handleMobileNav = (tab) => {
+    setActiveTab(tab);
+    setIsMobileMenuOpen(false);
+  };
+
+  // --- RENDERIZADORES ---
+  const renderWeekView = () => {
+    const start = startOfWeek(currentDate);
+    const days = Array.from({ length: 7 }, (_, i) => { const d = new Date(start); d.setDate(d.getDate() + i); return d; });
+    return (
+      <div className="w-full overflow-x-auto pb-4">
+        <div className="grid grid-cols-7 gap-2 min-w-[800px]">
+          {days.map((day, i) => (
+            <div key={i} className={`border rounded-lg flex flex-col h-[500px] ${day.getDate() === new Date().getDate() ? 'bg-primary-50 border-primary-200' : 'bg-white'}`}>
+              <div className="p-2 text-center border-b font-medium text-secondary-600">{day.toLocaleDateString('pt-BR', { weekday: 'short' })} <br /><span className="text-sm">{day.getDate()}/{day.getMonth() + 1}</span></div>
+              <div className="flex-1 p-1 overflow-y-auto space-y-2 scrollbar-thin">
+                {getBookingsForDate(day).map(b => (
+                  <div key={b.id} onClick={() => { setEditingData(b); setModalMode('booking'); setIsModalOpen(true); }} className="p-2 bg-white border-l-4 border-l-primary-600 rounded shadow-sm text-xs cursor-pointer hover:bg-primary-50 border border-secondary-100">
+                    <div className="font-bold truncate">{b.dogName}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderMonthView = () => {
+    const y = currentDate.getFullYear(), m = currentDate.getMonth();
+    const days = [...Array(new Date(y, m, 1).getDay()).fill(null), ...Array(new Date(y, m + 1, 0).getDate()).keys().map(i => new Date(y, m, i + 1))];
+    return (
+      <div className="w-full overflow-x-auto pb-4">
+        <div className="grid grid-cols-7 gap-px bg-secondary-200 border border-secondary-200 rounded-lg overflow-hidden min-w-[800px]">
+          {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map(d => <div key={d} className="bg-secondary-100 p-2 text-center font-bold text-secondary-600">{d}</div>)}
+          {days.map((day, i) => (
+            !day ? <div key={i} className="bg-white h-32"></div> :
+              <div key={i} className={`bg-white h-32 p-1 flex flex-col hover:bg-secondary-50 ${day.getDate() === new Date().getDate() && day.getMonth() === new Date().getMonth() ? 'bg-primary-50' : ''}`}>
+                <span className="text-sm font-medium self-end px-1">{day.getDate()}</span>
+                <div className="flex-1 overflow-y-auto space-y-1">
+                  {getBookingsForDate(day).slice(0, 3).map(b => <div key={b.id} onClick={() => { setEditingData(b); setModalMode('booking'); setIsModalOpen(true); }} className="text-xs truncate bg-primary-100 text-primary-800 px-1 rounded cursor-pointer">{b.dogName}</div>)}
+                  {getBookingsForDate(day).length > 3 && <div className="text-xs text-secondary-400 text-center">+{getBookingsForDate(day).length - 3}</div>}
+                </div>
+              </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  if (showSplash) return <SplashScreen onFinish={() => setShowSplash(false)} />;
+  if (!isAuthenticated) return <LoginScreen onLogin={() => setIsAuthenticated(true)} db={db} appId={appId} isDbReady={!!user} />;
+
+  return (
+    <div className="flex h-screen bg-background font-sans text-secondary-900 overflow-hidden">
+      {/* SIDEBAR DESKTOP */}
+      <aside className="hidden md:flex w-64 bg-primary-800 text-white flex-col shadow-xl z-20">
+        <div className="p-6 flex items-center gap-3 border-b border-primary-700">
+          {/* CORREÇÃO: Ícone com crop circular */}
+          <div className="shrink-0 bg-white rounded-full p-1">
+            <img src="/logo.png" alt="Logo" className="w-10 h-10 rounded-full object-cover" />
+          </div>
+          <div>
+            <h1 className="font-bold text-lg leading-none tracking-wide">Uma Casa Boa</h1>
+            <p className="text-xs font-medium opacity-80 leading-tight uppercase tracking-widest mt-1">Pra Cachorro</p>
+          </div>
+        </div>
+
+        <nav className="flex-1 py-6 space-y-2 px-3">
+          <button onClick={() => setActiveTab('financial')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${activeTab === 'financial' ? 'bg-primary-700 shadow' : 'hover:bg-primary-700'}`}><PieChart size={20} /> Financeiro</button>
+          <button onClick={() => setActiveTab('agenda')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${activeTab === 'agenda' ? 'bg-primary-700 shadow' : 'hover:bg-primary-700'}`}><Calendar size={20} /> Agenda</button>
+          <button onClick={() => setActiveTab('clients')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${activeTab === 'clients' ? 'bg-primary-700 shadow' : 'hover:bg-primary-700'}`}><User size={20} /> Cadastros</button>
+        </nav>
+
+        <div className="px-3 pb-2">
+          <InstallButton deferredPrompt={deferredPrompt} />
+        </div>
+
+        <div className="p-4 border-t border-primary-700"><button onClick={() => { if (confirm("Sair?")) setIsAuthenticated(false) }} className="w-full flex gap-2 text-secondary-300 hover:text-white"><LogOut size={16} /> Sair</button></div>
+      </aside>
+
+      {/* MAIN CONTENT */}
+      <main className="flex-1 flex flex-col overflow-hidden relative">
+        <header className="bg-white shadow-sm h-16 flex items-center px-4 md:px-6 justify-between z-30 relative">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="md:hidden p-2 rounded-lg text-secondary-600 hover:bg-secondary-100 focus:outline-none">
+              {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+
+            <h2 className="text-xl font-bold text-secondary-700 hidden md:block">{activeTab === 'agenda' ? 'Agenda' : activeTab === 'clients' ? 'Gerenciamento de Clientes' : 'Financeiro'}</h2>
+
+            <div className="flex items-center gap-2 md:hidden">
+              {/* CORREÇÃO: Ícone com crop circular no mobile */}
+              <img src="/logo.png" alt="Logo" className="w-9 h-9 rounded-full object-cover" />
+              <div>
+                <h2 className="font-bold text-primary-800 leading-none text-[15px]">Uma Casa Boa</h2>
+                <p className="font-bold text-primary-600 leading-none text-[10px] uppercase tracking-wider">Pra Cachorro</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-secondary-500 hidden md:block">Olá, {userName}</span>
+            <button onClick={() => { setEditingData(null); setModalMode('booking'); setIsModalOpen(true); }} className="bg-accent-500 text-white px-3 py-2 md:px-4 md:py-2 rounded-lg font-bold flex items-center gap-2 shadow hover:bg-accent-600 text-sm md:text-base">
+              <Plus size={20} /> <span className="hidden sm:inline">Nova Reserva</span><span className="sm:hidden">Nova</span>
+            </button>
+          </div>
+        </header>
+
+        {/* MENU MOBILE */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden absolute top-16 left-0 w-full bg-white shadow-xl border-t border-secondary-100 z-20 animate-fade-in flex flex-col p-2">
+            <button onClick={() => handleMobileNav('financial')} className={`flex items-center gap-3 p-4 rounded-lg font-medium ${activeTab === 'financial' ? 'bg-primary-50 text-primary-600' : 'text-secondary-700 hover:bg-secondary-50'}`}><PieChart size={20} /> Financeiro</button>
+            <button onClick={() => handleMobileNav('agenda')} className={`flex items-center gap-3 p-4 rounded-lg font-medium ${activeTab === 'agenda' ? 'bg-primary-50 text-primary-600' : 'text-secondary-700 hover:bg-secondary-50'}`}><Calendar size={20} /> Agenda</button>
+            <button onClick={() => handleMobileNav('clients')} className={`flex items-center gap-3 p-4 rounded-lg font-medium ${activeTab === 'clients' ? 'bg-primary-50 text-primary-600' : 'text-secondary-700 hover:bg-secondary-50'}`}><User size={20} /> Cadastros</button>
+
+            <div className="h-px bg-secondary-100 my-2"></div>
+
+            <div className="px-2 mb-2">
+              <InstallButton deferredPrompt={deferredPrompt} />
+            </div>
+
+            <button onClick={() => { if (confirm("Sair?")) setIsAuthenticated(false) }} className="flex items-center gap-3 p-4 rounded-lg font-medium text-red-600 hover:bg-red-50"><LogOut size={20} /> Sair</button>
+          </div>
+        )}
+
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-background">
+          {isMobileMenuOpen && <div className="md:hidden fixed inset-0 bg-black/20 z-10 top-16" onClick={() => setIsMobileMenuOpen(false)}></div>}
+
+          {activeTab === 'agenda' && (
+            <div className="space-y-6">
+              <div className="flex flex-col lg:flex-row justify-between items-center gap-4 bg-white p-4 rounded-xl shadow-sm border">
+                <div className="flex bg-secondary-100 p-1 rounded-lg w-full lg:w-auto">
+                  {['day', 'week', 'month'].map(v => <button key={v} onClick={() => setView(v)} className={`flex-1 lg:flex-none px-4 py-2 rounded-md text-sm font-medium transition ${view === v ? 'bg-white shadow text-primary-600' : 'text-secondary-600'}`}>{v === 'day' ? 'Dia' : v === 'week' ? 'Semana' : 'Mês'}</button>)}
+                </div>
+                <div className="flex items-center justify-between w-full lg:w-auto gap-4">
+                  <button onClick={() => navigateDate(-1)} className="p-2 hover:bg-secondary-100 rounded-full"><ChevronLeft /></button>
+                  <h3 className="text-lg font-bold text-primary-600 capitalize text-center w-48">
+                    {view === 'day' && formatDateBR(currentDate)}
+                    {view === 'month' && currentDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+                    {view === 'week' && `Semana de ${startOfWeek(currentDate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`}
+                  </h3>
+                  <button onClick={() => navigateDate(1)} className="p-2 hover:bg-secondary-100 rounded-full"><ChevronRight /></button>
+                </div>
+              </div>
+              {view === 'day' && (
+                getBookingsForDate(currentDate).length === 0 ? <div className="text-center py-12 bg-white rounded-2xl border-2 border-dashed border-secondary-200 text-secondary-400">Nenhuma hospedagem.</div> :
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {getBookingsForDate(currentDate).map(b => <BookingCard key={b.id} booking={b} onEdit={() => { setEditingData(b); setModalMode('booking'); setIsModalOpen(true); }} onDelete={() => handleDeleteBooking(b.id)} />)}
+                  </div>
+              )}
+              {view === 'week' && renderWeekView()}
+              {view === 'month' && renderMonthView()}
+            </div>
+          )}
+
+          {activeTab === 'clients' && <ClientList clients={clients} onEdit={(c) => { setEditingData(c); setModalMode(c ? 'client_edit' : 'client_new'); setIsModalOpen(true); }} onDelete={(id) => { if (confirm("Deletar?")) deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'clients', id)) }} />}
+          {activeTab === 'financial' && <FinancialPanel bookings={bookings.map(b => ({ ...b, clientName: clients.find(c => c.id === b.clientId)?.dogName }))} />}
+        </div>
+      </main>
+
+      {isModalOpen && (
+        <BookingModal
+          data={editingData}
+          mode={modalMode}
+          clientDatabase={clients}
+          onSave={handleSave}
+          onClose={() => setIsModalOpen(false)}
+          races={races}
+          onAddRace={(name) => addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'races'), { name })}
+          onDeleteRace={async (id) => {
+            try {
+              console.log("Tentando deletar raça com ID:", id);
+              await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'races', id));
+              console.log("Raça deletada com sucesso!");
+            } catch (error) {
+              console.error("Erro ao deletar raça:", error);
+              alert("Erro ao deletar raça: " + error.message);
+            }
+          }}
+          onCreateClient={() => { setEditingData(null); setModalMode('client_new'); }}
+        />
+      )}
+    </div>
+  );
+}
+
+==================================================================
+ARQUIVO: \src\components\AppIcon.jsx
+==================================================================
+
+// src/components/AppIcon.jsx
+import React from 'react';
+
+export default function AppIcon({ size = 24, className = "" }) {
+  // A cor azul oficial da sua marca
+  const blueColor = "#000099";
+
+  return (
+    <svg 
+      width={size} 
+      height={size} 
+      viewBox="0 0 100 100" 
+      fill="none" 
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-label="Ícone Uma Casa Boa Pra Cachorro"
+    >
+      {/* A Forma da Casa (Azul) */}
+      <path 
+        d="M50 5L95 40V95H5V40L50 5Z" 
+        fill={blueColor} 
+        stroke={blueColor} 
+        strokeWidth="4"
+        strokeLinejoin="round"
+      />
+      
+      {/* O Rosto do Cachorro (Branco, dentro da casa) */}
+      <g transform="translate(25, 45) scale(0.5)">
+        {/* Cabeça */}
+        <path
+          d="M50 10 C 30 10, 15 25, 15 45 C 15 65, 30 85, 50 85 C 70 85, 85 65, 85 45 C 85 25, 70 10, 50 10 Z"
+          fill="white"
+        />
+        {/* Orelhas Caídas */}
+        <path d="M15 45 C 5 45, 0 60, 5 70 C 10 80, 25 75, 30 65" fill="white" />
+        <path d="M85 45 C 95 45, 100 60, 95 70 C 90 80, 75 75, 70 65" fill="white" />
+        {/* Focinho e Boca (Azul para contraste) */}
+        <circle cx="50" cy="55" r="6" fill={blueColor} />
+        <path d="M50 61 V 70 M40 75 Q 50 85 60 75" stroke={blueColor} strokeWidth="3" fill="none" strokeLinecap="round"/>
+        {/* Olhos (Azul) */}
+        <circle cx="38" cy="40" r="4" fill={blueColor} />
+        <circle cx="62" cy="40" r="4" fill={blueColor} />
+      </g>
+    </svg>
+  );
+}
+
+==================================================================
+ARQUIVO: \src\components\BookingCard.jsx
+==================================================================
+
+import React, { useState } from 'react';
+import {
+  Clock, User, MessageCircle, Trash2, Edit, AlertTriangle, Dog
+} from 'lucide-react';
+import { formatCurrency, getBookingStatus } from '../utils/calculations';
+import { FaceRating } from './shared/RatingComponents';
+import ImageLightbox from './shared/ImageLightbox';
+
+export default function BookingCard({ booking, onEdit, onDelete }) {
+  const [lightboxIndex, setLightboxIndex] = useState(-1);
+  const status = getBookingStatus(booking.checkIn, booking.checkOut);
+  const totalNetValue = (parseFloat(booking.totalValue) || 0) - (parseFloat(booking.damageValue) || 0);
+
+  const formatDateShort = (dateStr) => {
+    return new Date(dateStr).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).toUpperCase();
+  };
+
+  const getWhatsAppLink = (number) => {
+    if (!number) return null;
+    const cleanNumber = number.replace(/\D/g, '');
+    return (cleanNumber.length >= 10) ? `https://wa.me/55${cleanNumber}` : null;
+  };
+  const waLink = getWhatsAppLink(booking.whatsapp);
+
+  return (
+    <>
+      {lightboxIndex >= 0 && booking.clientPhoto && (
+        <ImageLightbox
+          images={[booking.clientPhoto]}
+          currentIndex={lightboxIndex}
+          setIndex={setLightboxIndex}
+          onClose={() => setLightboxIndex(-1)}
+        />
+      )}
+      <div className={`bg-white rounded-xl p-0 shadow-sm hover:shadow-lg transition-all duration-300 border ${status.border} relative overflow-hidden group`}>
+        {/* Barra lateral colorida de status */}
+        <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${status.color.split(' ')[0].replace('bg-', 'bg-opacity-100 bg-')}`}></div>
+
+        <div className="p-4 pl-6">
+          {/* --- CABEÇALHO CORRIGIDO --- */}
+          <div className="flex justify-between items-start mb-3 gap-2">
+            {/* Lado Esquerdo: Foto + Textos (Flexível com min-w-0 para truncar) */}
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div
+                className="w-12 h-12 rounded-full bg-secondary-100 overflow-hidden border border-secondary-100 flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-primary-400 transition"
+                onClick={() => booking.clientPhoto && setLightboxIndex(0)}
+                title={booking.clientPhoto ? "Clique para ampliar" : ""}
+              >
+                {booking.clientPhoto ? (
+                  <img src={booking.clientPhoto} alt={booking.dogName} className="w-full h-full object-cover" />
+                ) : (
+                  <Dog className="w-full h-full p-2 text-secondary-300" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-bold text-secondary-900 text-lg leading-tight truncate" title={booking.dogName}>
+                  {booking.dogName}
+                </h3>
+                <p className="text-xs text-secondary-500 flex items-center gap-1 mt-0.5 truncate">
+                  <User size={12} className="flex-shrink-0" />
+                  <span className="truncate">{booking.ownerName}</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Lado Direito: Badge (Fixo, não encolhe) */}
+            <span className={`flex-shrink-0 whitespace-nowrap text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${status.color}`}>
+              {status.label}
+            </span>
+          </div>
+          {/* --------------------------- */}
+
+          {/* Datas */}
+          <div className="flex items-center justify-between bg-secondary-50 rounded-lg p-2 mb-3 border border-secondary-100 text-xs">
+            <div className="text-center">
+              <span className="block text-secondary-400 font-bold">ENTRADA</span>
+              <span className="block font-bold text-secondary-700 text-sm">{formatDateShort(booking.checkIn)}</span>
+              <span className="text-[10px] text-secondary-400">{new Date(booking.checkIn).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+            </div>
+            <div className="flex-1 flex justify-center px-2 text-secondary-300"><Clock size={14} /></div>
+            <div className="text-center">
+              <span className="block text-secondary-400 font-bold">SAÍDA</span>
+              <span className="block font-bold text-secondary-700 text-sm">{formatDateShort(booking.checkOut)}</span>
+              <span className="text-[10px] text-secondary-400">{new Date(booking.checkOut).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+            </div>
+
+          </div>
+
+          {/* Comportamento e Prejuízo */}
+          <div className="flex justify-between items-center mb-3">
+            <div className="flex items-center gap-1 bg-secondary-50 px-2 py-1 rounded">
+              <span className="text-[10px] text-secondary-500">Avaliação:</span>
+              <FaceRating rating={booking.clientDogBehaviorRating || 3} readonly size={14} />
+            </div>
+            {booking.damageValue > 0 && (
+              <div className="flex items-center gap-1 text-[10px] text-error bg-red-50 px-2 py-1 rounded font-bold border border-red-100">
+                <AlertTriangle size={10} /> - R$ {booking.damageValue}
+              </div>
+            )}
+          </div>
+
+          {/* Rodapé */}
+          <div className="flex items-end justify-between border-t pt-2 border-secondary-100">
+            <div className="min-w-0 pr-2">
+              <span className="text-xl font-bold text-primary-600 truncate block">{formatCurrency(totalNetValue)}</span>
+            </div>
+            <div className="flex items-center gap-1 flex-shrink-0">
+              {waLink && (
+                <a href={waLink} target="_blank" rel="noopener noreferrer" className="p-1.5 text-success hover:bg-green-50 rounded-lg transition" title="Whatsapp">
+                  <MessageCircle size={18} />
+                </a>
+              )}
+              <button onClick={onEdit} className="p-1.5 text-secondary-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition" title="Editar">
+                <Edit size={18} />
+              </button>
+              <button onClick={onDelete} className="p-1.5 text-secondary-400 hover:text-error hover:bg-red-50 rounded-lg transition" title="Excluir">
+                <Trash2 size={18} />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+==================================================================
+ARQUIVO: \src\components\BookingModal.jsx
+==================================================================
+
+import React, { useState, useEffect } from 'react';
+import {
+    FileText, Star, Camera, Plus, X, DollarSign, CheckCircle,
+    AlertTriangle, Heart, History, Search, AlertCircle, Upload,
+    MessageCircle, FilePlus, Pill, User, Dog, Calendar as CalendarIcon,
+    Trash2, Lock, ChevronDown
+} from 'lucide-react';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { updateDoc, doc } from 'firebase/firestore';
+import { db, storage, appId } from '../utils/firebase';
+import { compressImage } from '../utils/fileHelpers';
+import { calculateTotalDays, formatCurrency } from '../utils/calculations';
+import { StarRating, FaceRating } from './shared/RatingComponents';
+import ImageLightbox from './shared/ImageLightbox';
+
+// Componente auxiliar para exibir campos "Somente Leitura"
+const ReadOnlyField = ({ label, value, icon: Icon, highlight = false }) => (
+    <div className={`mb-3 ${highlight ? 'bg-secondary-50 p-2 rounded border border-secondary-100' : ''}`}>
+        <span className="text-xs font-bold text-secondary-400 uppercase flex items-center gap-1 mb-1">
+            {Icon && <Icon size={12} />} {label}
+        </span>
+        <div className="text-sm font-medium text-secondary-800 break-words">
+            {value || <span className="text-secondary-300 italic">-</span>}
+        </div>
+    </div>
+);
+
+export default function BookingModal({ data, mode, clientDatabase, onSave, onClose, races, onAddRace, onDeleteRace, onCreateClient }) {
+    const [searchQuery, setSearchQuery] = useState('');
+    const [showSearchResults, setShowSearchResults] = useState(false);
+    const [newRace, setNewRace] = useState('');
+    const [newMedication, setNewMedication] = useState({ name: '', dosage: '', time: '' });
+    const [socialDogInput, setSocialDogInput] = useState('');
+    const [isSocialDropdownOpen, setIsSocialDropdownOpen] = useState(false);
+    const [socialSearchTerm, setSocialSearchTerm] = useState('');
+
+    const [isUploading, setIsUploading] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [lightboxIndex, setLightboxIndex] = useState(-1);
+    const [vaccineLightboxIndex, setVaccineLightboxIndex] = useState(-1);
+
+    const [isRaceDropdownOpen, setIsRaceDropdownOpen] = useState(false);
+    const [raceSearchTerm, setRaceSearchTerm] = useState('');
+    const [raceToDelete, setRaceToDelete] = useState(null);
+
+    const isBookingMode = mode === 'booking';
+    const isEditingBooking = isBookingMode && data && data.id;
+
+    const showReadOnly = isBookingMode;
+
+    const [formData, setFormData] = useState({
+        clientId: data?.clientId || (mode.startsWith('client') && data?.id ? data.id : '') || '',
+        dogName: data?.dogName || '',
+        dogSize: data?.dogSize || 'Pequeno',
+        dogBreed: data?.dogBreed || 'Sem Raça Definida (SRD)',
+        source: data?.source || 'Particular',
+
+        ownerName: data?.ownerName || '',
+        whatsapp: data?.whatsapp || '',
+        ownerName2: data?.ownerName2 || '',
+        whatsapp2: data?.whatsapp2 || '',
+
+        ownerEmail: data?.ownerEmail || '',
+        ownerDoc: data?.ownerDoc || '',
+        address: data?.address || '',
+        birthYear: data?.birthYear || '',
+
+        history: data?.history || '',
+        ownerHistory: data?.ownerHistory || '',
+        ownerRating: data?.ownerRating || 3,
+        restrictions: data?.restrictions || '',
+        socialization: data?.socialization || [],
+
+        medications: data?.medications || [],
+
+        checkIn: data?.checkIn || '',
+        checkOut: data?.checkOut || '',
+        rating: data?.rating || 5,
+        dailyRate: data?.dailyRate || 80,
+        dogBehaviorRating: data?.dogBehaviorRating || 3,
+        totalValue: data?.totalValue || 0,
+        damageValue: data?.damageValue || '',
+        damageDescription: data?.damageDescription || '',
+
+        photos: data?.photos || [],
+        vaccineDocs: data?.vaccineDocs || [],
+        vaccines: data?.vaccines || '',
+        lastAntiRabica: data?.lastAntiRabica || '',
+        lastMultipla: data?.lastMultipla || '',
+        pastBookings: data?.pastBookings || []
+    });
+
+    useEffect(() => {
+        setFormData({
+            clientId: data?.clientId || (mode.startsWith('client') && data?.id ? data.id : '') || '',
+            dogName: data?.dogName || '',
+            dogSize: data?.dogSize || 'Pequeno',
+            dogBreed: data?.dogBreed || 'Sem Raça Definida (SRD)',
+            source: data?.source || 'Particular',
+
+            ownerName: data?.ownerName || '',
+            whatsapp: data?.whatsapp || '',
+            ownerName2: data?.ownerName2 || '',
+            whatsapp2: data?.whatsapp2 || '',
+
+            ownerEmail: data?.ownerEmail || '',
+            ownerDoc: data?.ownerDoc || '',
+            address: data?.address || '',
+            birthYear: data?.birthYear || '',
+
+            history: data?.history || '',
+            ownerHistory: data?.ownerHistory || '',
+            ownerRating: data?.ownerRating || 3,
+            restrictions: data?.restrictions || '',
+            socialization: data?.socialization || [],
+
+            medications: data?.medications || [],
+
+            checkIn: data?.checkIn || '',
+            checkOut: data?.checkOut || '',
+            rating: data?.rating || 5,
+            dailyRate: data?.dailyRate || 80,
+            dogBehaviorRating: data?.dogBehaviorRating || 3,
+            totalValue: data?.totalValue || 0,
+            damageValue: data?.damageValue || '',
+            damageDescription: data?.damageDescription || '',
+
+            photos: data?.photos || [],
+            vaccineDocs: data?.vaccineDocs || [],
+            vaccines: data?.vaccines || '',
+            lastAntiRabica: data?.lastAntiRabica || '',
+            lastMultipla: data?.lastMultipla || '',
+            pastBookings: data?.pastBookings || []
+        });
+    }, [data, mode]);
+
+    const generateYearOptions = () => {
+        const years = [];
+        for (let year = 2030; year >= 2000; year--) years.push(year);
+        return years;
+    };
+
+    const calculateAge = (birthYear) => {
+        if (!birthYear) return 0;
+        return Math.max(0, new Date().getFullYear() - parseInt(birthYear));
+    };
+    const realAgeYears = calculateAge(formData.birthYear);
+
+    const calculateHumanAge = (ageInYears, size) => {
+        const age = ageInYears;
+        const humanAgeMap = {
+            'Pequeno': [22, 27, 29, 36, 46, 55, 68, 76, 87, 99],
+            'Médio': [12, 23, 39, 51, 63, 75, 95, 95, 95, 95],
+            'Grande': [8, 16, 22, 40, 55, 75, 94, 94, 94, 94],
+            'Gigante': [12, 22, 40, 55, 75, 94, 94, 94, 94, 94]
+        };
+        const sizeKey = size || 'Pequeno';
+        const ages = humanAgeMap[sizeKey] || humanAgeMap['Pequeno'];
+        if (age <= 0) return 0;
+        if (age < 1) return Math.round(age * ages[0]);
+        return ages[Math.min(age, ages.length) - 1] || ages[ages.length - 1];
+    };
+    const humanAge = calculateHumanAge(realAgeYears, formData.dogSize);
+
+    useEffect(() => {
+        if (isBookingMode && formData.checkIn && formData.checkOut && formData.dailyRate) {
+            const days = calculateTotalDays(formData.checkIn, formData.checkOut);
+            const dailyRateFloat = parseFloat(formData.dailyRate) || 0;
+            setFormData(prev => ({ ...prev, totalValue: days * dailyRateFloat }));
+        }
+    }, [formData.checkIn, formData.checkOut, formData.dailyRate, isBookingMode]);
+
+    const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+
+    const handleMedicationChange = (e) => setNewMedication(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    const handleAddMedication = () => {
+        if (newMedication.name && newMedication.dosage && newMedication.time) {
+            setFormData(prev => ({ ...prev, medications: [...prev.medications, newMedication] }));
+            setNewMedication({ name: '', dosage: '', time: '' });
+        } else alert("Preencha todos os campos da medicação.");
+    };
+    const handleRemoveMedication = (index) => setFormData(prev => ({ ...prev, medications: prev.medications.filter((_, i) => i !== index) }));
+
+    const handleAddRace = async (e) => {
+        e.preventDefault();
+        if (newRace && !races.map(r => r.name.toLowerCase()).includes(newRace.toLowerCase())) {
+            try { await onAddRace(newRace); setFormData(prev => ({ ...prev, dogBreed: newRace })); setNewRace(''); } catch (error) { alert("Erro ao adicionar raça."); }
+        }
+    };
+
+    const handleAddSocialDog = (e) => {
+        e.preventDefault();
+        if (socialDogInput && formData.socialization.length < 5 && !formData.socialization.includes(socialDogInput)) {
+            setFormData(prev => ({ ...prev, socialization: [...prev.socialization, socialDogInput] }));
+            setSocialDogInput('');
+        }
+    };
+
+    const handleFileSelect = async (e, type) => {
+        if (!e.target.files[0]) return;
+        const file = e.target.files[0];
+        const isImage = file.type.startsWith('image/');
+        if (!isImage && file.size > 3 * 1024 * 1024) return alert("PDFs devem ter no máximo 3MB.");
+        if (type === 'photos' && formData.photos.length >= 5) return;
+        if (type === 'vaccines' && formData.vaccineDocs.length >= 3) return;
+
+        setIsUploading(true);
+        try {
+            let uploadFile = file;
+            if (isImage) uploadFile = await compressImage(file);
+            const uniqueName = `${type}-${Date.now()}-${file.name}`;
+            const storageRef = ref(storage, `images/public/${uniqueName}`);
+            await uploadBytes(storageRef, uploadFile);
+            const url = await getDownloadURL(storageRef);
+            const field = type === 'photos' ? 'photos' : 'vaccineDocs';
+            setFormData(prev => ({ ...prev, [field]: [...prev[field], url] }));
+        } catch (error) {
+            alert(`Erro upload: ${error.message}`);
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const removePhoto = (index, type) => {
+        const field = type === 'photos' ? 'photos' : 'vaccineDocs';
+        setFormData(prev => ({ ...prev, [field]: prev[field].filter((_, i) => i !== index) }));
+    };
+
+    const handleDeleteHistoryItem = async (historyId) => {
+        if (!window.confirm("Excluir registro do histórico?")) return;
+        if (!formData.clientId) return alert("Cliente não salvo.");
+        try {
+            const newPastBookings = formData.pastBookings.filter(h => h.id !== historyId);
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'clients', formData.clientId), { pastBookings: newPastBookings });
+            setFormData(prev => ({ ...prev, pastBookings: newPastBookings }));
+        } catch (e) { console.error(e); }
+    };
+
+    const selectClient = (client) => {
+        setFormData(prev => ({
+            ...prev,
+            clientId: client.id, dogName: client.dogName, dogSize: client.dogSize || 'Pequeno',
+            dogBreed: client.dogBreed || 'SRD', source: client.source || 'Particular',
+            ownerName: client.ownerName, ownerName2: client.ownerName2 || '',
+            whatsapp: client.whatsapp, whatsapp2: client.whatsapp2 || '',
+            ownerEmail: client.ownerEmail || '', ownerDoc: client.ownerDoc,
+            address: client.address, birthYear: client.birthYear || '', history: client.history,
+            ownerHistory: client.ownerHistory, ownerRating: client.ownerRating, restrictions: client.restrictions,
+            socialization: client.socialization || [], medications: client.medications || [],
+            photos: client.photos || [], vaccineDocs: client.vaccineDocs || [], vaccines: client.vaccines,
+            lastAntiRabica: client.lastAntiRabica || '', lastMultipla: client.lastMultipla || '',
+            pastBookings: client.pastBookings || []
+        }));
+        setSearchQuery(''); setShowSearchResults(false);
+    };
+
+    // Helper para criar o link do WhatsApp
+    const getWhatsAppUrl = (number) => {
+        if (!number) return null;
+        const cleanNumber = number.replace(/\D/g, '');
+        // Adiciona 55 se não tiver (assumindo Brasil)
+        const finalNumber = cleanNumber.length >= 10 ? `55${cleanNumber}` : cleanNumber;
+        return `https://wa.me/${finalNumber}`;
+    };
+
+    const totalPaidValue = (formData.pastBookings || []).reduce((acc, curr) => acc + ((parseFloat(curr.totalValue) || 0) - (parseFloat(curr.damageValue) || 0)), 0);
+    const availableDogs = clientDatabase.map(c => c.dogName).filter(n => n !== formData.dogName);
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-2 md:p-4 overflow-y-auto">
+            {lightboxIndex >= 0 && <ImageLightbox images={formData.photos} currentIndex={lightboxIndex} setIndex={setLightboxIndex} onClose={() => setLightboxIndex(-1)} />}
+            {vaccineLightboxIndex >= 0 && <ImageLightbox images={formData.vaccineDocs} currentIndex={vaccineLightboxIndex} setIndex={setVaccineLightboxIndex} onClose={() => setVaccineLightboxIndex(-1)} />}
+
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[95vh] overflow-y-auto flex flex-col">
+                <div className="bg-primary-800 px-6 py-4 flex justify-between items-center sticky top-0 z-10">
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                        <FileText /> {mode === 'client_new' ? 'Novo Cadastro' : (isBookingMode ? 'Hospedagem' : 'Editar Cliente')}
+                    </h2>
+                    <button onClick={onClose} className="text-white hover:bg-primary-700 rounded-full p-1"><X size={24} /></button>
+                </div>
+
+                {isBookingMode && !data && (
+                    <div className="bg-secondary-50 px-6 py-3 border-b border-secondary-100 relative">
+                        <label className="text-sm font-bold text-primary-800 flex items-center gap-2 mb-1">
+                            <Search size={16} /> Buscar Cliente Cadastrado
+                        </label>
+                        <div className="flex gap-2">
+                            <div className="relative flex-1">
+                                <input value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setShowSearchResults(true); }} placeholder="Digite o nome do cão..." className="w-full p-2 pl-3 border rounded shadow-sm outline-none focus:ring-2 focus:ring-primary-500" />
+                                {showSearchResults && searchQuery && (
+                                    <div className="absolute left-0 right-0 bg-white shadow-xl z-20 max-h-60 overflow-y-auto border mt-1 rounded-lg">
+                                        {clientDatabase.filter(c => c.dogName.toLowerCase().includes(searchQuery.toLowerCase())).map(c => (
+                                            <div key={c.id} onClick={() => selectClient(c)} className="p-3 hover:bg-secondary-50 cursor-pointer border-b font-medium flex justify-between">
+                                                <span>{c.dogName}</span>
+                                                <span className="text-sm text-secondary-500">{c.ownerName}</span>
+                                            </div>
+                                        ))}
+                                        {clientDatabase.filter(c => c.dogName.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+                                            <div className="p-3 text-secondary-500 text-sm">Nenhum cliente encontrado.</div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                            <button
+                                type="button"
+                                onClick={onCreateClient}
+                                className="bg-primary-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-primary-700 shadow-sm flex items-center gap-2 whitespace-nowrap"
+                            >
+                                <Plus size={18} /> Novo Pet
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                <form onSubmit={(e) => { e.preventDefault(); onSave(formData); }} className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+
+                    {/* ================= COLUNA 1: PET ================= */}
+                    <div className="space-y-5">
+                        <h3 className="text-primary-800 font-bold border-b pb-2 flex items-center gap-2"><Dog size={18} /> Dados do Pet</h3>
+
+                        {showReadOnly ? (
+                            <div className="grid grid-cols-2 gap-4 bg-secondary-50 p-3 rounded-lg border border-secondary-200 relative">
+                                <div className="absolute top-2 right-2 text-secondary-300"><Lock size={14} /></div>
+                                <ReadOnlyField label="Nome" value={formData.dogName} />
+                                <ReadOnlyField label="Raça" value={formData.dogBreed} />
+                                <ReadOnlyField label="Porte" value={formData.dogSize} />
+                                <ReadOnlyField label="Idade" value={`${realAgeYears} anos (${humanAge} humana)`} />
+
+                                <div className="col-span-2">
+                                    <span className="text-xs font-bold text-secondary-400 uppercase block mb-1">Restrições / Alergias</span>
+                                    <div className="text-sm font-bold text-red-600 bg-white p-2 rounded border border-red-100">
+                                        {formData.restrictions || "Nenhuma restrição registrada."}
+                                    </div>
+                                </div>
+
+                                <div className="col-span-2">
+                                    <span className="text-xs font-bold text-secondary-400 uppercase block mb-1">Medicações (Cadastro)</span>
+                                    {formData.medications.length === 0 ? <span className="text-sm text-secondary-400 italic">-</span> : (
+                                        <ul className="text-sm space-y-1">
+                                            {formData.medications.map((m, i) => (
+                                                <li key={i} className="bg-white p-1 rounded border border-secondary-200 flex gap-2">
+                                                    <Pill size={14} className="text-red-400 mt-0.5" />
+                                                    <span><b>{m.name}</b> ({m.dosage}) às {m.time}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div><label className="text-sm font-medium">Nome</label><input name="dogName" value={formData.dogName} onChange={handleChange} className="w-full p-2 border rounded" required /></div>
+                                    <div>
+                                        <label className="text-sm font-medium">Porte</label>
+                                        <select name="dogSize" value={formData.dogSize} onChange={handleChange} className="w-full p-2 border rounded bg-white">
+                                            <option>Pequeno</option><option>Médio</option><option>Grande</option><option>Gigante</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div><label className="text-sm font-medium">Nasc.</label><select name="birthYear" value={formData.birthYear} onChange={handleChange} className="w-full p-2 border rounded bg-white"><option value="">Ano</option>{generateYearOptions().map(y => <option key={y} value={y}>{y}</option>)}</select></div>
+                                    <div><label className="text-sm text-secondary-500">Real</label><input readOnly value={`${realAgeYears} anos`} className="w-full p-2 border bg-secondary-100 text-xs font-bold rounded" /></div>
+                                    <div><label className="text-sm text-warning">Humana</label><input readOnly value={`${humanAge} anos`} className="w-full p-2 border border-warning/30 bg-warning/10 text-warning text-xs font-bold rounded" /></div>
+                                </div>
+
+                                <div>
+                                    <label className="text-sm font-medium block mb-1">Raça</label>
+                                    <div className="flex flex-col sm:flex-row gap-2">
+                                        <div className="relative w-full sm:flex-1">
+                                            <div
+                                                className="w-full p-2 border rounded bg-white flex justify-between items-center cursor-pointer"
+                                                onClick={() => setIsRaceDropdownOpen(!isRaceDropdownOpen)}
+                                            >
+                                                <span className={`truncate ${!formData.dogBreed ? 'text-gray-500' : ''}`}>
+                                                    {formData.dogBreed || 'Selecione a Raça'}
+                                                </span>
+                                                <ChevronDown size={16} className="text-gray-500" />
+                                            </div>
+
+                                            {isRaceDropdownOpen && (
+                                                <div className="absolute top-full left-0 w-full bg-white border rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto mt-1">
+                                                    <div className="sticky top-0 bg-white border-b p-2">
+                                                        <div className="relative">
+                                                            <Search size={14} className="absolute left-2 top-2.5 text-gray-400" />
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Buscar raça..."
+                                                                className="w-full pl-8 pr-2 py-1.5 border rounded text-sm outline-none focus:border-primary-500"
+                                                                value={raceSearchTerm}
+                                                                onChange={(e) => setRaceSearchTerm(e.target.value)}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                autoFocus
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div className="py-1">
+                                                        {races
+                                                            .filter(r => r.name.toLowerCase().includes(raceSearchTerm.toLowerCase()))
+                                                            .sort((a, b) => a.name.localeCompare(b.name))
+                                                            .map(r => (
+                                                                <div
+                                                                    key={r.id}
+                                                                    className="px-3 py-2 hover:bg-primary-50 flex justify-between items-center cursor-pointer group"
+                                                                    onClick={() => {
+                                                                        if (raceToDelete === r.id) return;
+                                                                        setFormData(prev => ({ ...prev, dogBreed: r.name }));
+                                                                        setIsRaceDropdownOpen(false);
+                                                                        setRaceSearchTerm('');
+                                                                    }}
+                                                                >
+                                                                    {raceToDelete === r.id ? (
+                                                                        <div className="flex items-center justify-between w-full bg-red-50 p-1 rounded">
+                                                                            <span className="text-xs text-red-600 font-bold">Excluir?</span>
+                                                                            <div className="flex gap-2">
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={(e) => {
+                                                                                        e.preventDefault();
+                                                                                        e.stopPropagation();
+                                                                                        onDeleteRace(r.id);
+                                                                                        setRaceToDelete(null);
+                                                                                    }}
+                                                                                    className="text-red-600 hover:text-red-800 text-xs font-bold px-2 py-1 bg-red-100 rounded"
+                                                                                >
+                                                                                    Sim
+                                                                                </button>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={(e) => {
+                                                                                        e.preventDefault();
+                                                                                        e.stopPropagation();
+                                                                                        setRaceToDelete(null);
+                                                                                    }}
+                                                                                    className="text-gray-600 hover:text-gray-800 text-xs px-2 py-1 bg-gray-100 rounded"
+                                                                                >
+                                                                                    Não
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <>
+                                                                            <span className="text-sm text-secondary-800">{r.name}</span>
+                                                                            {onDeleteRace && (
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={(e) => {
+                                                                                        e.preventDefault();
+                                                                                        e.stopPropagation();
+                                                                                        setRaceToDelete(r.id);
+                                                                                    }}
+                                                                                    className="text-gray-300 hover:text-red-500 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                                    title="Excluir Raça"
+                                                                                >
+                                                                                    <Trash2 size={14} />
+                                                                                </button>
+                                                                            )}
+                                                                        </>
+                                                                    )}
+                                                                </div>
+                                                            ))
+                                                        }
+                                                        {races.filter(r => r.name.toLowerCase().includes(raceSearchTerm.toLowerCase())).length === 0 && (
+                                                            <div className="px-3 py-4 text-center text-sm text-gray-500">
+                                                                Nenhuma raça encontrada.
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="flex gap-2 w-full sm:w-auto">
+                                            <input value={newRace} onChange={(e) => setNewRace(e.target.value)} placeholder="Nova Raça" className="flex-1 sm:w-32 p-2 border rounded text-sm" />
+                                            <button type="button" onClick={handleAddRace} disabled={!newRace} className="bg-success text-white px-3 py-2 rounded font-bold hover:bg-green-700 flex-shrink-0" title="Adicionar Nova Raça">+</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-red-50 p-3 rounded border border-red-200">
+                                    <h4 className="text-red-600 font-bold text-sm mb-2 flex gap-2"><Pill size={16} /> Medicações</h4>
+                                    <div className="grid grid-cols-6 gap-2 mb-2">
+                                        <input name="name" value={newMedication.name} onChange={handleMedicationChange} placeholder="Nome" className="col-span-2 p-1 border rounded text-xs" />
+                                        <input name="dosage" value={newMedication.dosage} onChange={handleMedicationChange} placeholder="Dose" className="col-span-2 p-1 border rounded text-xs" />
+                                        <select name="time" value={newMedication.time} onChange={handleMedicationChange} className="col-span-1 p-1 border rounded text-xs bg-white">
+                                            <option value="">Hr</option>
+                                            {Array.from({ length: 24 }, (_, i) => {
+                                                const hour = i.toString().padStart(2, '0');
+                                                return <option key={hour} value={`${hour}:00`}>{`${hour}:00`}</option>;
+                                            })}
+                                        </select>
+                                        <button type="button" onClick={handleAddMedication} className="col-span-1 bg-red-500 text-white rounded flex items-center justify-center"><Plus size={14} /></button>
+                                    </div>
+                                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                                        {formData.medications.map((m, i) => (
+                                            <div key={i} className="flex justify-between bg-white p-1 rounded border text-xs">
+                                                <span><b>{m.name}</b> ({m.dosage}) - {m.time}</span>
+                                                <button type="button" onClick={() => handleRemoveMedication(i)} className="text-red-500"><X size={12} /></button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div><label className="text-sm font-medium">Restrições</label><input name="restrictions" value={formData.restrictions} onChange={handleChange} className="w-full p-2 border border-red-200 bg-red-50 text-red-800 rounded" placeholder="Ex: Alergias..." /></div>
+                            </>
+                        )}
+
+                        {/* SEÇÃO VARIÁVEIS DA HOSPEDAGEM */}
+                        <div className="border-t pt-4 mt-4">
+                            <h4 className="text-secondary-500 text-xs font-bold uppercase mb-3">Variáveis desta Hospedagem</h4>
+
+                            <div className="mb-3">
+                                <label className="text-sm font-medium block mb-1">Comportamento / Histórico</label>
+                                <textarea name="history" value={formData.history} onChange={handleChange} rows={3} className="w-full p-2 border rounded text-sm focus:ring-2 focus:ring-primary-500" placeholder="Descreva o comportamento nesta estadia..." />
+                            </div>
+
+                            <div className="bg-secondary-50 p-3 rounded border border-secondary-100 mb-3">
+                                <label className="text-sm font-bold text-primary-800 block mb-1">Avaliação Geral do Cão</label>
+                                <FaceRating rating={formData.dogBehaviorRating} setRating={(r) => setFormData({ ...formData, dogBehaviorRating: r })} />
+                            </div>
+
+                            <div className="mb-3">
+                                <label className="text-sm font-medium block mb-1">Socialização</label>
+                                <div className="relative">
+                                    <div
+                                        className="w-full p-2 border rounded bg-white flex justify-between items-center cursor-pointer"
+                                        onClick={() => setIsSocialDropdownOpen(!isSocialDropdownOpen)}
+                                    >
+                                        <span className="text-sm text-gray-600">Adicionar cão...</span>
+                                        <ChevronDown size={16} className="text-gray-500" />
+                                    </div>
+                                    {isSocialDropdownOpen && (
+                                        <div className="absolute top-full left-0 w-full bg-white border rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto mt-1">
+                                            <div className="sticky top-0 bg-white border-b p-2">
+                                                <div className="relative">
+                                                    <Search size={14} className="absolute left-2 top-2.5 text-gray-400" />
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Buscar cão..."
+                                                        className="w-full pl-8 pr-2 py-1.5 border rounded text-sm outline-none focus:border-primary-500"
+                                                        value={socialSearchTerm}
+                                                        onChange={(e) => setSocialSearchTerm(e.target.value)}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        autoFocus
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="py-1">
+                                                {availableDogs
+                                                    .filter(dog => dog.toLowerCase().includes(socialSearchTerm.toLowerCase()) && !formData.socialization.includes(dog))
+                                                    .sort()
+                                                    .map((dog, index) => (
+                                                        <div
+                                                            key={index}
+                                                            className="px-3 py-2 hover:bg-primary-50 cursor-pointer text-sm"
+                                                            onClick={() => {
+                                                                if (formData.socialization.length < 5) {
+                                                                    setFormData(prev => ({ ...prev, socialization: [...prev.socialization, dog] }));
+                                                                    setIsSocialDropdownOpen(false);
+                                                                    setSocialSearchTerm('');
+                                                                }
+                                                            }}
+                                                        >
+                                                            {dog}
+                                                        </div>
+                                                    ))
+                                                }
+                                                {availableDogs.filter(dog => dog.toLowerCase().includes(socialSearchTerm.toLowerCase()) && !formData.socialization.includes(dog)).length === 0 && (
+                                                    <div className="px-3 py-4 text-center text-sm text-gray-500">
+                                                        Nenhum cão encontrado.
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                    {formData.socialization.map((dog, i) => (
+                                        <span key={i} className="bg-primary-100 text-primary-800 text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                                            {dog}
+                                            <button type="button" onClick={() => setFormData(prev => ({ ...prev, socialization: prev.socialization.filter((_, idx) => idx !== i) }))} className="hover:text-red-600"><X size={12} /></button>
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ================= COLUNA 2: TUTOR & HOSPEDAGEM ================= */}
+                    <div className="space-y-6">
+                        <h3 className="text-secondary-800 font-bold border-b pb-2 flex items-center gap-2"><User size={18} /> Dados do Tutor</h3>
+
+                        {showReadOnly ? (
+                            <div className="bg-secondary-50 p-3 rounded-lg border border-secondary-200 relative">
+                                <div className="absolute top-2 right-2 text-secondary-300"><Lock size={14} /></div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <ReadOnlyField label="Tutor 1" value={formData.ownerName} icon={User} />
+                                    <ReadOnlyField label="WhatsApp 1" value={formData.whatsapp} icon={MessageCircle} />
+                                    <ReadOnlyField label="Tutor 2" value={formData.ownerName2} icon={User} />
+                                    <ReadOnlyField label="WhatsApp 2" value={formData.whatsapp2} icon={MessageCircle} />
+                                </div>
+                                <ReadOnlyField label="Endereço" value={formData.address} />
+                                <div className="mt-2">
+                                    <span className="text-xs font-bold text-secondary-400 uppercase block mb-1">Histórico do Tutor</span>
+                                    <p className="text-sm text-secondary-700 bg-white p-2 rounded border border-secondary-100 italic">
+                                        {formData.ownerHistory || "Sem observações."}
+                                    </p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div><label className="text-sm font-medium">Tutor 1</label><input name="ownerName" value={formData.ownerName} onChange={handleChange} className="w-full p-2 border rounded" required /></div>
+                                    <div><label className="text-sm font-medium">WhatsApp 1</label><input name="whatsapp" value={formData.whatsapp} onChange={handleChange} className="w-full p-2 border rounded" placeholder="(00) 00000-0000" required /></div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div><label className="text-sm font-medium">Tutor 2</label><input name="ownerName2" value={formData.ownerName2} onChange={handleChange} className="w-full p-2 border rounded" /></div>
+                                    <div><label className="text-sm font-medium">WhatsApp 2</label><input name="whatsapp2" value={formData.whatsapp2} onChange={handleChange} className="w-full p-2 border rounded" placeholder="(00) 00000-0000" /></div>
+                                </div>
+                                <div><label className="text-sm font-medium">Endereço</label><input name="address" value={formData.address} onChange={handleChange} className="w-full p-2 border rounded" /></div>
+                                <div><label className="text-sm font-medium">Histórico do Tutor</label><textarea name="ownerHistory" value={formData.ownerHistory} onChange={handleChange} rows={2} className="w-full p-2 border rounded" /></div>
+                            </div>
+                        )}
+
+                        {isBookingMode && (
+                            <div className="bg-primary-50 p-4 rounded-xl border border-primary-100 mt-6">
+                                <h3 className="text-primary-800 font-bold border-b border-primary-200 pb-2 mb-3 flex items-center gap-2"><CalendarIcon size={18} /> Dados da Reserva</h3>
+                                <div className="grid grid-cols-2 gap-4 mb-3">
+                                    <div><label className="text-sm font-bold text-primary-700">Check-in</label><input type="datetime-local" name="checkIn" value={formData.checkIn} onChange={handleChange} className="w-full p-2 border rounded bg-white" required /></div>
+                                    <div><label className="text-sm font-bold text-primary-700">Check-out</label><input type="datetime-local" name="checkOut" value={formData.checkOut} onChange={handleChange} className="w-full p-2 border rounded bg-white" required /></div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4 mb-3">
+                                    <div><label className="text-sm font-medium">Diária (R$)</label><input type="number" name="dailyRate" value={formData.dailyRate} onChange={handleChange} className="w-full p-2 border rounded" /></div>
+                                    <div><label className="text-sm font-bold text-success-700">Total (R$)</label><input type="number" name="totalValue" value={formData.totalValue} readOnly className="w-full p-2 border rounded bg-success-50 font-bold text-success-800" /></div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* UPLOAD DE FOTOS E VACINAS */}
+                        <div className="mt-6 space-y-4">
+                            <div>
+                                <label className="text-sm font-bold flex items-center gap-2 mb-2"><Camera size={16} /> Fotos do Pet (Max 5)</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {formData.photos.map((url, i) => (
+                                        <div key={i} className="relative w-16 h-16 group">
+                                            <img src={url} alt="Pet" className="w-full h-full object-cover rounded-lg cursor-pointer border hover:border-primary-500" onClick={() => setLightboxIndex(i)} />
+                                            <button type="button" onClick={() => removePhoto(i, 'photos')} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition"><X size={12} /></button>
+                                        </div>
+                                    ))}
+                                    {formData.photos.length < 5 && (
+                                        <label className={`w-16 h-16 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-secondary-50 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                            <Upload size={20} className="text-secondary-400" />
+                                            <span className="text-[10px] text-secondary-400">Add</span>
+                                            <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileSelect(e, 'photos')} disabled={isUploading} />
+                                        </label>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="text-sm font-bold flex items-center gap-2 mb-2"><FilePlus size={16} /> Carteira de Vacinação (Max 3)</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {formData.vaccineDocs.map((url, i) => (
+                                        <div key={i} className="relative w-16 h-16 group">
+                                            <img src={url} alt="Vacina" className="w-full h-full object-cover rounded-lg cursor-pointer border hover:border-primary-500" onClick={() => setVaccineLightboxIndex(i)} />
+                                            <button type="button" onClick={() => removePhoto(i, 'vaccines')} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition"><X size={12} /></button>
+                                        </div>
+                                    ))}
+                                    {formData.vaccineDocs.length < 3 && (
+                                        <label className={`w-16 h-16 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-secondary-50 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                            <Upload size={20} className="text-secondary-400" />
+                                            <span className="text-[10px] text-secondary-400">Add</span>
+                                            <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileSelect(e, 'vaccines')} disabled={isUploading} />
+                                        </label>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* HISTÓRICO FINANCEIRO E DE ESTADIAS */}
+                        {formData.pastBookings.length > 0 && (
+                            <div className="mt-6 border-t pt-4">
+                                <h4 className="text-sm font-bold flex items-center gap-2 mb-3"><History size={16} /> Histórico de Estadias</h4>
+                                <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                                    {formData.pastBookings.map((h) => (
+                                        <div key={h.id} className="text-xs bg-secondary-50 p-2 rounded border flex justify-between items-center group">
+                                            <div>
+                                                <span className="font-bold">{new Date(h.checkIn).toLocaleDateString('pt-BR')}</span>
+                                                <span className="mx-1">à</span>
+                                                <span className="font-bold">{new Date(h.checkOut).toLocaleDateString('pt-BR')}</span>
+                                                <div className="text-secondary-500">Total: {formatCurrency(h.totalValue)}</div>
+                                            </div>
+                                            <button type="button" onClick={() => handleDeleteHistoryItem(h.id)} className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100"><Trash2 size={14} /></button>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="mt-2 text-right text-xs font-bold text-primary-700">
+                                    Total Gasto: {formatCurrency(totalPaidValue)}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* BOTÕES DE AÇÃO */}
+                    <div className="col-span-1 md:col-span-2 flex justify-end gap-3 pt-6 border-t mt-4">
+                        <button type="button" onClick={onClose} className="px-6 py-2 rounded-lg border border-secondary-300 text-secondary-600 font-bold hover:bg-secondary-50">Cancelar</button>
+                        <button type="submit" disabled={isSaving} className="px-8 py-2 rounded-lg bg-primary-600 text-white font-bold hover:bg-primary-700 shadow-lg flex items-center gap-2">
+                            {isSaving ? 'Salvando...' : <><CheckCircle size={20} /> Salvar</>}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
+==================================================================
+ARQUIVO: \src\components\ClientList.jsx
+==================================================================
+
+import React, { useState } from 'react';
+import { Users, Search, Plus, FileText, Trash2, History, Dog, X } from 'lucide-react';
+import { FaceRating } from './shared/RatingComponents';
+
+export default function ClientList({ clients, onEdit, onDelete }) {
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedImage, setSelectedImage] = useState(null);
+
+    const filteredClients = clients.filter(client =>
+        (client.dogName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (client.ownerName || '').toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    return (
+        <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 min-h-[500px]">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
+                <h2 className="text-2xl font-bold text-secondary-800 flex items-center gap-2">
+                    <Users className="text-primary-600" /> Cadastros
+                </h2>
+                <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+                    <div className="relative flex-1 w-full">
+                        <input
+                            type="text"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            placeholder="Buscar por cão ou tutor..."
+                            className="pl-10 pr-4 py-3 border rounded-lg w-full lg:w-64 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        />
+                        <Search className="absolute left-3 top-3.5 text-primary-500" size={18} />
+                    </div>
+                    <button
+                        onClick={() => onEdit(null)} // null indica criação de novo cliente
+                        className="bg-success text-white px-6 py-3 rounded-lg font-bold flex items-center justify-center gap-2 shadow hover:bg-green-600 whitespace-nowrap w-full sm:w-auto"
+                    >
+                        <Plus size={20} /> Novo Cadastro
+                    </button>
+                </div>
+            </div>
+
+            {filteredClients.length === 0 ? (
+                <div className="text-center py-20 text-secondary-500 border-2 border-dashed rounded-xl bg-secondary-50">
+                    {searchTerm ? 'Nenhum cliente encontrado para esta busca.' : 'Nenhum cliente cadastrado.'}
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredClients.map(client => (
+                        <div key={client.id} className="border rounded-xl p-4 hover:shadow-md transition bg-secondary-50 flex flex-col gap-3">
+                            <div className="flex items-center gap-3">
+                                <div
+                                    className="w-14 h-14 bg-white rounded-full overflow-hidden border flex-shrink-0 cursor-pointer group"
+                                    onClick={() => client.photos && client.photos[0] && setSelectedImage(client.photos[0])}
+                                >
+                                    {client.photos && client.photos[0] ? (
+                                        <img
+                                            src={client.photos[0]}
+                                            alt="Dog"
+                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                        />
+                                    ) : (
+                                        <Dog className="p-3 text-secondary-400 w-full h-full" />
+                                    )}
+                                </div>
+                                <div className="min-w-0">
+                                    <h3 className="font-bold text-lg truncate text-secondary-900">{client.dogName}</h3>
+                                    <p className="text-sm text-secondary-600 truncate">{client.ownerName}</p>
+                                </div>
+                            </div>
+
+                            <div className="text-sm space-y-1 mt-1">
+                                <div className="flex items-center gap-2 text-secondary-600">
+                                    <FaceRating rating={client.dogBehaviorRating || 3} readonly size={16} />
+                                    <span className="text-xs">(Avaliação Geral)</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-secondary-600">
+                                    <History size={14} className="text-primary-600" /> {client.pastBookings?.length || 0} Hospedagens
+                                </div>
+                            </div>
+
+                            <div className="flex gap-2 mt-auto pt-3">
+                                <button
+                                    onClick={() => onEdit(client)}
+                                    className="flex-1 bg-white border border-primary-200 text-primary-600 py-2 rounded-lg font-medium hover:bg-primary-50 flex items-center justify-center gap-2"
+                                >
+                                    <FileText size={16} /> Detalhes
+                                </button>
+                                {onDelete && (
+                                    <button
+                                        onClick={() => onDelete(client.id)}
+                                        className="p-2 text-error hover:bg-red-50 rounded-lg"
+                                        title="Excluir Cliente"
+                                    >
+                                        <Trash2 size={20} />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Fullscreen Image Modal */}
+            {selectedImage && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 p-4 animate-in fade-in duration-200"
+                    onClick={() => setSelectedImage(null)}
+                >
+                    <button
+                        className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors bg-black/50 rounded-full p-2"
+                        onClick={() => setSelectedImage(null)}
+                    >
+                        <X size={32} />
+                    </button>
+                    <img
+                        src={selectedImage}
+                        alt="Fullscreen Dog"
+                        className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                </div>
+            )}
+        </div>
+    );
+}
+
+==================================================================
+ARQUIVO: \src\components\ErrorBoundary.jsx
+==================================================================
+
+import React from 'react';
+
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null, errorInfo: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    this.setState({ error, errorInfo });
+    console.error("Uncaught error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-6 bg-red-50 border border-red-200 m-4 rounded-lg">
+          <h1 className="text-red-700 font-bold text-xl mb-2">Ops! Ocorreu um erro.</h1>
+          <details className="whitespace-pre-wrap text-sm text-red-900 font-mono bg-red-100 p-4 rounded">
+            {this.state.error && this.state.error.toString()}
+            <br />
+            {this.state.errorInfo && this.state.errorInfo.componentStack}
+          </details>
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+          >
+            Recarregar Página
+          </button>
+        </div>
+      );
+    }
+
+    return this.props.children; 
+  }
+}
+
+export default ErrorBoundary;
+
+==================================================================
+ARQUIVO: \src\components\FinancialPanel.jsx
+==================================================================
+
+import React, { useState } from 'react';
+import { PieChart, DollarSign, ChevronDown, ChevronUp, Calendar, TrendingUp } from 'lucide-react';
+import { formatCurrency } from '../utils/calculations';
+
+export default function FinancialPanel({ bookings }) {
+  const [view, setView] = useState('monthly');
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+
+  const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+  // Abreviação para mobile
+  const shortMonthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+  const years = [2023, 2024, 2025, 2026];
+
+  // Helpers internos para filtrar os bookings recebidos via props
+  const getBookingsByMonth = (month, year) => {
+    return bookings.filter(b => {
+      if (!b.checkIn) return false;
+      const d = new Date(b.checkIn);
+      return d.getMonth() === month && d.getFullYear() === year;
+    }).sort((a, b) => new Date(a.checkIn) - new Date(b.checkIn));
+  };
+
+  const calculateMonthlyNetTotal = (month, year) => {
+    return getBookingsByMonth(month, year).reduce((acc, curr) => {
+      const revenue = parseFloat(curr.totalValue) || 0;
+      const damage = parseFloat(curr.damageValue) || 0;
+      return acc + (revenue - damage);
+    }, 0);
+  };
+
+  // Preparação de dados anuais
+  const annualData = monthNames.map((month, idx) => {
+    const netTotal = calculateMonthlyNetTotal(idx, selectedYear);
+    const count = getBookingsByMonth(idx, selectedYear).length;
+    return { month, shortMonth: shortMonthNames[idx], idx, netTotal, count };
+  });
+
+  const annualNetTotal = annualData.reduce((acc, curr) => acc + curr.netTotal, 0);
+  const annualBookingsCount = annualData.reduce((acc, curr) => acc + curr.count, 0);
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 min-h-[500px] animate-fade-in">
+      {/* Header do Painel */}
+      <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+        <h2 className="text-2xl font-bold text-secondary-800 flex items-center gap-2">
+          <PieChart className="text-primary-600" /> Painel Financeiro
+        </h2>
+        <div className="flex bg-secondary-100 p-1 rounded-lg w-full md:w-auto h-10">
+          <button onClick={() => setView('monthly')} className={`flex-1 md:flex-none px-6 rounded-md text-sm font-medium transition flex items-center justify-center ${view === 'monthly' ? 'bg-white shadow text-primary-600' : 'text-secondary-600'}`}>Mensal</button>
+          <button onClick={() => setView('annual')} className={`flex-1 md:flex-none px-6 rounded-md text-sm font-medium transition flex items-center justify-center ${view === 'annual' ? 'bg-white shadow text-primary-600' : 'text-secondary-600'}`}>Anual</button>
+        </div>
+      </div>
+
+      {view === 'monthly' ? (
+        <div className="space-y-6">
+          {/* Filtros Mensais */}
+          <div className="flex flex-wrap gap-4 items-center bg-primary-50 p-4 rounded-xl border border-primary-100">
+            <div className="flex items-center gap-2 flex-1 min-w-[120px]">
+              <label className="font-bold text-primary-600 text-sm">Ano:</label>
+              <select value={selectedYear} onChange={(e) => setSelectedYear(parseInt(e.target.value))} className="w-full p-2 border rounded-lg bg-white outline-none focus:ring-2 focus:ring-primary-500 text-sm">
+                {years.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </div>
+            <div className="flex items-center gap-2 flex-1 min-w-[120px]">
+              <label className="font-bold text-primary-600 text-sm">Mês:</label>
+              <select value={selectedMonth} onChange={(e) => setSelectedMonth(parseInt(e.target.value))} className="w-full p-2 border rounded-lg bg-white outline-none focus:ring-2 focus:ring-primary-500 text-sm">
+                {monthNames.map((m, idx) => <option key={idx} value={idx}>{m}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Card de Lucro */}
+          <div className="bg-gradient-to-r from-success to-green-400 rounded-2xl p-6 text-white shadow-lg">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-green-100 text-xs font-medium uppercase tracking-wider">Lucro Líquido (Real)</p>
+                <p className="text-white/80 text-xs mb-1">{monthNames[selectedMonth]}/{selectedYear}</p>
+                <h3 className="text-3xl md:text-4xl font-bold tracking-tight">{formatCurrency(calculateMonthlyNetTotal(selectedMonth, selectedYear))}</h3>
+              </div>
+              <div className="bg-white bg-opacity-20 p-3 rounded-full"><DollarSign size={28} className="text-white" /></div>
+            </div>
+          </div>
+
+          {/* Tabela Detalhada */}
+          <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm whitespace-nowrap">
+                <thead className="bg-secondary-50 border-b">
+                  <tr>
+                    <th className="p-3 font-semibold text-secondary-700">Data</th>
+                    <th className="p-3 font-semibold text-secondary-700">Cliente</th>
+                    <th className="p-3 font-semibold text-secondary-700 text-right">Bruto</th>
+                    <th className="p-3 font-semibold text-error text-right">Prej.</th>
+                    <th className="p-3 font-semibold text-success text-right">Líquido</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {getBookingsByMonth(selectedMonth, selectedYear).length > 0 ? (
+                    getBookingsByMonth(selectedMonth, selectedYear).map(booking => {
+                      const damage = parseFloat(booking.damageValue) || 0;
+                      const realValue = (parseFloat(booking.totalValue) || 0) - damage;
+                      return (
+                        <tr key={booking.id} className="hover:bg-secondary-50">
+                          <td className="p-3 text-secondary-800">{new Date(booking.checkIn).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</td>
+                          <td className="p-3">
+                            <div className="font-medium text-secondary-900 truncate max-w-[100px] md:max-w-none">{booking.dogName}</div>
+                          </td>
+                          <td className="p-3 text-right text-secondary-700">R$ {booking.totalValue}</td>
+                          <td className="p-3 text-right text-error font-medium">{damage > 0 ? `- R$ ${damage}` : '-'}</td>
+                          <td className="p-3 text-right font-bold text-success">{formatCurrency(realValue)}</td>
+                        </tr>
+                      )
+                    })
+                  ) : (
+                    <tr><td colSpan="5" className="p-8 text-center text-secondary-500 italic">Sem faturamento neste período.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {/* Filtros Anuais */}
+          <div className="flex items-center gap-2 bg-primary-50 p-3 rounded-xl border border-primary-100 w-full md:w-fit justify-center md:justify-start">
+            <label className="font-bold text-primary-600 text-sm">Ano:</label>
+            <select value={selectedYear} onChange={(e) => setSelectedYear(parseInt(e.target.value))} className="p-2 pr-8 border rounded-lg bg-white outline-none focus:ring-2 focus:ring-primary-500 text-sm font-bold">
+              {years.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </div>
+
+          {/* Tabela Anual Otimizada para Mobile */}
+          <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
+            <table className="w-full text-left table-fixed"> {/* table-fixed é crucial para não estourar */}
+              <thead className="bg-secondary-50 border-b text-xs md:text-sm uppercase tracking-wider">
+                <tr>
+                  <th className="w-[25%] p-3 pl-4 font-bold text-secondary-600">Mês</th>
+                  <th className="w-[20%] p-3 text-center font-bold text-secondary-600" title="Quantidade de Hospedagens">Qtd.</th>
+                  <th className="w-[55%] p-3 pr-4 text-right font-bold text-secondary-600">Lucro</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y text-sm md:text-base">
+                {annualData.map(({ month, shortMonth, netTotal, count }) => (
+                  <tr key={month} className="hover:bg-secondary-50 transition">
+                    <td className="p-3 pl-4 font-medium text-secondary-800 truncate">
+                      {/* Mostra abreviação no mobile e nome completo no desktop */}
+                      <span className="md:hidden">{shortMonth}</span>
+                      <span className="hidden md:inline">{month}</span>
+                    </td>
+                    <td className="p-3 text-center">
+                      {count > 0 ? (
+                        <span className="inline-flex items-center justify-center bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-bold min-w-[24px]">
+                          {count}
+                        </span>
+                      ) : <span className="text-secondary-300">-</span>}
+                    </td>
+                    <td className={`p-3 pr-4 text-right font-bold truncate ${netTotal > 0 ? 'text-success' : 'text-secondary-400'}`}>
+                      {netTotal > 0 ? formatCurrency(netTotal) : 'R$ 0,00'}
+                    </td>
+                  </tr>
+                ))}
+                {/* TOTALIZADOR */}
+                <tr className="bg-secondary-100 border-t-2 border-secondary-300">
+                  <td className="p-3 pl-4 font-extrabold text-secondary-800 text-xs md:text-sm">TOTAL</td>
+                  <td className="p-3 text-center font-bold text-secondary-800 text-xs md:text-sm">
+                    {annualBookingsCount}
+                  </td>
+                  <td className={`p-3 pr-4 text-right font-extrabold text-sm md:text-base ${annualNetTotal > 0 ? 'text-success' : 'text-secondary-500'}`}>
+                    {formatCurrency(annualNetTotal)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+==================================================================
+ARQUIVO: \src\components\InstallButton.jsx
+==================================================================
+
+import React, { useState, useEffect } from 'react';
+import { Download, Share, PlusSquare, X, MoreVertical } from 'lucide-react';
+
+export default function InstallButton({ deferredPrompt }) {
+    const [isIOS, setIsIOS] = useState(false);
+    const [showIOSInstructions, setShowIOSInstructions] = useState(false);
+    const [showAndroidInstructions, setShowAndroidInstructions] = useState(false); // Novo estado para manual do Android
+    const [isStandalone, setIsStandalone] = useState(false);
+
+    useEffect(() => {
+        // Detecta se já está instalado (Standalone) para esconder o botão
+        const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches ||
+            window.navigator.standalone === true;
+        setIsStandalone(isStandaloneMode);
+
+        // Detecta iOS
+        const userAgent = window.navigator.userAgent.toLowerCase();
+        const ios = /iphone|ipad|ipod/.test(userAgent);
+        if (ios && !isStandaloneMode) {
+            setIsIOS(true);
+        }
+    }, []);
+
+    const handleClick = async (e) => {
+        e.preventDefault();
+
+        // --- Lógica iPhone ---
+        if (isIOS) {
+            setShowIOSInstructions(true);
+            return;
+        }
+
+        // --- Lógica Android ---
+        // Cenário 1: Temos o evento automático guardado
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                console.log('Instalação aceita');
+            }
+            // O deferredPrompt geralmente só pode ser usado uma vez.
+        }
+        // Cenário 2: NÃO temos o evento (Plano B - Manual)
+        else {
+            setShowAndroidInstructions(true);
+        }
+    };
+
+    // Se já estiver rodando como app instalado, não mostra nada.
+    if (isStandalone) return null;
+
+    // --- REMOVEMOS A LINHA QUE ESCONDIA O BOTÃO SE NÃO TIVESSE O PROMPT ---
+    // O botão agora sempre tenta renderizar se não for standalone.
+
+    return (
+        <>
+            {/* O Botão do Menu */}
+            <button
+                onClick={handleClick}
+                className="flex items-center gap-3 p-4 rounded-lg font-bold text-primary-600 bg-primary-50 hover:bg-primary-100 w-full transition-colors border border-primary-100"
+            >
+                <Download size={20} />
+                <span>Instalar App</span>
+            </button>
+
+            {/* --- MODAL DE INSTRUÇÕES MANUAL ANDROID (NOVO) --- */}
+            {showAndroidInstructions && (
+                <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center animate-fade-in p-4" onClick={() => setShowAndroidInstructions(false)}>
+                    <div className="bg-white w-full max-w-sm p-6 rounded-2xl shadow-2xl relative" onClick={(e) => e.stopPropagation()}>
+                        <button onClick={() => setShowAndroidInstructions(false)} className="absolute top-4 right-4 text-secondary-400 hover:text-secondary-600"><X /></button>
+
+                        <div className="flex flex-col items-center text-center space-y-4">
+                            <div className="w-16 h-16 bg-secondary-100 rounded-xl flex items-center justify-center mb-2">
+                                <img src="/logo.png" alt="Icon" className="w-12 h-12 object-contain" />
+                            </div>
+                            <h3 className="text-xl font-bold text-primary-800">Instalação Manual</h3>
+                            <p className="text-sm text-secondary-600">A instalação automática não está disponível agora. Faça manualmente:</p>
+
+                            <div className="w-full space-y-3 text-left bg-secondary-50 p-4 rounded-xl border border-secondary-100 text-sm">
+                                <div className="flex items-center gap-3">
+                                    <MoreVertical size={20} className="text-secondary-600" />
+                                    <span>1. Toque nos <b>três pontinhos</b> no canto superior do navegador.</span>
+                                </div>
+                                <div className="h-px bg-secondary-200 w-full"></div>
+                                <div className="flex items-center gap-3">
+                                    <Download size={20} className="text-primary-600" />
+                                    <span>2. Selecione <b>"Instalar aplicativo"</b> ou <b>"Adicionar à tela inicial"</b>.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* --- MODAL DE INSTRUÇÕES IPHONE (MANTIDO IGUAL) --- */}
+            {showIOSInstructions && (
+                <div className="fixed inset-0 z-[60] bg-black/60 flex items-end justify-center animate-fade-in" onClick={() => setShowIOSInstructions(false)}>
+                    <div className="bg-white w-full max-w-md p-6 rounded-t-2xl shadow-2xl relative" onClick={(e) => e.stopPropagation()}>
+                        <button onClick={() => setShowIOSInstructions(false)} className="absolute top-4 right-4 text-secondary-400 hover:text-secondary-600"><X /></button>
+
+                        <div className="flex flex-col items-center text-center space-y-4">
+                            <div className="w-16 h-16 bg-secondary-100 rounded-xl flex items-center justify-center mb-2">
+                                <img src="/logo.png" alt="Icon" className="w-12 h-12 object-contain" />
+                            </div>
+                            <h3 className="text-xl font-bold text-primary-800">Instalar no iPhone</h3>
+                            <p className="text-sm text-secondary-600">Siga os passos abaixo:</p>
+
+                            <div className="w-full space-y-3 text-left bg-secondary-50 p-4 rounded-xl border border-secondary-100 text-sm">
+                                <div className="flex items-center gap-3">
+                                    <Share size={20} className="text-primary-600" />
+                                    <span>1. Toque em <b>Compartilhar</b>.</span>
+                                </div>
+                                <div className="h-px bg-secondary-200 w-full"></div>
+                                <div className="flex items-center gap-3">
+                                    <PlusSquare size={20} className="text-secondary-600" />
+                                    <span>2. Escolha <b>Adicionar à Tela de Início</b>.</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 translate-y-full">
+                            <div className="w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[10px] border-t-white"></div>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
+    );
+}
+
+==================================================================
+ARQUIVO: \src\components\LoginScreen.jsx
+==================================================================
+
+import React, { useState } from 'react';
+import { Mail, Lock, Dog } from 'lucide-react';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+
+const LoginScreen = ({ onLogin, db, appId, isDbReady = true }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleLoginSubmit = async (e) => {
+    e.preventDefault();
+    if (!isDbReady) {
+      alert("Aguardando conexão com o servidor...");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const loginsRef = collection(db, 'artifacts', appId, 'public', 'data', 'logins');
+      const q = query(loginsRef, where("email", "==", email), where("password", "==", password));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        onLogin();
+      } else {
+        alert("Email ou senha incorretos. Verifique suas credenciais.");
+        setIsLoading(false);
+      }
+    } catch (error) {
+      console.error("Erro ao realizar login:", error);
+      alert(`Erro de conexão: ${error.message}`);
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden border border-secondary-200">
+        <div className="bg-primary-50 p-8 text-center border-b border-primary-100">
+          <div className="inline-flex bg-white p-2 rounded-full shadow-sm mb-4">
+            <img src="/logo.png" alt="Logo" className="w-20 h-20 rounded-full object-cover" />
+          </div>
+          <h1 className="text-2xl font-bold text-primary-800">Uma Casa Boa</h1>
+          <p className="text-primary-600 font-medium uppercase tracking-wider text-sm">Pra Cachorro</p>
+        </div>
+        <div className="p-8">
+          <form onSubmit={handleLoginSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-secondary-700 mb-1">Email</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-3 text-secondary-400" size={20} />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-all text-secondary-900"
+                  placeholder="seu@email.com"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-secondary-700 mb-1">Senha</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-3 text-secondary-400" size={20} />
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 outline-none transition-all text-secondary-900"
+                  placeholder="••••••••"
+                />
+              </div>
+            </div>
+            <button
+              type="submit"
+              disabled={isLoading || !isDbReady}
+              className="w-full bg-primary-800 text-white py-3 rounded-lg font-bold hover:bg-primary-900 transition shadow-lg flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              {isLoading ? 'Verificando...' : 'Acessar Sistema'}
+            </button>
+          </form>
+          <p className="text-xs text-center text-secondary-400 mt-6">
+            Status: {isDbReady ? <span className="text-success font-bold">Online</span> : <span className="text-warning">Conectando...</span>}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default LoginScreen;
+
+==================================================================
+ARQUIVO: \src\components\shared\ImageLightbox.jsx
+==================================================================
+
+import React, { useEffect } from 'react';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const ImageLightbox = ({ images, currentIndex, onClose, setIndex }) => {
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'ArrowRight') setIndex((currentIndex + 1) % images.length);
+      if (e.key === 'ArrowLeft') setIndex((currentIndex - 1 + images.length) % images.length);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentIndex, images.length, onClose, setIndex]);
+
+  if (!images || images.length === 0) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center backdrop-blur-sm animate-fade-in">
+      <button 
+          onClick={onClose} 
+          className="absolute top-4 right-4 text-white hover:text-gray-300 p-2 rounded-full bg-black/20 hover:bg-white/10 transition"
+          title="Fechar (Esc)"
+      >
+          <X size={32} />
+      </button>
+      
+      {images.length > 1 && (
+        <button 
+          onClick={(e) => { e.stopPropagation(); setIndex((currentIndex - 1 + images.length) % images.length); }} 
+          className="absolute left-4 text-white hover:text-gray-300 p-3 rounded-full bg-black/20 hover:bg-white/10 transition"
+        >
+          <ChevronLeft size={40} />
+        </button>
+      )}
+      
+      <div className="relative max-w-[90vw] max-h-[90vh]">
+           <img 
+              src={images[currentIndex]} 
+              className="max-h-[85vh] max-w-[90vw] object-contain rounded-lg shadow-2xl" 
+              alt={`Foto ${currentIndex + 1}`} 
+           />
+           <div className="absolute -bottom-10 left-0 right-0 text-center text-white text-sm font-medium">
+              {currentIndex + 1} de {images.length}
+           </div>
+      </div>
+      
+      {images.length > 1 && (
+        <button 
+          onClick={(e) => { e.stopPropagation(); setIndex((currentIndex + 1) % images.length); }} 
+          className="absolute right-4 text-white hover:text-gray-300 p-3 rounded-full bg-black/20 hover:bg-white/10 transition"
+        >
+          <ChevronRight size={40} />
+        </button>
+      )}
+    </div>
+  );
+};
+
+export default ImageLightbox;
+
+==================================================================
+ARQUIVO: \src\components\shared\RatingComponents.jsx
+==================================================================
+
+import React from 'react';
+import { Star, Smile, Meh, Frown, Angry, Laugh } from 'lucide-react';
+
+export const StarRating = ({ rating, setRating, readonly = false, size = 24 }) => {
+  return (
+    <div className="flex space-x-1">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          onClick={(e) => { e.preventDefault(); !readonly && setRating && setRating(star); }}
+          className={`${readonly ? 'cursor-default' : 'cursor-pointer'} focus:outline-none transition-colors duration-200`}
+          disabled={readonly}
+          title={`Nota ${star}`}
+        >
+          <Star
+            size={readonly ? (size > 16 ? 16 : size) : size}
+            className={`${star <= rating ? 'fill-current text-[#FFD700]' : 'text-gray-300'}`}
+            strokeWidth={star <= rating ? 0 : 2}
+            stroke={star <= rating ? 'none' : '#9CA3AF'}
+          />
+        </button>
+      ))}
+    </div>
+  );
+};
+
+export const FaceRating = ({ rating, setRating, readonly = false, size = 24 }) => {
+  const faces = [
+    { val: 1, icon: Angry, color: 'text-[#FF0000]', label: 'Raiva' },
+    { val: 2, icon: Frown, color: 'text-[#FF7F00]', label: 'Triste' },
+    { val: 3, icon: Meh, color: 'text-[#FFD700]', label: 'Neutro' },
+    { val: 4, icon: Smile, color: 'text-[#00FF00]', label: 'Bom' },
+    { val: 5, icon: Laugh, color: 'text-[#00AA00]', label: 'Excelente' },
+  ];
+
+  const safeRating = Number(rating) || 3;
+
+  return (
+    <div className="flex space-x-3">
+      {faces.map((face) => {
+        const Icon = face.icon;
+        const isSelected = safeRating === face.val;
+        
+        return (
+          <button
+            key={face.val}
+            type="button"
+            onClick={(e) => { e.preventDefault(); !readonly && setRating && setRating(face.val); }}
+            className={`
+              ${readonly ? 'cursor-default' : 'cursor-pointer'} focus:outline-none transition-colors duration-200
+              flex flex-col items-center gap-1 focus:outline-none group
+            `}
+            disabled={readonly}
+            title={face.label}
+          >
+            <Icon
+              size={size}
+              className={`
+                ${isSelected ? face.color : 'text-gray-300'} 
+                ${isSelected && !readonly ? 'fill-current opacity-100 stroke-[2.5px]' : 'group-hover:text-gray-400'}
+                transition-all duration-200
+              `}
+              strokeWidth={isSelected ? 2.5 : 2}
+            />
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
+==================================================================
+ARQUIVO: \src\components\SplashScreen.jsx
+==================================================================
+
+import React, { useEffect, useState } from 'react';
+import { PawPrint } from 'lucide-react';
+
+export default function SplashScreen({ onFinish }) {
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    // --- ÁUDIO ---
+    const audioUrl = 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_70433997e6.mp3?filename=dog-bark-17998.mp3';
+    const playBark = () => {
+      const audio = new Audio(audioUrl);
+      audio.volume = 0.4;
+      audio.play().catch(() => { });
+    };
+
+    // --- SEQUÊNCIA DE ANIMAÇÃO ---
+    const timer1 = setTimeout(() => setStep(1), 500);
+    const bark1 = setTimeout(() => playBark(), 600);
+    const bark2 = setTimeout(() => playBark(), 1100);
+    const timer2 = setTimeout(() => setStep(2), 1500);
+    const bark3 = setTimeout(() => playBark(), 1800);
+    const timer3 = setTimeout(() => setStep(3), 4500);
+    const timer4 = setTimeout(onFinish, 5000);
+
+    return () => {
+      clearTimeout(timer1); clearTimeout(timer2); clearTimeout(timer3); clearTimeout(timer4);
+      clearTimeout(bark1); clearTimeout(bark2); clearTimeout(bark3);
+    };
+  }, [onFinish]);
+
+  return (
+    <div className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-primary-900 transition-opacity duration-700 ${step === 3 ? 'opacity-0' : 'opacity-100'}`}>
+
+      {/* Container Central */}
+      <div className="relative flex flex-col items-center mb-8">
+
+        {/* --- ÍCONE PRINCIPAL (IMAGEM PNG COM CROP CIRCULAR) --- */}
+        <div className={`transition-all duration-700 transform ${step >= 1 ? 'scale-100 translate-y-0 opacity-100' : 'scale-0 translate-y-10 opacity-0'}`}>
+          <div className="relative bg-white w-40 h-40 rounded-full shadow-2xl animate-bounce flex items-center justify-center overflow-hidden border-4 border-primary-500">
+            <img
+              src="/logo.png"
+              alt="Logo Uma Casa Boa Pra Cachorro"
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </div>
+        {/* ----------------------- */}
+
+        {/* Texto Centralizado */}
+        <div className={`text-center mt-8 transition-all duration-1000 ${step >= 1 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
+          <h1 className="text-4xl md:text-6xl font-black text-white tracking-wide leading-none">
+            Uma Casa Boa
+          </h1>
+          <p className="text-xl md:text-3xl font-bold text-primary-200 tracking-[0.2em] uppercase mt-2">
+            Pra Cachorro
+          </p>
+        </div>
+
+        {/* Barra de carregamento */}
+        <div className="mt-8 w-56 h-1.5 bg-primary-800 rounded-full overflow-hidden">
+          <div className={`h-full bg-accent rounded-full transition-all duration-[4000ms] ease-out ${step >= 1 ? 'w-full' : 'w-0'}`}></div>
+        </div>
+      </div>
+
+      {/* Animação das Patinhas (Mantida) */}
+      {step >= 2 && (
+        <div className="absolute bottom-16 md:bottom-24 flex gap-8 opacity-40">
+          <PawPrint size={30} className="text-primary-300 animate-pulse" style={{ animationDelay: '0ms', transform: 'rotate(-20deg)' }} />
+          <PawPrint size={30} className="text-primary-300 animate-pulse" style={{ animationDelay: '300ms', transform: 'rotate(20deg) translateY(-15px)' }} />
+          <PawPrint size={30} className="text-primary-300 animate-pulse" style={{ animationDelay: '600ms', transform: 'rotate(-20deg)' }} />
+          <PawPrint size={30} className="text-primary-300 animate-pulse" style={{ animationDelay: '900ms', transform: 'rotate(20deg) translateY(-15px)' }} />
+          <PawPrint size={30} className="text-primary-300 animate-pulse" style={{ animationDelay: '1200ms', transform: 'rotate(-20deg)' }} />
+        </div>
+      )}
+
+      <div className="absolute bottom-4 text-primary-400 text-[10px] font-medium uppercase tracking-widest">
+        Carregando sistema...
+      </div>
+    </div>
+  );
+}
+
+==================================================================
+ARQUIVO: \src\index.css
+==================================================================
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+==================================================================
+ARQUIVO: \src\main.jsx
+==================================================================
+
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import App from './App.jsx'
+import ErrorBoundary from './components/ErrorBoundary'
+
+createRoot(document.getElementById('root')).render(
+  <StrictMode>
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  </StrictMode>,
+)
+
+==================================================================
+ARQUIVO: \src\utils\calculations.js
+==================================================================
+
+export const calculateTotalDays = (checkInStr, checkOutStr) => {
+  if (!checkInStr || !checkOutStr) return 0;
+
+  const start = new Date(checkInStr);
+  const end = new Date(checkOutStr);
+
+  // Zera as horas para calcular apenas dias cheios (noites)
+  const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+
+  const diffTime = endDay.getTime() - startDay.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  // Garante no mínimo 1 diária
+  return Math.max(1, diffDays);
+};
+
+export const formatCurrency = (value) => {
+  return new Intl.NumberFormat('pt-BR', { 
+    style: 'currency', 
+    currency: 'BRL' 
+  }).format(value || 0);
+};
+
+export const formatDateBR = (dateStr) => {
+  if (!dateStr) return '';
+  return new Date(dateStr).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+};
+
+export const getBookingStatus = (checkIn, checkOut) => {
+  const now = new Date();
+  const start = new Date(checkIn);
+  const end = new Date(checkOut);
+
+  if (now < start) return { label: 'Agendado', color: 'bg-blue-100 text-blue-700', border: 'border-blue-200' };
+  if (now >= start && now <= end) return { label: 'Hospedado', color: 'bg-green-100 text-green-700 animate-pulse', border: 'border-green-200' };
+  return { label: 'Finalizado', color: 'bg-gray-100 text-gray-500', border: 'border-gray-200' };
+};
+
+==================================================================
+ARQUIVO: \src\utils\fileHelpers.js
+==================================================================
+
+export const compressImage = (file) => {
+    return new Promise((resolve, reject) => {
+      if (!file || !file.type.startsWith('image/')) {
+        resolve(file);
+        return;
+      }
+  
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const MAX_WIDTH = 1024;
+          const MAX_HEIGHT = 1024;
+          const MAX_SIZE_MB = 3;
+          let width = img.width;
+          let height = img.height;
+  
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+  
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+  
+          let quality = 0.9;
+          let compressedBlob;
+  
+          const dataURItoBlob = (dataURI) => {
+            const byteString = atob(dataURI.split(',')[1]);
+            const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+            const ab = new ArrayBuffer(byteString.length);
+            const ia = new Uint8Array(ab);
+            for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+            return new Blob([ab], { type: mimeString });
+          };
+  
+          do {
+            compressedBlob = dataURItoBlob(canvas.toDataURL('image/jpeg', quality));
+            quality -= 0.1;
+          } while (compressedBlob.size > MAX_SIZE_MB * 1024 * 1024 && quality > 0.3);
+  
+          if (compressedBlob.size > MAX_SIZE_MB * 1024 * 1024) {
+            reject(new Error(`O arquivo ainda é maior que ${MAX_SIZE_MB}MB.`));
+          } else {
+            resolve(compressedBlob);
+          }
+        };
+        img.src = event.target.result;
+      };
+      reader.onerror = (error) => reject(error);
+      reader.readAsDataURL(file);
+    });
+  };
+
+==================================================================
+ARQUIVO: \src\utils\firebase.js
+==================================================================
+
+import { initializeApp } from 'firebase/app';
+import { getAuth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyACJGg6OZiZ16aEBOTFaUq9kqQmLxV6OU0",
+  authDomain: "doghotel-eca69.firebaseapp.com",
+  projectId: "doghotel-eca69",
+  storageBucket: "doghotel-eca69.firebasestorage.app",
+  messagingSenderId: "845677452140",
+  appId: "1:845677452140:web:eb3d58618809c16dccf149"
+};
+
+const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+export const storage = getStorage(app);
+export const appId = 'doghotel-production';
+
+==================================================================
+ARQUIVO: \tailwind.config.js
+==================================================================
+
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          50: '#f0f9ff',
+          100: '#e0f2fe',
+          200: '#bae6fd',
+          300: '#7dd3fc',
+          400: '#38bdf8',
+          500: '#0ea5e9',
+          600: '#0284c7',
+          700: '#0369a1',
+          800: '#1e293b', // Deep blue-grey (Slate 800) - Main Brand
+          900: '#0f172a', // Slate 900
+        },
+        secondary: {
+          50: '#f8fafc',
+          100: '#f1f5f9',
+          200: '#e2e8f0',
+          300: '#cbd5e1',
+          400: '#94a3b8',
+          500: '#64748b', // Slate 500
+          600: '#475569', // Slate 600
+          700: '#334155',
+          800: '#1e293b',
+          900: '#0f172a',
+        },
+        accent: {
+          500: '#0ea5e9', // Sky 500
+          600: '#0284c7',
+        },
+        surface: '#ffffff',
+        background: '#f1f5f9', // Slate 100
+        success: '#10b981',
+        warning: '#f59e0b',
+        error: '#ef4444',
+      }
+    },
+  },
+  plugins: [],
+}
+
+==================================================================
+ARQUIVO: \vite.config.js
+==================================================================
+
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [react()],
+})

@@ -1,0 +1,15 @@
+src/
+├── components/
+│   ├── shared/
+│   │   ├── ImageLightbox.jsx
+│   │   └── RatingComponents.jsx
+│   ├── BookingCard.jsx
+│   ├── BookingModal.jsx
+│   ├── ClientList.jsx
+│   ├── FinancialPanel.jsx
+│   └── LoginScreen.jsx
+├── utils/
+│   ├── calculations.js   <-- Nova lógica de datas e moeda
+│   ├── firebase.js       <-- Configuração isolada
+│   └── fileHelpers.js    <-- Compressão de imagem
+└── App.jsx               <-- Orquestrador principal
