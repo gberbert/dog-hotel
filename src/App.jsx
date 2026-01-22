@@ -10,7 +10,7 @@ import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 
 // Imports Modulares
 import { db, auth, appId } from './utils/firebase.js';
-import { formatDateBR } from './utils/calculations.js';
+import { formatDateBR, isVaccineExpired } from './utils/calculations.js';
 import SplashScreen from './components/SplashScreen.jsx';
 import LoginScreen from './components/LoginScreen.jsx';
 import BookingCard from './components/BookingCard.jsx';
@@ -136,31 +136,45 @@ export default function DogHotelApp() {
 
   const handleSave = async (formData) => {
     if (!user) return alert("Sem conexão.");
-    const isNewClient = !formData.clientId;
     const isBooking = modalMode === 'booking';
     const isEditingBooking = isBooking && formData.id;
 
-    if (isNewClient && (modalMode === 'client_new' || isBooking)) {
-      const dogName = (formData.dogName || '').trim().toLowerCase();
-      const w1 = (formData.whatsapp || '').replace(/\D/g, '').trim();
-      const w2 = (formData.whatsapp2 || '').replace(/\D/g, '').trim();
-
-      const isDuplicate = clients.some(c => {
-        const cName = (c.dogName || '').trim().toLowerCase();
-        if (cName !== dogName) return false;
-        const cw1 = (c.whatsapp || '').replace(/\D/g, '').trim();
-        const cw2 = (c.whatsapp2 || '').replace(/\D/g, '').trim();
-        return (w1 && (w1 === cw1 || w1 === cw2)) || (w2 && (w2 === cw1 || w2 === cw2));
-      });
-
-      if (isDuplicate) return alert(`ERRO: Já existe um pet "${formData.dogName}" vinculado a este WhatsApp.`);
+    // --- Validação de Vacina (Feature Nova) ---
+    if (isVaccineExpired(formData.lastAntiRabica) || isVaccineExpired(formData.lastMultipla)) {
+      if (!confirm("⚠️ ATENÇÃO: Há vacinas vencidas (> 1 ano). Deseja realmente salvar este registro?")) return;
     }
 
     try {
       let clientId = formData.clientId;
       const clientsRef = collection(db, 'artifacts', appId, 'public', 'data', 'clients');
-      const existingClient = !clientId ?
-        clients.find(c => c.dogName.toLowerCase() === formData.dogName.toLowerCase()) : clients.find(c => c.id === clientId);
+
+      // --- Correção de Duplicidade: Chave Composta (Pet + Tutor) ---
+      // Se não temos ID, buscamos match EXATO de (Pet + Tutor) para evitar sobrescrever pets com mesmo nome de tutores diferentes
+      let existingClient = clientId ? clients.find(c => c.id === clientId) : null;
+
+      if (!existingClient) {
+        const inputDog = (formData.dogName || '').trim().toLowerCase();
+        const inputOwner = (formData.ownerName || '').trim().toLowerCase();
+        const inputW1 = (formData.whatsapp || '').replace(/\D/g, '').trim();
+
+        existingClient = clients.find(c => {
+          const dbDog = (c.dogName || '').trim().toLowerCase();
+          if (dbDog !== inputDog) return false; // Nome do cão diferente -> Não é o mesmo
+
+          // Se nome do cão é igual, verifica o tutor
+          const dbOwner = (c.ownerName || '').trim().toLowerCase();
+          const dbW1 = (c.whatsapp || '').replace(/\D/g, '').trim();
+          const dbW2 = (c.whatsapp2 || '').replace(/\D/g, '').trim();
+
+          const ownerMatch = (inputOwner.length > 0 && dbOwner === inputOwner);
+          const phoneMatch = (inputW1.length > 5 && (inputW1 === dbW1 || inputW1 === dbW2));
+
+          return ownerMatch || phoneMatch;
+        });
+
+        // Se encontrou por match de nome+tutor, assume esse ID para editar
+        if (existingClient) clientId = existingClient.id;
+      }
 
       // Helper Conservador: Se o form estiver vazio, mantém o banco.
       const getVal = (formVal, dbVal) => {

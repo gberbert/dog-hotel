@@ -4,7 +4,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { updateDoc, doc } from 'firebase/firestore';
 import { db, storage, appId } from '../utils/firebase';
 import { compressImage } from '../utils/fileHelpers';
-import { calculateTotalDays, formatCurrency } from '../utils/calculations';
+import { calculateTotalDays, formatCurrency, isVaccineExpired } from '../utils/calculations';
 import ImageLightbox from './shared/ImageLightbox';
 
 // Sub-Componentes (Caminhos ajustados)
@@ -371,8 +371,9 @@ export default function BookingModal({ data, mode, bookings, clientDatabase, onS
                                                 name="lastAntiRabica"
                                                 value={formData.lastAntiRabica}
                                                 onChange={handleChange}
-                                                className="w-full p-2 border border-secondary-300 rounded text-sm bg-white focus:ring-2 focus:ring-primary-500 outline-none"
+                                                className={`w-full p-2 border rounded text-sm focus:ring-2 outline-none ${isVaccineExpired(formData.lastAntiRabica) ? 'border-red-500 bg-red-50 text-red-700 focus:ring-red-500' : 'border-secondary-300 bg-white focus:ring-primary-500'}`}
                                             />
+                                            {isVaccineExpired(formData.lastAntiRabica) && <span className="text-[10px] text-red-600 font-bold mt-1 block">⚠️ Vencida (&gt; 1 ano)</span>}
                                         </div>
                                         <div>
                                             <label className="text-[10px] font-bold text-primary-700 uppercase mb-1 block">Multi V8 / V10</label>
@@ -381,8 +382,9 @@ export default function BookingModal({ data, mode, bookings, clientDatabase, onS
                                                 name="lastMultipla"
                                                 value={formData.lastMultipla}
                                                 onChange={handleChange}
-                                                className="w-full p-2 border border-secondary-300 rounded text-sm bg-white focus:ring-2 focus:ring-primary-500 outline-none"
+                                                className={`w-full p-2 border rounded text-sm focus:ring-2 outline-none ${isVaccineExpired(formData.lastMultipla) ? 'border-red-500 bg-red-50 text-red-700 focus:ring-red-500' : 'border-secondary-300 bg-white focus:ring-primary-500'}`}
                                             />
+                                            {isVaccineExpired(formData.lastMultipla) && <span className="text-[10px] text-red-600 font-bold mt-1 block">⚠️ Vencida (&gt; 1 ano)</span>}
                                         </div>
                                     </div>
                                 </div>

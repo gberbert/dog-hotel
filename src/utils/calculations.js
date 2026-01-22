@@ -16,9 +16,9 @@ export const calculateTotalDays = (checkInStr, checkOutStr) => {
 };
 
 export const formatCurrency = (value) => {
-  return new Intl.NumberFormat('pt-BR', { 
-    style: 'currency', 
-    currency: 'BRL' 
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
   }).format(value || 0);
 };
 
@@ -35,4 +35,22 @@ export const getBookingStatus = (checkIn, checkOut) => {
   if (now < start) return { label: 'Agendado', color: 'bg-blue-100 text-blue-700', border: 'border-blue-200' };
   if (now >= start && now <= end) return { label: 'Hospedado', color: 'bg-green-100 text-green-700 animate-pulse', border: 'border-green-200' };
   return { label: 'Finalizado', color: 'bg-gray-100 text-gray-500', border: 'border-gray-200' };
+};
+
+export const isVaccineExpired = (dateStr) => {
+  if (!dateStr) return false;
+  const vaccineDate = new Date(dateStr);
+  // Simples sanity check para datas inválidas
+  if (isNaN(vaccineDate.getTime())) return false;
+
+  const today = new Date();
+  // Zera hora de hoje
+  today.setHours(0, 0, 0, 0);
+
+  const expirationDate = new Date(vaccineDate);
+  expirationDate.setFullYear(vaccineDate.getFullYear() + 1);
+  // Zera hora da expiração para comparar dia
+  expirationDate.setHours(0, 0, 0, 0);
+
+  return today > expirationDate;
 };
