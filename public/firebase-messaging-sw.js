@@ -22,8 +22,15 @@ messaging.onBackgroundMessage((payload) => {
     const notificationOptions = {
         body: payload.notification.body,
         icon: '/icon-192.png'
-        // badge removido para evitar quadrados brancos no Android
     };
+
+    // Tenta atualizar o Badge do App (Bolinha vermelha com número)
+    if (payload.data && payload.data.badge && 'setAppBadge' in navigator) {
+        const badgeCount = parseInt(payload.data.badge);
+        if (!isNaN(badgeCount)) {
+            navigator.setAppBadge(badgeCount).catch(e => console.log('Erro badge:', e));
+        }
+    }
 
     return self.registration.showNotification(notificationTitle, notificationOptions);
 });
