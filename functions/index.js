@@ -1,6 +1,6 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
-const { isSameDay, addDays, getMinutes, getHours } = require('date-fns');
+const { isSameDay, addDays, getMinutes, getHours, parseISO, isWithinInterval, startOfDay, endOfDay, format } = require('date-fns');
 const { toZonedTime } = require('date-fns-tz');
 
 admin.initializeApp();
@@ -11,112 +11,140 @@ exports.checkScheduledAlerts = functions.https.onRequest(async (req, res) => {
         const messaging = admin.messaging();
         const appId = 'doghotel-production';
 
-        // 1. Configurar Datas e Horários
+        // 1. Configurar Datas e Horários (BRT)
         const timeZone = 'America/Sao_Paulo';
         const nowUTC = new Date();
         const nowBRT = toZonedTime(nowUTC, timeZone);
+
         const currentHour = getHours(nowBRT);
         const currentMinute = getMinutes(nowBRT);
-        console.log(`Hora Atual Brasil: ${currentHour}:${currentMinute}`);
+        const todayStr = format(nowBRT, 'yyyy-MM-dd'); // Formato usado nas datas de checkin/out
+
+        console.log(`[Cron] Execução: ${todayStr} ${currentHour}:${currentMinute} (BRT)`);
 
         const notificationsToSend = [];
 
-        // 2. Buscar Clientes
-        const clientsRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('clients');
-        const clientsSnapshot = await clientsRef.get();
-        console.log(`Scan em ${clientsSnapshot.size} clientes.`);
+        // 2. Buscar Dados Necessários (Bookings e Clients)
+        const dataRef = db.collection('artifacts').doc(appId).collection('public').doc('data');
 
-        clientsSnapshot.forEach(doc => {
-            const client = doc.data();
-            const clientId = doc.id;
+        const [clientsSnap, bookingsSnap] = await Promise.all([
+            dataRef.collection('clients').get(),
+            dataRef.collection('bookings').get()
+        ]);
 
-            // --- VACINAS (Sempre checa) ---
-            const checkVaccine = (dateStr, type) => {
-                if (!dateStr) return;
-                const lastDose = new Date(dateStr);
-                const validUntil = addDays(lastDose, 365);
-                const warningDate = addDays(validUntil, -7);
+        // Mapear clientes para acesso rápido
+        const clientsMap = {};
+        clientsSnap.forEach(doc => {
+            clientsMap[doc.id] = { id: doc.id, ...doc.data() };
+        });
 
-                if (isSameDay(nowBRT, warningDate)) {
+        console.log(`[Cron] Database: ${bookingsSnap.size} bookings, ${clientsSnap.size} clientes.`);
+
+        // 3. Processar Bookings
+        bookingsSnap.forEach(doc => {
+            const booking = doc.data();
+            const bookingId = doc.id;
+            const client = clientsMap[booking.clientId];
+
+            if (!client) return; // Booking órfão, ignora
+
+            // --- A) EVENTOS DE CHECK-IN / CHECK-OUT (Briefing Diário) ---
+            // Regra Anti-Spam: Dispara apenas nos primeiros 15 min de cada hora comercial (8h-19h)
+            // Isso garante aviso mas evita notificar a cada 10 min o dia todo.
+            const isBriefingTime = (currentMinute <= 15) && (currentHour >= 8 && currentHour <= 19);
+
+            if (isBriefingTime) {
+                if (booking.checkIn === todayStr) {
                     notificationsToSend.push({
-                        title: `💉 Vacina a Vencer`,
-                        body: `A vacina ${type} do pet ${client.dogName} vence em 7 dias!`,
-                        type: 'vaccine',
+                        title: `🏨 Check-in Hoje`,
+                        body: `${client.dogName} chega hoje! (Tutor: ${client.ownerName || 'N/A'})`,
+                        type: 'checkin',
                         dogName: client.dogName,
-                        clientId: clientId,
+                        clientId: client.id,
+                        bookingId: bookingId,
                         timestamp: admin.firestore.FieldValue.serverTimestamp()
                     });
                 }
-                if (isSameDay(nowBRT, validUntil)) {
+
+                if (booking.checkOut === todayStr) {
                     notificationsToSend.push({
-                        title: `⚠️ Vacina Venceu Hoje`,
-                        body: `A vacina ${type} do pet ${client.dogName} venceu hoje.`,
-                        type: 'vaccine',
+                        title: `👋 Check-out Hoje`,
+                        body: `${client.dogName} sai hoje. Preparar pertences.`,
+                        type: 'checkout',
                         dogName: client.dogName,
-                        clientId: clientId,
+                        clientId: client.id,
+                        bookingId: bookingId,
                         timestamp: admin.firestore.FieldValue.serverTimestamp()
                     });
                 }
-            };
-            checkVaccine(client.lastAntiRabica, 'Anti-Rábica');
-            checkVaccine(client.lastMultipla, 'Múltipla');
+            }
 
-            // --- MEDICAÇÕES (Janela +/- 1 Hora) ---
-            if (client.medications && Array.isArray(client.medications)) {
-                client.medications.forEach(med => {
-                    if (!med.time) return;
-                    const [medHourStr] = med.time.split(':');
-                    const medHour = parseInt(medHourStr);
-                    const hourDiff = Math.abs(currentHour - medHour);
+            // --- B) HOSPEDAGEM ATIVA: REMÉDIOS ---
+            // Verifica se hoje está dentro do período (inclusivo)
+            // Comparação de Strings yyyy-MM-dd funciona lexicograficamente
+            const isActive = (todayStr >= booking.checkIn && todayStr <= booking.checkOut);
 
-                    if (hourDiff <= 1) {
-                        notificationsToSend.push({
-                            title: `💊 Hora do Remédio`,
-                            body: `Dar ${med.name} (${med.dosage}) para ${client.dogName} agora (${med.time})!`,
-                            type: 'medication',
-                            dogName: client.dogName,
-                            clientId: clientId,
-                            timestamp: admin.firestore.FieldValue.serverTimestamp(),
-                            medicationName: med.name
-                        });
-                    }
-                });
+            if (isActive) {
+                // Varre medicação do cliente associado
+                if (client.medications && Array.isArray(client.medications)) {
+                    client.medications.forEach(med => {
+                        if (!med.time) return;
+
+                        // Formato esperado med.time: "HH:mm"
+                        const [medHourStr] = med.time.split(':');
+                        const medHour = parseInt(medHourStr);
+
+                        // Janela de Notificação: Hora Exata
+                        // O Cron roda a cada 10 min. 
+                        // Se medHour == currentHour, estamos na hora certa.
+                        // Ex: Med as 14:00. Cron 14:00, 14:10, 14:20... -> Notifica em todos (insistente).
+                        // Isso é desejado para remédio (alerta crítico).
+                        if (medHour === currentHour) {
+                            notificationsToSend.push({
+                                title: `💊 Hora do Remédio`,
+                                body: `Dar ${med.name} (${med.dosage}) para ${client.dogName} agora (${med.time})!`,
+                                type: 'medication',
+                                dogName: client.dogName,
+                                clientId: client.id,
+                                medicationName: med.name,
+                                timestamp: admin.firestore.FieldValue.serverTimestamp()
+                            });
+                        }
+                    });
+                }
             }
         });
 
-        // 3. Persistir Notificações no DB e Enviar Push
+        // 4. Persistir e Enviar Push
         if (notificationsToSend.length > 0) {
+            console.log(`[Cron] Gerando ${notificationsToSend.length} notificações...`);
 
-            // A) Salvar no Firestore (Inbox do App)
-            const inboxRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('notifications');
             const batch = db.batch();
+            const notificationsRef = dataRef.collection('notifications');
 
+            // A) Salvar no Inbox
             notificationsToSend.forEach(note => {
-                const newDocInfo = inboxRef.doc();
+                const newDocInfo = notificationsRef.doc();
                 batch.set(newDocInfo, {
                     ...note,
-                    read: false, // Nova notificação começa como não lida
+                    read: false,
                     createdAt: nowBRT.toISOString()
                 });
             });
             await batch.commit();
-            console.log(`${notificationsToSend.length} notificações salvas no Inbox.`);
 
-
-            // B) Enviar Push (Para Celulares)
+            // B) Enviar Push Notification
             const devicesRef = db.collection('artifacts').doc(appId).collection('system').doc('notification_devices');
             const devicesSnap = await devicesRef.get();
 
             if (devicesSnap.exists) {
                 const tokens = devicesSnap.data().tokens || [];
-                const uniqueTokens = [...new Set(tokens)];
-                const validTokens = [];
+                const uniqueTokens = [...new Set(tokens)]; // Dedup tokens
                 const invalidTokens = [];
 
                 if (uniqueTokens.length > 0) {
+                    console.log(`[Cron] Enviando push para ${uniqueTokens.length} dispositivos.`);
 
-                    // Envia cada notificação como um push separado
-                    // (Poderia agrupar, mas enviar separado garante atenção)
                     for (const note of notificationsToSend) {
                         const message = {
                             notification: {
@@ -125,17 +153,10 @@ exports.checkScheduledAlerts = functions.https.onRequest(async (req, res) => {
                             },
                             webpush: {
                                 notification: {
-                                    icon: '/icon-192.png',
-                                    badge: '/badge-icon.png' // Tentativa de badge icon
+                                    icon: '/logo.png', // Logo relativa (precisa estar na public do hosting) ou absoluta
+                                    badge: '/logo.png'
                                 },
-                                fcm_options: {
-                                    link: 'https://dog-hotel-iota.vercel.app/'
-                                }
-                                // headers: {TTL: "4500"} // Opcional
-                            },
-                            data: {
-                                badge: '1', // Para tratamento customizado no SW se necessário
-                                url: '/notifications' // Para deep link futuro
+                                fcm_options: { link: '/' }
                             },
                             tokens: uniqueTokens
                         };
@@ -143,38 +164,41 @@ exports.checkScheduledAlerts = functions.https.onRequest(async (req, res) => {
                         try {
                             const response = await messaging.sendEachForMulticast(message);
 
-                            // Processar erros para limpeza de token
+                            // Coleta tokens inválidos para limpeza
                             response.responses.forEach((resp, idx) => {
                                 if (!resp.success) {
-                                    if (['messaging/registration-token-not-registered', 'messaging/invalid-argument'].includes(resp.error.code)) {
+                                    const errCode = resp.error.code;
+                                    if (errCode === 'messaging/registration-token-not-registered' || errCode === 'messaging/invalid-argument') {
                                         invalidTokens.push(uniqueTokens[idx]);
                                     }
                                 }
                             });
 
-                            console.log(`Push Enviado: "${note.title}". Success: ${response.successCount}/${uniqueTokens.length}`);
-
                         } catch (err) {
-                            console.error("Erro no envio multicast:", err);
+                            console.error("[Cron] Erro envio Push:", err.message);
                         }
                     }
 
-                    // C) Limpeza Automática de Tokens Inválidos
+                    // C) Limpeza de Tokens
                     if (invalidTokens.length > 0) {
                         const uniqueInvalid = [...new Set(invalidTokens)];
-                        console.log(`Removendo ${uniqueInvalid.length} tokens inválidos...`);
+                        console.log(`[Cron] Removendo ${uniqueInvalid.length} tokens inválidos.`);
                         await devicesRef.update({
                             tokens: admin.firestore.FieldValue.arrayRemove(...uniqueInvalid)
                         });
                     }
+                } else {
+                    console.log("[Cron] Sem dispositivos cadastrados para push.");
                 }
             }
+        } else {
+            console.log("[Cron] Nenhuma notificação necessária neste ciclo.");
         }
 
-        res.status(200).send(`Processamento Concluído. ${notificationsToSend.length} alertas gerados e salvos.`);
+        res.status(200).send(`Ciclo OK. Alertas: ${notificationsToSend.length}`);
 
     } catch (error) {
-        console.error("Erro Fatal:", error);
+        console.error("[Cron] Erro Fatal:", error);
         res.status(500).send("Erro: " + error.message);
     }
 });
