@@ -76,7 +76,7 @@ export default function NotificationManager() {
             }
 
             const token = await getToken(msg, {
-                // vapidKey: 'YOUR_PUBLIC_VAPID_KEY_HERE' // Se necessário depois
+                vapidKey: 'BlcjV2GKACtyG1LpMXXMS-06iu2UlqcmOKF-7bI-bmmRdCgyzHFKp00xEVX7f0aOVWgw-YaJKAZhOpkBsRcTg7I'
             });
 
             if (token) {
@@ -114,10 +114,25 @@ export default function NotificationManager() {
         }
     };
 
+    const handleReset = () => {
+        localStorage.removeItem('doghotel_fcm_token');
+        setFcmToken(null);
+        setPermissionState('default');
+        window.location.reload();
+    };
+
     if (permissionState === 'granted' && fcmToken) {
         return (
-            <div className="flex items-center gap-2 text-green-600 bg-green-50 px-3 py-1 rounded-full text-xs font-bold border border-green-200">
-                <Bell size={14} /> Notificações Ativas
+            <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 text-green-600 bg-green-50 px-3 py-1 rounded-full text-xs font-bold border border-green-200">
+                    <Bell size={14} /> Ativo
+                </div>
+                <button
+                    onClick={() => { if (confirm("Reativar notificações para corrigir problemas?")) handleReset(); }}
+                    className="text-[10px] text-secondary-400 underline hover:text-secondary-600"
+                >
+                    Refazer
+                </button>
             </div>
         );
     }
