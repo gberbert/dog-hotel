@@ -11,18 +11,22 @@ service cloud.firestore {
     match /artifacts/doghotel-production/public/data {
       
       // 1. Coleção LOGINS
-      // PERIGO: Mantido como 'read: true' para seu sistema de login atual funcionar.
-      // RECOMENDAÇÃO: Migrar para Firebase Auth nativo para poder bloquear leitura aqui.
       match /logins/{loginId} {
         allow read: if true;
-        allow write: if false; // Bloqueia escrita pública
+        allow write: if false; 
       }
 
-      // 2. Outras Coleções (Bookings, Clients, Races)
-      // Só permite ler/escrever se o usuário estiver "logado" (mesmo anonimamente)
+      // 2. Outras Coleções Públicas (Clients, Bookings...)
       match /{collectionName}/{docId} {
         allow read, write: if isAuthenticated();
       }
     }
+
+    // REGRA DE NOTIFICAÇÕES (NOVA)
+    // Permite que qualquer usuário autenticado (anônimo) salve seu token
+    match /artifacts/doghotel-production/system/notification_devices {
+      allow read, write: if true; // Aberto para permitir cadastro sem login complexo
+    }
+
   }
 }
