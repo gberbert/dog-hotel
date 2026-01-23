@@ -11,9 +11,12 @@ import ImageLightbox from './shared/ImageLightbox';
 import PetForm from './booking/PetForm';
 import OwnerForm from './booking/OwnerForm';
 import BookingDetailsForm from './booking/BookingDetailsForm';
+import BookingVariablesForm from './booking/BookingVariablesForm';
 import PDFHeader from './shared/PDFHeader';
+import CustomAlert from './shared/CustomAlert';
 
 export default function BookingModal({ data, mode, bookings, clientDatabase, onSave, onClose, races, onAddRace, onDeleteRace, onCreateClient, onOpenBooking }) {
+    const [alertState, setAlertState] = useState({ isOpen: false, type: 'warning', title: '', message: '', onConfirm: null });
     const [searchQuery, setSearchQuery] = useState('');
     const [showSearchResults, setShowSearchResults] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
@@ -197,6 +200,17 @@ export default function BookingModal({ data, mode, bookings, clientDatabase, onS
             lastAntiRabica: client.lastAntiRabica || '', lastMultipla: client.lastMultipla || '',
             pastBookings: client.pastBookings || []
         }));
+        // Verifica vacinas vencidas para alerta imediato
+        if (isVaccineExpired(client.lastAntiRabica) || isVaccineExpired(client.lastMultipla)) {
+            setAlertState({
+                isOpen: true,
+                type: 'error', // Estilo vermelho com ícone amarelo
+                title: 'ALERTA DE VACINA',
+                message: 'Este cliente possui vacinas vencidas (> 1 ano).\nVerifique as datas no cadastro do pet.',
+                onConfirm: () => setAlertState(prev => ({ ...prev, isOpen: false })),
+                confirmText: 'Entendido'
+            });
+        }
         setSearchQuery(''); setShowSearchResults(false);
     };
 
@@ -204,6 +218,17 @@ export default function BookingModal({ data, mode, bookings, clientDatabase, onS
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-2 md:p-4 overflow-y-auto">
+            {/* Alerta Customizado (Global no Modal) */}
+            <CustomAlert
+                isOpen={alertState.isOpen}
+                type={alertState.type}
+                title={alertState.title}
+                message={alertState.message}
+                onConfirm={alertState.onConfirm}
+                onCancel={alertState.onCancel}
+                confirmText={alertState.confirmText}
+            />
+
             {lightboxIndex >= 0 && <ImageLightbox images={formData.photos} currentIndex={lightboxIndex} setIndex={setLightboxIndex} onClose={() => setLightboxIndex(-1)} />}
             {vaccineLightboxIndex >= 0 && <ImageLightbox images={formData.vaccineDocs} currentIndex={vaccineLightboxIndex} setIndex={setVaccineLightboxIndex} onClose={() => setVaccineLightboxIndex(-1)} />}
 
@@ -277,9 +302,10 @@ export default function BookingModal({ data, mode, bookings, clientDatabase, onS
                                 {showSearchResults && searchQuery && (
                                     <div className="absolute left-0 right-0 bg-white shadow-xl z-20 max-h-60 overflow-y-auto border mt-1 rounded-lg">
                                         {clientDatabase.filter(c => c.dogName.toLowerCase().includes(searchQuery.toLowerCase())).map(c => (
-                                            <div key={c.id} onClick={() => selectClient(c)} className="p-3 hover:bg-secondary-50 cursor-pointer border-b font-medium flex justify-between">
-                                                <span>{c.dogName}</span>
-                                                <span className="text-sm text-secondary-500">{c.ownerName}</span>
+                                            <div key={c.id} onClick={() => selectClient(c)} className="p-3 hover:bg-secondary-50 cursor-pointer border-b font-medium flex items-center gap-2">
+                                                <span className="font-bold text-primary-800 whitespace-nowrap">{c.dogName}</span>
+                                                <span className="text-secondary-400 font-normal"> - </span>
+                                                <span className="text-sm text-secondary-600 truncate flex-1 text-left">{c.ownerName}</span>
                                             </div>
                                         ))}
                                     </div>
@@ -293,16 +319,96 @@ export default function BookingModal({ data, mode, bookings, clientDatabase, onS
                 {/* FORMULÁRIO */}
                 <form onSubmit={handleSubmit} className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
 
-                    <PetForm
-                        formData={formData}
-                        handleChange={handleChange}
-                        setFormData={setFormData}
-                        showReadOnly={showReadOnly}
-                        races={races}
-                        onAddRace={onAddRace}
-                        onDeleteRace={onDeleteRace}
-                        clientDatabase={clientDatabase}
-                    />
+                    <div className="space-y-6">
+                        <PetForm
+                            formData={formData}
+                            handleChange={handleChange}
+                            setFormData={setFormData}
+                            showReadOnly={showReadOnly}
+                            races={races}
+                            onAddRace={onAddRace}
+                            onDeleteRace={onDeleteRace}
+                            clientDatabase={clientDatabase}
+                        />
+
+                        {/* Fotos do Pet */}
+                        <div>
+                            <label className="text-sm font-bold flex items-center gap-2 mb-2"><Camera size={16} /> Fotos do Pet (Max 5)</label>
+                            <div className="flex flex-wrap gap-2">
+                                {formData.photos.map((url, i) => (
+                                    <div key={i} className="relative w-16 h-16 group">
+                                        <img src={url} alt="Pet" className="w-full h-full object-cover rounded-lg cursor-pointer border hover:border-primary-500" onClick={() => setLightboxIndex(i)} />
+                                        <button type="button" onClick={() => removePhoto(i, 'photos')} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition"><X size={12} /></button>
+                                    </div>
+                                ))}
+                                {formData.photos.length < 5 && (
+                                    <label className={`w-16 h-16 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-secondary-50 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                        <Upload size={20} className="text-secondary-400" />
+                                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileSelect(e, 'photos')} disabled={isUploading} />
+                                    </label>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Carteira de Vacinação + Datas */}
+                        <div className="bg-secondary-50 p-3 rounded-lg border border-secondary-200">
+                            <label className="text-sm font-bold flex items-center gap-2 mb-2"><FilePlus size={16} /> Carteira de Vacinação</label>
+
+                            {/* Uploads */}
+                            <div className="flex flex-wrap gap-2 mb-4">
+                                {formData.vaccineDocs.map((url, i) => (
+                                    <div key={i} className="relative w-16 h-16 group">
+                                        <img src={url} alt="Vacina" className="w-full h-full object-cover rounded-lg cursor-pointer border hover:border-primary-500" onClick={() => setVaccineLightboxIndex(i)} />
+                                        <button type="button" onClick={() => removePhoto(i, 'vaccines')} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition"><X size={12} /></button>
+                                    </div>
+                                ))}
+                                {formData.vaccineDocs.length < 3 && (
+                                    <label className={`w-16 h-16 border-2 border-dashed bg-white rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-secondary-50 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                        <Upload size={20} className="text-secondary-400" />
+                                        <span className="text-[10px] text-secondary-400">Add</span>
+                                        <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileSelect(e, 'vaccines')} disabled={isUploading} />
+                                    </label>
+                                )}
+                            </div>
+
+                            {/* NOVOS CAMPOS DE DATA (Layout Mobile Otimizado) */}
+                            <div className="border-t border-secondary-200 pt-3">
+                                <label className="text-xs font-bold text-secondary-500 flex items-center gap-1 mb-2"><Syringe size={14} /> Últimas Doses</label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="text-[10px] font-bold text-primary-700 uppercase mb-1 block">Anti-Rábica</label>
+                                        <input
+                                            type="date"
+                                            name="lastAntiRabica"
+                                            value={formData.lastAntiRabica}
+                                            onChange={handleChange}
+                                            className={`w-full p-2 border rounded text-sm focus:ring-2 outline-none ${isVaccineExpired(formData.lastAntiRabica) ? 'border-red-500 bg-red-50 text-red-700 focus:ring-red-500' : 'border-secondary-300 bg-white focus:ring-primary-500'}`}
+                                        />
+                                        {isVaccineExpired(formData.lastAntiRabica) && <span className="text-[10px] text-red-600 font-bold mt-1 block">⚠️ Vencida (&gt; 1 ano)</span>}
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-bold text-primary-700 uppercase mb-1 block">Multi V8 / V10</label>
+                                        <input
+                                            type="date"
+                                            name="lastMultipla"
+                                            value={formData.lastMultipla}
+                                            onChange={handleChange}
+                                            className={`w-full p-2 border rounded text-sm focus:ring-2 outline-none ${isVaccineExpired(formData.lastMultipla) ? 'border-red-500 bg-red-50 text-red-700 focus:ring-red-500' : 'border-secondary-300 bg-white focus:ring-primary-500'}`}
+                                        />
+                                        {isVaccineExpired(formData.lastMultipla) && <span className="text-[10px] text-red-600 font-bold mt-1 block">⚠️ Vencida (&gt; 1 ano)</span>}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Variáveis da Hospedagem (Histórico, Socialização, Avaliação) - Movido para cá */}
+                        <BookingVariablesForm
+                            formData={formData}
+                            handleChange={handleChange}
+                            setFormData={setFormData}
+                            clientDatabase={clientDatabase}
+                        />
+                    </div>
 
                     <div className="space-y-6">
                         <OwnerForm
@@ -320,75 +426,7 @@ export default function BookingModal({ data, mode, bookings, clientDatabase, onS
                         )}
 
                         <div className="mt-6 space-y-4">
-                            {/* Fotos do Pet */}
-                            <div>
-                                <label className="text-sm font-bold flex items-center gap-2 mb-2"><Camera size={16} /> Fotos do Pet (Max 5)</label>
-                                <div className="flex flex-wrap gap-2">
-                                    {formData.photos.map((url, i) => (
-                                        <div key={i} className="relative w-16 h-16 group">
-                                            <img src={url} alt="Pet" className="w-full h-full object-cover rounded-lg cursor-pointer border hover:border-primary-500" onClick={() => setLightboxIndex(i)} />
-                                            <button type="button" onClick={() => removePhoto(i, 'photos')} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition"><X size={12} /></button>
-                                        </div>
-                                    ))}
-                                    {formData.photos.length < 5 && (
-                                        <label className={`w-16 h-16 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-secondary-50 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                                            <Upload size={20} className="text-secondary-400" />
-                                            <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileSelect(e, 'photos')} disabled={isUploading} />
-                                        </label>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Carteira de Vacinação + Datas */}
-                            <div className="bg-secondary-50 p-3 rounded-lg border border-secondary-200">
-                                <label className="text-sm font-bold flex items-center gap-2 mb-2"><FilePlus size={16} /> Carteira de Vacinação</label>
-
-                                {/* Uploads */}
-                                <div className="flex flex-wrap gap-2 mb-4">
-                                    {formData.vaccineDocs.map((url, i) => (
-                                        <div key={i} className="relative w-16 h-16 group">
-                                            <img src={url} alt="Vacina" className="w-full h-full object-cover rounded-lg cursor-pointer border hover:border-primary-500" onClick={() => setVaccineLightboxIndex(i)} />
-                                            <button type="button" onClick={() => removePhoto(i, 'vaccines')} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition"><X size={12} /></button>
-                                        </div>
-                                    ))}
-                                    {formData.vaccineDocs.length < 3 && (
-                                        <label className={`w-16 h-16 border-2 border-dashed bg-white rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-secondary-50 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                                            <Upload size={20} className="text-secondary-400" />
-                                            <span className="text-[10px] text-secondary-400">Add</span>
-                                            <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileSelect(e, 'vaccines')} disabled={isUploading} />
-                                        </label>
-                                    )}
-                                </div>
-
-                                {/* NOVOS CAMPOS DE DATA (Layout Mobile Otimizado) */}
-                                <div className="border-t border-secondary-200 pt-3">
-                                    <label className="text-xs font-bold text-secondary-500 flex items-center gap-1 mb-2"><Syringe size={14} /> Últimas Doses</label>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div>
-                                            <label className="text-[10px] font-bold text-primary-700 uppercase mb-1 block">Anti-Rábica</label>
-                                            <input
-                                                type="date"
-                                                name="lastAntiRabica"
-                                                value={formData.lastAntiRabica}
-                                                onChange={handleChange}
-                                                className={`w-full p-2 border rounded text-sm focus:ring-2 outline-none ${isVaccineExpired(formData.lastAntiRabica) ? 'border-red-500 bg-red-50 text-red-700 focus:ring-red-500' : 'border-secondary-300 bg-white focus:ring-primary-500'}`}
-                                            />
-                                            {isVaccineExpired(formData.lastAntiRabica) && <span className="text-[10px] text-red-600 font-bold mt-1 block">⚠️ Vencida (&gt; 1 ano)</span>}
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] font-bold text-primary-700 uppercase mb-1 block">Multi V8 / V10</label>
-                                            <input
-                                                type="date"
-                                                name="lastMultipla"
-                                                value={formData.lastMultipla}
-                                                onChange={handleChange}
-                                                className={`w-full p-2 border rounded text-sm focus:ring-2 outline-none ${isVaccineExpired(formData.lastMultipla) ? 'border-red-500 bg-red-50 text-red-700 focus:ring-red-500' : 'border-secondary-300 bg-white focus:ring-primary-500'}`}
-                                            />
-                                            {isVaccineExpired(formData.lastMultipla) && <span className="text-[10px] text-red-600 font-bold mt-1 block">⚠️ Vencida (&gt; 1 ano)</span>}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            {/* Fotos e Vacinas movidas para a coluna da esquerda */}
                         </div>
 
                         {/* Histórico */}
