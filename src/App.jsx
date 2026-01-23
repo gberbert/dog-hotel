@@ -22,6 +22,7 @@ import UpcomingBookings from './components/UpcomingBookings.jsx';
 import BreedIdentifier from './components/BreedIdentifier.jsx';
 import ConfirmationModal from './components/shared/ConfirmationModal.jsx';
 import NotificationManager from './components/shared/NotificationManager.jsx';
+import NotificationBell from './components/shared/NotificationBell.jsx';
 
 // Import da Versão
 import { appVersion } from './version.js';
@@ -456,8 +457,11 @@ export default function DogHotelApp() {
               </div>
             </div>
 
+
+
             <div className="flex items-center gap-3">
               <span className="text-sm text-secondary-500 hidden md:block">Olá, {userName}</span>
+              <NotificationBell />
               <button onClick={() => { setEditingData(null); setModalMode('booking'); setIsModalOpen(true); }} className="bg-accent-500 text-white px-3 py-2 md:px-4 md:py-2 rounded-lg font-bold flex items-center gap-2 shadow hover:bg-accent-600 text-sm md:text-base">
                 <Plus size={20} /> <span className="hidden sm:inline">Nova Reserva</span><span className="sm:hidden">Nova</span>
               </button>
@@ -474,6 +478,10 @@ export default function DogHotelApp() {
               <button onClick={() => handleMobileNav('breed')} className={`flex items-center gap-3 p-4 rounded-lg font-medium ${activeTab === 'breed' ? 'bg-primary-50 text-primary-600' : 'text-secondary-700 hover:bg-secondary-50'}`}><PawPrint size={20} /> Minha Raça</button>
 
               <div className="h-px bg-secondary-100 my-2"></div>
+
+              <div className="flex justify-center py-2 border-b border-secondary-100 mb-2">
+                <NotificationBell />
+              </div>
 
               <div className="text-center text-xs text-secondary-400 py-2">v{appVersion}</div>
 
