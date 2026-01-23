@@ -72,7 +72,12 @@ export default function NotificationBell() {
                     {/* Backdrop invisível para fechar ao clicar fora */}
                     <div className="fixed inset-0 z-40" onClick={() => setShowDropdown(false)} />
 
-                    <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 shadow-xl rounded-xl z-50 overflow-hidden max-h-[80vh] flex flex-col">
+                    {/* Container Responsivo: Fixed Centralizado no Mobile / Absolute Right no Desktop */}
+                    <div className="
+                        fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-sm
+                        md:absolute md:top-full md:left-auto md:right-0 md:translate-x-0 md:translate-y-2 md:w-80
+                        bg-white border border-gray-200 shadow-2xl rounded-xl z-50 overflow-hidden max-h-[80vh] flex flex-col
+                    ">
                         <div className="bg-primary-50 p-3 border-b border-primary-100 flex justify-between items-center">
                             <h3 className="font-bold text-primary-800 text-sm">Notificações</h3>
                             <button onClick={() => setShowDropdown(false)}><X size={16} className="text-primary-400" /></button>
