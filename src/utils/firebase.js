@@ -16,4 +16,16 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+// Inicializa Messaging apenas se suportado (navegador)
+import { getMessaging, isSupported } from 'firebase/messaging';
+export const messaging = (async () => {
+  try {
+    const isSup = await isSupported();
+    return isSup ? getMessaging(app) : null;
+  } catch (e) {
+    console.warn('Firebase Messaging not supported:', e);
+    return null;
+  }
+})();
+
 export const appId = 'doghotel-production';

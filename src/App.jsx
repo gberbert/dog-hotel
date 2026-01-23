@@ -21,6 +21,7 @@ import InstallButton from './components/InstallButton.jsx';
 import UpcomingBookings from './components/UpcomingBookings.jsx';
 import BreedIdentifier from './components/BreedIdentifier.jsx';
 import ConfirmationModal from './components/shared/ConfirmationModal.jsx';
+import NotificationManager from './components/shared/NotificationManager.jsx';
 
 // Import da Versão
 import { appVersion } from './version.js';
@@ -428,6 +429,7 @@ export default function DogHotelApp() {
 
           <div className="px-3 pb-2">
             <InstallButton deferredPrompt={deferredPrompt} />
+            <div className="mt-2"><NotificationManager /></div>
           </div>
 
           <div className="p-4 border-t border-primary-700"><button onClick={() => { if (confirm("Sair?")) setIsAuthenticated(false) }} className="w-full flex gap-2 text-secondary-300 hover:text-white"><LogOut size={16} /> Sair</button></div>
@@ -477,6 +479,7 @@ export default function DogHotelApp() {
 
               <div className="px-2 mb-2">
                 <InstallButton deferredPrompt={deferredPrompt} />
+                <div className="mt-2 text-center md:hidden"><NotificationManager /></div>
               </div>
 
               <button onClick={() => { if (confirm("Sair?")) setIsAuthenticated(false) }} className="flex items-center gap-3 p-4 rounded-lg font-medium text-red-600 hover:bg-red-50"><LogOut size={20} /> Sair</button>
