@@ -76,7 +76,7 @@ export default function NotificationManager() {
             }
 
             const token = await getToken(msg, {
-                vapidKey: 'BlcjV2GKACtyG1LpMXXMS-06iu2UlqcmOKF-7bI-bmmRdCgyzHFKp00xEVX7f0aOVWgw-YaJKAZhOpkBsRcTg7I'
+                vapidKey: 'BDgyNCYdBi8QHHnGfWPP1xLOTWOQ8QXqKRHL952wnPinxDN-vsBinGFbiYq4qz7tv_l9YUZYdWmcGOh_NrSwLRg'
             });
 
             if (token) {
