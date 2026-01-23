@@ -14,16 +14,16 @@ firebase.initializeApp(firebaseConfig);
 
 const messaging = firebase.messaging();
 
-// Handler para notificações em Segundo Plano
 messaging.onBackgroundMessage((payload) => {
     console.log('[firebase-messaging-sw.js] Received background message ', payload);
 
     const notificationTitle = payload.notification.title;
+    // Simplificação para Android: Sem Badge customizado, sem actions extras.
     const notificationOptions = {
         body: payload.notification.body,
-        icon: '/icon-192.png', // Fallback icon
-        badge: '/badge-icon.png' // Se tiver
+        icon: '/icon-192.png'
+        // badge removido para evitar quadrados brancos no Android
     };
 
-    self.registration.showNotification(notificationTitle, notificationOptions);
+    return self.registration.showNotification(notificationTitle, notificationOptions);
 });

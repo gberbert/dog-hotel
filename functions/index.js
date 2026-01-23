@@ -1,6 +1,6 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
-const { isSameDay, parse, addDays, getMinutes, getHours } = require('date-fns');
+const { isSameDay, addDays, getMinutes, getHours } = require('date-fns');
 const { toZonedTime } = require('date-fns-tz');
 
 admin.initializeApp();
@@ -32,19 +32,21 @@ exports.checkScheduledAlerts = functions.https.onRequest(async (req, res) => {
             const client = doc.data();
 
             // ----------------------------------------------------
-            // 1. CHECAGEM DE VACINAS (1x ao Dia - 09:00~09:30)
+            // 1. CHECAGEM DE VACINAS (MODO TESTE: Sempre Executa)
             // ----------------------------------------------------
-            if (currentHour === 9 && currentMinute < 30) {
+            // Removida a restrição de horário (currentHour === 9) para facilitar testes.
+            // Em produção, isso significa que se você rodar a URL manualmente várias vezes ao dia,
+            // receberá o alerta várias vezes. Pelo Cron (30 em 30 min), receberia 48x.
+            // Para uso pessoal ok, para escalar precisaria da trava de volta.
+            {
                 const checkVaccine = (dateStr, type) => {
                     if (!dateStr) return;
-                    const lastDose = new Date(dateStr); // Assume string date YYYY-MM-DD
-                    // Precisamos garantir que a data da vacina seja interpretada no mesmo fuso ou sem fuso
-                    // date-fns parseISO é bom
+                    const lastDose = new Date(dateStr);
 
                     const validUntil = addDays(lastDose, 365);
                     const warningDate = addDays(validUntil, -7);
 
-                    // Compara apenas DIA/MÊS/ANO, ignora hora
+                    // Compara apenas DIA/MÊS/ANO
                     if (isSameDay(nowBRT, warningDate)) {
                         notificationsToSend.push({
                             title: `💉 Vacina a Vencer: ${client.dogName}`,
@@ -63,41 +65,21 @@ exports.checkScheduledAlerts = functions.https.onRequest(async (req, res) => {
             }
 
             // ----------------------------------------------------
-            // 2. CHECAGEM DE MEDICAÇÕES (A cada 30 min)
+            // 2. CHECAGEM DE MEDICAÇÕES (MODO TESTE: Janela Estendida)
             // ----------------------------------------------------
-            // Formato esperado de medications: [{ name: 'Dipirona', time: '10:00', dosage: '1g' }, ...]
             if (client.medications && Array.isArray(client.medications)) {
                 client.medications.forEach(med => {
                     if (!med.time) return;
 
-                    // Extrai hora e minuto da medicação (ex: "10:00")
-                    const [medHourStr, medMinuteStr] = med.time.split(':');
+                    const [medHourStr] = med.time.split(':');
                     const medHour = parseInt(medHourStr);
-                    const medMinute = parseInt(medMinuteStr);
 
-                    // Lógica de "Janela de Disparo":
-                    // Como o cron roda de 30 em 30 min (ex: 10:00, 10:30, 11:00),
-                    // verificamos se a medicação está agendada para o intervalo "agora" até "agora + 29 min"
-                    // OU se bate exatamente com a hora atual (margem de erro de 2 min para garantir)
-
-                    // Exemplo: Agora é 10:01. Medicação é 10:00.
-                    // Math.abs(10 - 10) === 0 e Math.abs(1 - 0) < 5 -> Dispara.
-
+                    // MODO TESTE/PERMISSIVO:
+                    // Aceita se a hora atual for igual ou adjacente (+/- 1 hora) à hora do remédio.
+                    // Isso cobre casos de teste manual onde o relógio não bate exato.
                     const hourDiff = Math.abs(currentHour - medHour);
-                    const minuteDiff = Math.abs(currentMinute - medMinute);
 
-                    // Aceita se estiver na mesma hora e diferença de minutos for pequena (< 25 min)
-                    // (Considerando que o cron roda a cada 30 min, se rodarmos as 10:00 e a medicação for 10:15, pegaremos no próximo? Não.
-                    // Melhor abordagem: Verificar se a medicação está DENTRO da janela da rodada atual.
-
-                    // Se rodou as 10:00, pega tudo das 09:45 até 10:15? Não, melhor, pega da hora cheia.
-                    // Vamos simplificar: Se Hora == MedHora E (abs(Minuto - MedMinuto) <= 15)
-
-                    if (hourDiff === 0 && minuteDiff <= 15) {
-                        // Para evitar disparar "Teste (1g)" duas vezes se o cron rodar 10:05 e 10:10, 
-                        // idealmente teríamos um flag de 'enviado', mas sem backend complexo, 
-                        // assumimos que o cron é fiel aos 30 min (ex: 10:00, 10:30).
-
+                    if (hourDiff <= 1) {
                         notificationsToSend.push({
                             title: `💊 Hora do Remédio: ${client.dogName}`,
                             body: `Dar ${med.name} (${med.dosage}) para ${client.dogName} agora (${med.time})!`
@@ -114,6 +96,7 @@ exports.checkScheduledAlerts = functions.https.onRequest(async (req, res) => {
 
             if (devicesSnap.exists) {
                 const tokens = devicesSnap.data().tokens || [];
+                // Filtra duplicatas
                 const uniqueTokens = [...new Set(tokens)];
 
                 if (uniqueTokens.length > 0) {
