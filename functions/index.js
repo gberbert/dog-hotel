@@ -29,7 +29,7 @@ exports.checkScheduledAlerts = functions.https.onRequest(async (req, res) => {
 
         const [clientsSnap, bookingsSnap] = await Promise.all([
             dataRef.collection('clients').get(),
-            dataRef.collection('bookings').get()
+            dataRef.collection('bookings').where('checkOut', '>=', todayStr).get()
         ]);
 
         // Mapear clientes para acesso rápido
