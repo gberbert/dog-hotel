@@ -90,19 +90,31 @@ exports.checkScheduledAlerts = functions.https.onRequest(async (req, res) => {
                     client.medications.forEach(med => {
                         if (!med.time) return;
 
-                        // Formato esperado med.time: "HH:mm"
-                        const [medHourStr] = med.time.split(':');
+                        const [medHourStr, medMinStr] = med.time.split(':');
                         const medHour = parseInt(medHourStr);
+                        const medMin = parseInt(medMinStr || '0');
 
-                        // Janela de Notificação: Hora Exata
-                        // O Cron roda a cada 10 min. 
-                        // Se medHour == currentHour, estamos na hora certa.
-                        // Ex: Med as 14:00. Cron 14:00, 14:10, 14:20... -> Notifica em todos (insistente).
-                        // Isso é desejado para remédio (alerta crítico).
-                        if (medHour === currentHour) {
+                        // Converto tudo para minutos absolutos do dia
+                        const currentTotalMinutes = (currentHour * 60) + currentMinute;
+                        const medTotalMinutes = (medHour * 60) + medMin;
+
+                        // Diferença: Tem que ser positivo (no futuro) e menor que limite (ex: 20 min)
+                        // Cron roda a cada 10 min. Janela segura: 0 a 15 min.
+                        // Ex: Med 14:00 (840 min).
+                        // Cron 13:40 (820 min) -> Diff 20 (falso, muito cedo)
+                        // Cron 13:50 (830 min) -> Diff 10 (true, AVISA 10 min antes)
+                        // Cron 14:00 (840 min) -> Diff 0 (falso, ja foi ou agora. Se quiser avisar "em cima", usa >= 0)
+                        // Aviso: "Em breve" ou "Agora"
+
+                        const diffMinutes = medTotalMinutes - currentTotalMinutes;
+
+                        // Logica ajustada: Avisar se estiver entre 1 min e 12 minutos antes.
+                        // Isso garante que em um ciclo de 10 min, ele pega pelo menos uma vez.
+                        // E não repete na próxima (pois terá passado ou diff será negativo ou muito grande)
+                        if (diffMinutes > 0 && diffMinutes <= 15) {
                             notificationsToSend.push({
-                                title: `💊 Hora do Remédio`,
-                                body: `Dar ${med.name} (${med.dosage}) para ${client.dogName} agora (${med.time})!`,
+                                title: `💊 Hora do Remédio em ${diffMinutes} min`,
+                                body: `Dar ${med.name} (${med.dosage}) para ${client.dogName} às ${med.time}!`,
                                 type: 'medication',
                                 dogName: client.dogName,
                                 clientId: client.id,

@@ -221,15 +221,7 @@ export default function PetForm({
                         <div className="grid grid-cols-6 gap-2 mb-2">
                             <input name="name" value={newMedication.name} onChange={handleMedicationChange} placeholder="Nome" className="col-span-2 p-1 border rounded text-xs" />
                             <input name="dosage" value={newMedication.dosage} onChange={handleMedicationChange} placeholder="Dose" className="col-span-2 p-1 border rounded text-xs" />
-                            <select name="time" value={newMedication.time} onChange={handleMedicationChange} className="col-span-1 p-1 border rounded text-xs bg-white">
-                                <option value="">Hr</option>
-                                {Array.from({ length: 48 }, (_, i) => {
-                                    const h = Math.floor(i / 2).toString().padStart(2, '0');
-                                    const m = i % 2 === 0 ? '00' : '30';
-                                    const t = `${h}:${m}`;
-                                    return <option key={t} value={t}>{t}</option>;
-                                })}
-                            </select>
+                            <input type="time" name="time" value={newMedication.time} onChange={handleMedicationChange} className="col-span-1 p-1 border rounded text-xs bg-white text-center" />
                             {editingMedicationIndex >= 0 ? (
                                 <div className="col-span-1 flex gap-1">
                                     <button type="button" onClick={(e) => { e.preventDefault(); handleAddMedication(); }} className="flex-1 bg-green-500 text-white rounded flex items-center justify-center hover:bg-green-600 transition" title="Confirmar Edição"><Check size={14} /></button>
