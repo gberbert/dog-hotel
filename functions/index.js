@@ -1,7 +1,7 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const { isSameDay, addDays, getMinutes, getHours, parseISO, isWithinInterval, startOfDay, endOfDay, format } = require('date-fns');
-const { onDocumentUpdated } = require('firebase-functions/v2/firestore');
+const { onDocumentUpdated, onDocumentCreated } = require('firebase-functions/v2/firestore');
 const { toZonedTime } = require('date-fns-tz');
 
 admin.initializeApp();
@@ -262,6 +262,51 @@ exports.onBookingRequestUpdated = onDocumentUpdated(
                 }
             } catch (err) {
                 console.error("[Push] Erro ao enviar notificação de aprovação:", err);
+            }
+        }
+        return null;
+    });
+
+exports.onBookingRequestCreated = onDocumentCreated(
+    'artifacts/{appId}/public/data/booking_requests/{requestId}',
+    async (event) => {
+        const newValue = event.data.data();
+        const appId = event.params.appId;
+        const messaging = admin.messaging();
+        const db = admin.firestore();
+
+        if (newValue.status === 'pending') {
+            try {
+                // Notificar o admin
+                const devicesRef = db.collection('artifacts').doc(appId).collection('system').doc('notification_devices');
+                const devicesSnap = await devicesRef.get();
+
+                if (devicesSnap.exists) {
+                    const tokens = devicesSnap.data().tokens || [];
+                    const uniqueTokens = [...new Set(tokens)];
+                    
+                    if (uniqueTokens.length > 0) {
+                        const message = {
+                            notification: {
+                                title: `🐶 Nova Solicitação de Hospedagem!`,
+                                body: `${newValue.ownerName} solicitou uma vaga para ${newValue.dogName}.`,
+                            },
+                            webpush: {
+                                notification: {
+                                    icon: '/logo.png',
+                                    badge: '/logo.png'
+                                },
+                                fcm_options: { link: '/' }
+                            },
+                            tokens: uniqueTokens
+                        };
+
+                        const response = await messaging.sendEachForMulticast(message);
+                        console.log(`[Push] Nova Solicitação. Sucessos: ${response.successCount}, Falhas: ${response.failureCount}`);
+                    }
+                }
+            } catch (err) {
+                console.error("[Push] Erro ao enviar notificação de nova solicitação:", err);
             }
         }
         return null;

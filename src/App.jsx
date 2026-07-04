@@ -401,6 +401,17 @@ export default function DogHotelApp() {
     setIsMobileMenuOpen(false);
   };
 
+  const handleEditClientFromRequest = (clientId) => {
+    const client = clients.find(c => c.id === clientId);
+    if (client) {
+      setEditingData(client);
+      setModalMode('client_edit');
+      setIsModalOpen(true);
+    } else {
+      alert("Cadastro do cliente não encontrado.");
+    }
+  };
+
   const handleAcceptRequest = (req) => {
     setEditingData(req);
     setModalMode('booking_request');
@@ -739,7 +750,7 @@ export default function DogHotelApp() {
 
             {activeTab === 'clients' && <ClientList clients={clients} onEdit={(c) => { setEditingData(c); setModalMode(c ? 'client_edit' : 'client_new'); setIsModalOpen(true); }} onDelete={(id) => { if (confirm("Deletar?")) deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'clients', id)) }} />}
             {activeTab === 'financial' && <FinancialPanel bookings={bookings.map(b => ({ ...b, clientName: clients.find(c => c.id === b.clientId)?.dogName }))} onDelete={requestDeleteBooking} />}
-            {activeTab === 'requests' && userRole === 'admin' && <BookingRequestsPanel db={db} appId={appId} onAcceptRequest={handleAcceptRequest} />}
+            {activeTab === 'requests' && userRole === 'admin' && <BookingRequestsPanel db={db} appId={appId} onAcceptRequest={handleAcceptRequest} onEditClient={handleEditClientFromRequest} />}
             {activeTab === 'my_requests' && userRole === 'user' && <ClientRequestsPanel db={db} appId={appId} user={user} />}
             {activeTab === 'breed' && <BreedIdentifier />}
             {activeTab === 'admin_panel' && userRole === 'admin' && <AdminPanel db={db} appId={appId} />}

@@ -3,7 +3,7 @@ import { collection, onSnapshot, updateDoc, doc } from 'firebase/firestore';
 import { Calendar, Clock, User, CheckCircle, Trash2, Dog } from 'lucide-react';
 import { formatDateBR } from '../utils/calculations';
 
-export default function BookingRequestsPanel({ db, appId, onAcceptRequest }) {
+export default function BookingRequestsPanel({ db, appId, onAcceptRequest, onEditClient }) {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -65,16 +65,24 @@ export default function BookingRequestsPanel({ db, appId, onAcceptRequest }) {
             <div key={req.id} className="bg-white p-5 rounded-xl border border-secondary-200 shadow-sm flex flex-col md:flex-row gap-6 md:items-center justify-between">
               
               <div className="flex-1 space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600">
-                    <Dog size={20} />
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600">
+                      <Dog size={20} />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-lg text-secondary-900 leading-tight">{req.dogName}</h3>
+                      <p className="text-sm text-secondary-500 flex items-center gap-1">
+                        <User size={12} /> {req.ownerName}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-bold text-lg text-secondary-900 leading-tight">{req.dogName}</h3>
-                    <p className="text-sm text-secondary-500 flex items-center gap-1">
-                      <User size={12} /> {req.ownerName}
-                    </p>
-                  </div>
+                  <button 
+                    onClick={() => onEditClient(req.clientId)}
+                    className="text-primary-600 bg-primary-50 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 hover:bg-primary-100 border border-primary-200"
+                  >
+                    <User size={14}/> Ficha do Cão
+                  </button>
                 </div>
 
                 <div className="bg-secondary-50 p-3 rounded-lg flex flex-wrap gap-x-6 gap-y-2 border border-secondary-100">
