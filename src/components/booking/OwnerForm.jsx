@@ -1,7 +1,7 @@
 import React from 'react';
 import { User, MessageCircle, Lock } from 'lucide-react';
 
-export default function OwnerForm({ formData, handleChange, showReadOnly }) {
+export default function OwnerForm({ formData, handleChange, showReadOnly, isClientView = false }) {
     // Helper para ReadOnlyField
     const ReadOnlyField = ({ label, value, icon: Icon }) => (
         <div className="mb-3">
@@ -46,7 +46,10 @@ export default function OwnerForm({ formData, handleChange, showReadOnly }) {
                         <div><label className="text-sm font-medium">WhatsApp 2</label><input name="whatsapp2" value={formData.whatsapp2} onChange={handleChange} className="w-full p-2 border rounded" placeholder="(00) 00000-0000" /></div>
                     </div>
                     <div><label className="text-sm font-medium">Endereço</label><input name="address" value={formData.address} onChange={handleChange} className="w-full p-2 border rounded" /></div>
-                    <div><label className="text-sm font-medium">Histórico do Tutor</label><textarea name="ownerHistory" value={formData.ownerHistory} onChange={handleChange} rows={2} className="w-full p-2 border rounded" /></div>
+                    
+                    {!isClientView && (
+                        <div><label className="text-sm font-medium">Histórico do Tutor</label><textarea name="ownerHistory" value={formData.ownerHistory} onChange={handleChange} rows={2} className="w-full p-2 border rounded" /></div>
+                    )}
                 </div>
             )}
         </div>

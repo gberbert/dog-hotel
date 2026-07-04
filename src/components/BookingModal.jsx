@@ -164,7 +164,11 @@ export default function BookingModal({ data, mode, bookings, clientDatabase, onS
             const field = type === 'photos' ? 'photos' : 'vaccineDocs';
             setFormData(prev => ({ ...prev, [field]: [...prev[field], url] }));
         } catch (error) {
-            alert(`Erro upload: ${error.message}`);
+            if (error.code === 'storage/quota-exceeded') {
+                alert("O limite de armazenamento gratuito do Firebase (5GB) foi atingido. Não é possível enviar novas fotos.");
+            } else {
+                alert(`Erro upload: ${error.message}`);
+            }
         } finally {
             setIsUploading(false);
         }

@@ -1,6 +1,7 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const { isSameDay, addDays, getMinutes, getHours, parseISO, isWithinInterval, startOfDay, endOfDay, format } = require('date-fns');
+const { onDocumentUpdated } = require('firebase-functions/v2/firestore');
 const { toZonedTime } = require('date-fns-tz');
 
 admin.initializeApp();
@@ -214,3 +215,54 @@ exports.checkScheduledAlerts = functions.https.onRequest(async (req, res) => {
         res.status(500).send("Erro: " + error.message);
     }
 });
+
+exports.onBookingRequestUpdated = onDocumentUpdated(
+    'artifacts/{appId}/public/data/booking_requests/{requestId}',
+    async (event) => {
+        const newValue = event.data.after.data();
+        const previousValue = event.data.before.data();
+        const appId = event.params.appId;
+        const messaging = admin.messaging();
+        const db = admin.firestore();
+
+        if (previousValue.status === 'pending' && newValue.status === 'approved') {
+            const clientId = newValue.clientId;
+            if (!clientId) return null;
+
+            try {
+                const clientSnap = await db.collection('artifacts').doc(appId)
+                    .collection('public').doc('data')
+                    .collection('clients').doc(clientId).get();
+
+                if (clientSnap.exists) {
+                    const clientData = clientSnap.data();
+                    const tokens = clientData.fcmTokens || [];
+
+                    if (tokens.length > 0) {
+                        const message = {
+                            notification: {
+                                title: `✅ Hospedagem Aprovada!`,
+                                body: `Sua solicitação de hospedagem para ${newValue.dogName} foi confirmada na agenda.`,
+                            },
+                            webpush: {
+                                notification: {
+                                    icon: '/logo.png',
+                                    badge: '/logo.png'
+                                },
+                                fcm_options: { link: '/' }
+                            },
+                            tokens: [...new Set(tokens)]
+                        };
+
+                        const response = await messaging.sendEachForMulticast(message);
+                        console.log(`[Push] Solicitação Aprovada para ${clientId}. Sucessos: ${response.successCount}, Falhas: ${response.failureCount}`);
+                    } else {
+                        console.log(`[Push] Cliente ${clientId} não possui tokens registrados.`);
+                    }
+                }
+            } catch (err) {
+                console.error("[Push] Erro ao enviar notificação de aprovação:", err);
+            }
+        }
+        return null;
+    });

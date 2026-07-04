@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import {
   Calendar, User, PieChart, LogOut, Home,
-  Plus, ChevronLeft, ChevronRight, Search, Menu, X, PawPrint
+  Plus, ChevronLeft, ChevronRight, Search, Menu, X, PawPrint, Shield, Inbox
 } from 'lucide-react';
 import {
   collection, onSnapshot, addDoc, updateDoc, doc, deleteDoc, query, where, getDocs, getDoc
 } from 'firebase/firestore';
-import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 
 // Imports Modulares
 import { db, auth, appId } from './utils/firebase.js';
-import { formatDateBR, isVaccineExpired } from './utils/calculations.js';
+import { formatDateBR, isVaccineExpired, getCapacityInfoForDate } from './utils/calculations.js';
 import SplashScreen from './components/SplashScreen.jsx';
 import LoginScreen from './components/LoginScreen.jsx';
 import BookingCard from './components/BookingCard.jsx';
@@ -23,6 +23,11 @@ import BreedIdentifier from './components/BreedIdentifier.jsx';
 import ConfirmationModal from './components/shared/ConfirmationModal.jsx';
 import NotificationManager from './components/shared/NotificationManager.jsx';
 import NotificationBell from './components/shared/NotificationBell.jsx';
+import AdminPanel from './components/AdminPanel.jsx';
+import MyProfile from './components/MyProfile.jsx';
+import ClientBookingModal from './components/ClientBookingModal.jsx';
+import BookingRequestsPanel from './components/BookingRequestsPanel.jsx';
+import ClientRequestsPanel from './components/ClientRequestsPanel.jsx';
 
 // Import da Versão
 import { appVersion } from './version.js';
@@ -35,11 +40,12 @@ export default function DogHotelApp() {
   const [showSplash, setShowSplash] = useState(true);
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState('user');
 
-  // Aba padrão 'home'
-  const [activeTab, setActiveTab] = useState('home');
+  // Aba padrão
+  const [activeTab, setActiveTab] = useState('agenda');
 
-  const [userName, setUserName] = useState('Recepcionista');
+  const [userName, setUserName] = useState('Usuário');
   const [view, setView] = useState('month');
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -47,9 +53,12 @@ export default function DogHotelApp() {
   const [bookings, setBookings] = useState([]);
   const [clients, setClients] = useState([]);
   const [races, setRaces] = useState([]);
+  const [maxCapacity, setMaxCapacity] = useState(6);
+  const [capacityOverrides, setCapacityOverrides] = useState([]);
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isClientBookingModalOpen, setIsClientBookingModalOpen] = useState(false);
   const [editingData, setEditingData] = useState(null);
   const [modalMode, setModalMode] = useState('booking');
 
@@ -69,17 +78,51 @@ export default function DogHotelApp() {
   }, []);
 
   useEffect(() => {
-    const initAuth = async () => { try { await signInAnonymously(auth); } catch (e) { console.error(e); } };
-    initAuth();
     return onAuthStateChanged(auth, async (u) => {
-      setUser(u);
       if (u) {
+        if (!u.emailVerified) {
+          await signOut(auth);
+          setUser(null);
+          setIsAuthenticated(false);
+          setUserRole('user');
+          return;
+        }
+
+        setUser(u);
         setIsAuthenticated(true);
-        const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'logins'), where("email", "==", "lyoni.berbert@gmail.com"));
-        const snap = await getDocs(q);
-        if (!snap.empty && snap.docs[0].data().name) setUserName(snap.docs[0].data().name);
+        try {
+          const roleDoc = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'user_roles', u.uid));
+          if (roleDoc.exists()) {
+            const data = roleDoc.data();
+            setUserName(data.name || u.email);
+            setUserRole(data.role || (u.email === 'lyoni.berbert@gmail.com' ? 'admin' : 'user'));
+            if (data.role !== 'admin' && u.email !== 'lyoni.berbert@gmail.com') setActiveTab('agenda');
+          } else {
+            setUserName(u.email);
+            const defaultRole = u.email === 'lyoni.berbert@gmail.com' ? 'admin' : 'user';
+            setUserRole(defaultRole);
+            if (defaultRole !== 'admin') setActiveTab('agenda');
+          }
+        } catch (e) {
+          console.error("Erro ao buscar perfil:", e);
+        }
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
+        setUserRole('user');
       }
     });
+  }, []);
+
+  useEffect(() => {
+    // Captura o param de link de convite
+    const urlParams = new URLSearchParams(window.location.search);
+    const vincularId = urlParams.get('vincular');
+    if (vincularId) {
+      localStorage.setItem('doghotel_vincular_id', vincularId);
+      // Limpa a URL sem dar refresh
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
   }, []);
 
   useEffect(() => {
@@ -87,7 +130,14 @@ export default function DogHotelApp() {
       const unsubClients = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'clients'), (s) => setClients(s.docs.map(d => ({ id: d.id, ...d.data() }))));
       const unsubBookings = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'bookings'), (s) => setBookings(s.docs.map(d => ({ id: d.id, ...d.data() }))));
       const unsubRaces = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'races'), (s) => setRaces(s.docs.map(d => ({ id: d.id, ...d.data() }))));
-      return () => { unsubClients(); unsubBookings(); unsubRaces(); };
+      const unsubSettings = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'general'), (d) => {
+        if(d.exists()) {
+          const data = d.data();
+          setMaxCapacity(data.maxCapacity || 6);
+          setCapacityOverrides(data.capacityOverrides || []);
+        }
+      });
+      return () => { unsubClients(); unsubBookings(); unsubRaces(); unsubSettings(); };
     }
   }, [user]);
 
@@ -97,9 +147,10 @@ export default function DogHotelApp() {
       setTimeout(() => {
         const el = document.getElementById('today-cell');
         if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+          // Remover 'behavior: smooth' para garantir compatibilidade com iOS Safari em containers horizontais
+          el.scrollIntoView({ block: 'center', inline: 'center' });
         }
-      }, 500); // Delay para garantir renderização
+      }, 100); // Reduzir o delay para ser mais instantâneo
     }
   }, [activeTab, view, currentDate]);
 
@@ -138,8 +189,8 @@ export default function DogHotelApp() {
 
   const handleSave = async (formData) => {
     if (!user) return alert("Sem conexão.");
-    const isBooking = modalMode === 'booking';
-    const isEditingBooking = isBooking && formData.id;
+    const isBooking = modalMode === 'booking' || modalMode === 'booking_request';
+    const isEditingBooking = isBooking && editingData?.id && modalMode !== 'booking_request';
 
     // --- Validação de Vacina (Feature Nova) ---
     if (isVaccineExpired(formData.lastAntiRabica) || isVaccineExpired(formData.lastMultipla)) {
@@ -264,12 +315,23 @@ export default function DogHotelApp() {
         const bData = { ...formData, clientId: clientId };
         Object.keys(bData).forEach(key => bData[key] === undefined && delete bData[key]);
 
-        let bookingId = editingData?.id;
+        let bookingId = modalMode !== 'booking_request' ? editingData?.id : null;
         if (bookingId) {
           await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'bookings', bookingId), bData);
         } else {
           const newBookingRef = await addDoc(bRef, bData);
           bookingId = newBookingRef.id;
+
+          if (modalMode === 'booking_request' && editingData?.id) {
+            try {
+              await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'booking_requests', editingData.id), {
+                status: 'approved',
+                bookingId: bookingId
+              });
+            } catch (e) {
+              console.error("Erro ao atualizar request original", e);
+            }
+          }
         }
 
         // Atualização Otimista: Reservas (Merge Seguro)
@@ -339,6 +401,12 @@ export default function DogHotelApp() {
     setIsMobileMenuOpen(false);
   };
 
+  const handleAcceptRequest = (req) => {
+    setEditingData(req);
+    setModalMode('booking_request');
+    setIsModalOpen(true);
+  };
+
   // --- RENDERIZADORES ---
   const renderWeekView = () => {
     const start = startOfWeek(currentDate);
@@ -348,11 +416,29 @@ export default function DogHotelApp() {
         <div className="grid grid-cols-7 gap-2 min-w-[800px]">
           {days.map((day, i) => (
             <div key={i} className={`border rounded-lg flex flex-col h-[500px] ${day.getDate() === new Date().getDate() ? 'bg-primary-50 border-primary-200' : 'bg-white'}`}>
-              <div className="p-2 text-center border-b font-medium text-secondary-600">{day.toLocaleDateString('pt-BR', { weekday: 'short' })} <br /><span className="text-sm">{day.getDate()}/{day.getMonth() + 1}</span></div>
+              <div className="p-2 text-center border-b font-medium text-secondary-600">
+                {day.toLocaleDateString('pt-BR', { weekday: 'short' })} <br /><span className="text-sm">{day.getDate()}/{day.getMonth() + 1}</span>
+                <div className="mt-1">
+                  {(() => {
+                    const capInfo = getCapacityInfoForDate(day, maxCapacity, capacityOverrides);
+                    const currentBookings = getBookingsForDate(day).length;
+                    const remain = capInfo.capacity - currentBookings;
+                    if (capInfo.capacity === 0) {
+                      return <span className="bg-red-100 text-red-800 font-bold px-1.5 py-0.5 rounded text-[10px] block">Bloqueado</span>;
+                    } else if (remain <= 0) {
+                      return <span className="bg-red-100 text-red-800 font-bold px-1.5 py-0.5 rounded text-[10px] block">Lotação Completa</span>;
+                    } else {
+                      return <span className="bg-green-100 text-green-800 font-bold px-1.5 py-0.5 rounded text-[10px] block">{remain} Vagas</span>;
+                    }
+                  })()}
+                </div>
+              </div>
               <div className="flex-1 p-1 overflow-y-auto space-y-2 scrollbar-thin">
                 {getBookingsForDate(day).map(b => (
-                  <div key={b.id} onClick={() => { setEditingData(b); setModalMode('booking'); setIsModalOpen(true); }} className="p-2 bg-white border-l-4 border-l-primary-600 rounded shadow-sm text-xs cursor-pointer hover:bg-primary-50 border border-secondary-100">
-                    <div className="font-bold truncate">{b.dogName}</div>
+                  <div key={b.id} onClick={() => { if (userRole === 'admin') { setEditingData(b); setModalMode('booking'); setIsModalOpen(true); } }} className={`p-2 bg-white border-l-4 ${userRole === 'admin' ? 'border-l-primary-600 cursor-pointer hover:bg-primary-50' : 'border-l-secondary-400 cursor-default'} rounded shadow-sm text-xs border border-secondary-100`}>
+                    <div className={`font-bold truncate ${userRole !== 'admin' ? 'text-secondary-600' : ''}`}>
+                      {userRole === 'admin' ? b.dogName : (clients.find(c => c.id === b.clientId)?.dogBreed || 'SRD')}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -380,12 +466,29 @@ export default function DogHotelApp() {
                 onClick={() => { setView('day'); setCurrentDate(day); }}
                 className={`bg-white h-48 p-1 flex flex-col hover:bg-secondary-50 cursor-pointer transition-colors duration-300 ${isToday ? 'bg-yellow-50 border-2 border-yellow-400 shadow-inner' : ''}`}
               >
-                <div className="flex justify-between items-center px-1">
+                <div className="flex justify-between items-start px-1 pt-1 flex-wrap gap-1">
                   <span className={`text-sm font-medium ${isToday ? 'text-yellow-700 font-bold' : ''}`}>{day.getDate()}</span>
-                  {isToday && <span className="text-[10px] bg-yellow-400 text-yellow-900 px-1 rounded font-bold uppercase">Hoje</span>}
+                  <div className="flex flex-col gap-0.5 items-end">
+                    {(() => {
+                      const capInfo = getCapacityInfoForDate(day, maxCapacity, capacityOverrides);
+                      const currentBookings = getBookingsForDate(day).length;
+                      const remain = capInfo.capacity - currentBookings;
+                      if (capInfo.capacity === 0) {
+                        return <span className="bg-red-100 text-red-800 font-bold px-1 rounded text-[9px] leading-tight">Bloqueado</span>;
+                      } else if (remain <= 0) {
+                        return <span className="bg-red-100 text-red-800 font-bold px-1 rounded text-[9px] leading-tight">Lotado</span>;
+                      } else {
+                        return <span className="bg-green-100 text-green-800 font-bold px-1 rounded text-[9px] leading-tight">{remain} Vagas</span>;
+                      }
+                    })()}
+                  </div>
                 </div>
                 <div className="flex-1 overflow-y-auto space-y-1 mt-1">
-                  {getBookingsForDate(day).slice(0, 6).map(b => <div key={b.id} className="text-xs truncate bg-primary-100 text-primary-800 px-1 rounded border border-primary-200">{b.dogName}</div>)}
+                  {getBookingsForDate(day).slice(0, 6).map(b => (
+                    <div key={b.id} className={`text-xs truncate px-1 rounded border ${userRole === 'admin' ? 'bg-primary-100 text-primary-800 border-primary-200' : 'bg-secondary-100 text-secondary-600 border-secondary-200'}`}>
+                      {userRole === 'admin' ? b.dogName : (clients.find(c => c.id === b.clientId)?.dogBreed || 'SRD')}
+                    </div>
+                  ))}
                   {getBookingsForDate(day).length > 6 && <div className="text-xs text-secondary-400 text-center">+{getBookingsForDate(day).length - 6}</div>}
                 </div>
               </div>
@@ -397,7 +500,7 @@ export default function DogHotelApp() {
   };
 
   if (showSplash) return <SplashScreen onFinish={() => setShowSplash(false)} />;
-  if (!isAuthenticated) return <LoginScreen onLogin={() => setIsAuthenticated(true)} db={db} appId={appId} isDbReady={!!user} />;
+  if (!isAuthenticated) return <LoginScreen onLogin={() => setIsAuthenticated(true)} db={db} appId={appId} isDbReady={true} />;
 
   return (
     <DataProvider user={user}>
@@ -415,11 +518,29 @@ export default function DogHotelApp() {
           </div>
 
           <nav className="flex-1 py-6 space-y-2 px-3">
-            <button onClick={() => setActiveTab('home')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${activeTab === 'home' ? 'bg-primary-700 shadow' : 'hover:bg-primary-700'}`}><Home size={20} /> Início</button>
-            <button onClick={() => setActiveTab('financial')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${activeTab === 'financial' ? 'bg-primary-700 shadow' : 'hover:bg-primary-700'}`}><PieChart size={20} /> Financeiro</button>
+            {userRole === 'admin' && (
+              <>
+                <button onClick={() => setActiveTab('home')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${activeTab === 'home' ? 'bg-primary-700 shadow' : 'hover:bg-primary-700'}`}><Home size={20} /> Início</button>
+                <button onClick={() => setActiveTab('financial')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${activeTab === 'financial' ? 'bg-primary-700 shadow' : 'hover:bg-primary-700'}`}><PieChart size={20} /> Financeiro</button>
+              </>
+            )}
             <button onClick={() => { setActiveTab('agenda'); setView('month'); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${activeTab === 'agenda' ? 'bg-primary-700 shadow' : 'hover:bg-primary-700'}`}><Calendar size={20} /> Agenda</button>
-            <button onClick={() => setActiveTab('clients')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${activeTab === 'clients' ? 'bg-primary-700 shadow' : 'hover:bg-primary-700'}`}><User size={20} /> Cadastros</button>
+            {userRole === 'admin' && (
+              <>
+                <button onClick={() => setActiveTab('clients')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${activeTab === 'clients' ? 'bg-primary-700 shadow' : 'hover:bg-primary-700'}`}><User size={20} /> Cadastros</button>
+                <button onClick={() => setActiveTab('requests')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${activeTab === 'requests' ? 'bg-primary-700 shadow' : 'hover:bg-primary-700'}`}><Inbox size={20} /> Solicitações</button>
+              </>
+            )}
+            {userRole === 'user' && (
+              <>
+                <button onClick={() => setActiveTab('my_profile')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${activeTab === 'my_profile' ? 'bg-primary-700 shadow' : 'hover:bg-primary-700'}`}><User size={20} /> Meu Cadastro</button>
+                <button onClick={() => setActiveTab('my_requests')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${activeTab === 'my_requests' ? 'bg-primary-700 shadow' : 'hover:bg-primary-700'}`}><Inbox size={20} /> Minhas Solicitações</button>
+              </>
+            )}
             <button onClick={() => setActiveTab('breed')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${activeTab === 'breed' ? 'bg-primary-700 shadow' : 'hover:bg-primary-700'}`}><PawPrint size={20} /> Minha Raça</button>
+            {userRole === 'admin' && (
+              <button onClick={() => setActiveTab('admin_panel')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${activeTab === 'admin_panel' ? 'bg-primary-700 shadow' : 'hover:bg-primary-700'}`}><Shield size={20} /> Administração</button>
+            )}
           </nav>
 
           <div className="px-6 pb-4 mt-auto">
@@ -445,7 +566,7 @@ export default function DogHotelApp() {
               </button>
 
               <h2 className="text-xl font-bold text-secondary-700 hidden md:block">
-                {activeTab === 'home' ? 'Início' : activeTab === 'agenda' ? 'Agenda' : activeTab === 'clients' ? 'Gerenciamento de Clientes' : activeTab === 'breed' ? 'Identificador de Raças' : 'Financeiro'}
+                {activeTab === 'home' ? 'Início' : activeTab === 'agenda' ? 'Agenda' : activeTab === 'clients' ? 'Gerenciamento de Clientes' : activeTab === 'requests' ? 'Solicitações de Hospedagem' : activeTab === 'my_requests' ? 'Minhas Solicitações' : activeTab === 'breed' ? 'Identificador de Raças' : activeTab === 'my_profile' ? 'Meu Cadastro' : activeTab === 'admin_panel' ? 'Administração do Sistema' : 'Financeiro'}
               </h2>
 
               <div className="flex items-center gap-2 md:hidden">
@@ -462,20 +583,40 @@ export default function DogHotelApp() {
             <div className="flex items-center gap-3">
               <span className="text-sm text-secondary-500 hidden md:block">Olá, {userName}</span>
               <NotificationBell />
-              <button onClick={() => { setEditingData(null); setModalMode('booking'); setIsModalOpen(true); }} className="bg-accent-500 text-white px-3 py-2 md:px-4 md:py-2 rounded-lg font-bold flex items-center gap-2 shadow hover:bg-accent-600 text-sm md:text-base">
-                <Plus size={20} /> <span className="hidden sm:inline">Nova Reserva</span><span className="sm:hidden">Nova</span>
-              </button>
+              {userRole === 'admin' && (
+                <button onClick={() => { setEditingData(null); setModalMode('booking'); setIsModalOpen(true); }} className="bg-accent-500 text-white px-3 py-2 md:px-4 md:py-2 rounded-lg font-bold flex items-center gap-2 shadow hover:bg-accent-600 text-sm md:text-base">
+                  <Plus size={20} /> <span className="hidden sm:inline">Nova Reserva</span><span className="sm:hidden">Nova</span>
+                </button>
+              )}
             </div>
           </header>
 
           {/* MENU MOBILE */}
           {isMobileMenuOpen && (
             <div className="md:hidden absolute top-16 left-0 w-full bg-white shadow-xl border-t border-secondary-100 z-20 animate-fade-in flex flex-col p-2">
-              <button onClick={() => handleMobileNav('home')} className={`flex items-center gap-3 p-4 rounded-lg font-medium ${activeTab === 'home' ? 'bg-primary-50 text-primary-600' : 'text-secondary-700 hover:bg-secondary-50'}`}><Home size={20} /> Início</button>
-              <button onClick={() => handleMobileNav('financial')} className={`flex items-center gap-3 p-4 rounded-lg font-medium ${activeTab === 'financial' ? 'bg-primary-50 text-primary-600' : 'text-secondary-700 hover:bg-secondary-50'}`}><PieChart size={20} /> Financeiro</button>
+              {userRole === 'admin' && (
+                <>
+                  <button onClick={() => handleMobileNav('home')} className={`flex items-center gap-3 p-4 rounded-lg font-medium ${activeTab === 'home' ? 'bg-primary-50 text-primary-600' : 'text-secondary-700 hover:bg-secondary-50'}`}><Home size={20} /> Início</button>
+                  <button onClick={() => handleMobileNav('financial')} className={`flex items-center gap-3 p-4 rounded-lg font-medium ${activeTab === 'financial' ? 'bg-primary-50 text-primary-600' : 'text-secondary-700 hover:bg-secondary-50'}`}><PieChart size={20} /> Financeiro</button>
+                </>
+              )}
               <button onClick={() => handleMobileNav('agenda')} className={`flex items-center gap-3 p-4 rounded-lg font-medium ${activeTab === 'agenda' ? 'bg-primary-50 text-primary-600' : 'text-secondary-700 hover:bg-secondary-50'}`}><Calendar size={20} /> Agenda</button>
-              <button onClick={() => handleMobileNav('clients')} className={`flex items-center gap-3 p-4 rounded-lg font-medium ${activeTab === 'clients' ? 'bg-primary-50 text-primary-600' : 'text-secondary-700 hover:bg-secondary-50'}`}><User size={20} /> Cadastros</button>
+              {userRole === 'admin' && (
+                <>
+                  <button onClick={() => handleMobileNav('clients')} className={`flex items-center gap-3 p-4 rounded-lg font-medium ${activeTab === 'clients' ? 'bg-primary-50 text-primary-600' : 'text-secondary-700 hover:bg-secondary-50'}`}><User size={20} /> Cadastros</button>
+                  <button onClick={() => handleMobileNav('requests')} className={`flex items-center gap-3 p-4 rounded-lg font-medium ${activeTab === 'requests' ? 'bg-primary-50 text-primary-600' : 'text-secondary-700 hover:bg-secondary-50'}`}><Inbox size={20} /> Solicitações</button>
+                </>
+              )}
+              {userRole === 'user' && (
+                <>
+                  <button onClick={() => handleMobileNav('my_profile')} className={`flex items-center gap-3 p-4 rounded-lg font-medium ${activeTab === 'my_profile' ? 'bg-primary-50 text-primary-600' : 'text-secondary-700 hover:bg-secondary-50'}`}><User size={20} /> Meu Cadastro</button>
+                  <button onClick={() => handleMobileNav('my_requests')} className={`flex items-center gap-3 p-4 rounded-lg font-medium ${activeTab === 'my_requests' ? 'bg-primary-50 text-primary-600' : 'text-secondary-700 hover:bg-secondary-50'}`}><Inbox size={20} /> Minhas Solicitações</button>
+                </>
+              )}
               <button onClick={() => handleMobileNav('breed')} className={`flex items-center gap-3 p-4 rounded-lg font-medium ${activeTab === 'breed' ? 'bg-primary-50 text-primary-600' : 'text-secondary-700 hover:bg-secondary-50'}`}><PawPrint size={20} /> Minha Raça</button>
+              {userRole === 'admin' && (
+                <button onClick={() => handleMobileNav('admin_panel')} className={`flex items-center gap-3 p-4 rounded-lg font-medium ${activeTab === 'admin_panel' ? 'bg-primary-50 text-primary-600' : 'text-secondary-700 hover:bg-secondary-50'}`}><Shield size={20} /> Administração</button>
+              )}
 
               <div className="h-px bg-secondary-100 my-2"></div>
 
@@ -509,24 +650,86 @@ export default function DogHotelApp() {
             {activeTab === 'agenda' && (
               <div className="space-y-6">
                 <div className="flex flex-col lg:flex-row justify-between items-center gap-4 bg-white p-4 rounded-xl shadow-sm border">
+                  <div className="flex items-center gap-4 w-full lg:w-auto justify-between lg:justify-start">
+                    <h2 className="text-xl font-bold text-secondary-800 flex items-center gap-2">
+                      <Calendar className="text-primary-600" /> Agenda
+                    </h2>
+                    
+                    {userRole === 'user' && (
+                      <button 
+                        onClick={() => setIsClientBookingModalOpen(true)}
+                        className="bg-primary-600 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 text-sm hover:bg-primary-700 transition"
+                      >
+                        <Plus size={16} /> Agendar
+                      </button>
+                    )}
+                    
+                    {/* TAG DE VAGAS (SÓ NA VISÃO DIÁRIA) */}
+                    {view === 'day' && (
+                      <div className="hidden sm:block">
+                        {(() => {
+                          const capInfo = getCapacityInfoForDate(currentDate, maxCapacity, capacityOverrides);
+                          const currentBookings = getBookingsForDate(currentDate).length;
+                          const remain = capInfo.capacity - currentBookings;
+                          if (capInfo.capacity === 0) {
+                            return <span className="bg-red-100 text-red-800 font-bold px-3 py-1 rounded-full text-xs">Bloqueado / Sem Vagas</span>;
+                          } else if (remain <= 0) {
+                            return <span className="bg-red-100 text-red-800 font-bold px-3 py-1 rounded-full text-xs">Lotação Completa</span>;
+                          } else {
+                            return <span className="bg-green-100 text-green-800 font-bold px-3 py-1 rounded-full text-xs">Restam {remain} Vagas</span>;
+                          }
+                        })()}
+                      </div>
+                    )}
+                  </div>
+
                   <div className="flex bg-secondary-100 p-1 rounded-lg w-full lg:w-auto">
                     {['day', 'week', 'month'].map(v => <button key={v} onClick={() => setView(v)} className={`flex-1 lg:flex-none px-4 py-2 rounded-md text-sm font-medium transition ${view === v ? 'bg-white shadow text-primary-600' : 'text-secondary-600'}`}>{v === 'day' ? 'Dia' : v === 'week' ? 'Semana' : 'Mês'}</button>)}
                   </div>
-                  <div className="flex items-center justify-between w-full lg:w-auto gap-4">
-                    <button onClick={() => navigateDate(-1)} className="p-2 hover:bg-secondary-100 rounded-full"><ChevronLeft /></button>
-                    <h3 className="text-lg font-bold text-primary-600 capitalize text-center w-48">
-                      {view === 'day' && formatDateBR(currentDate)}
-                      {view === 'month' && currentDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
-                      {view === 'week' && `Semana de ${startOfWeek(currentDate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`}
-                    </h3>
-                    <button onClick={() => navigateDate(1)} className="p-2 hover:bg-secondary-100 rounded-full"><ChevronRight /></button>
-                  </div>
                 </div>
+
+                {/* TAG DE VAGAS MOBILE (SÓ NA VISÃO DIÁRIA) */}
+                {view === 'day' && (
+                  <div className="sm:hidden -mt-4">
+                    {(() => {
+                      const capInfo = getCapacityInfoForDate(currentDate, maxCapacity, capacityOverrides);
+                      const currentBookings = getBookingsForDate(currentDate).length;
+                      const remain = capInfo.capacity - currentBookings;
+                      if (capInfo.capacity === 0) {
+                        return <span className="block text-center bg-red-100 text-red-800 font-bold px-3 py-2 rounded-lg text-sm">Bloqueado / Sem Vagas</span>;
+                      } else if (remain <= 0) {
+                        return <span className="block text-center bg-red-100 text-red-800 font-bold px-3 py-2 rounded-lg text-sm">Lotação Completa</span>;
+                      } else {
+                        return <span className="block text-center bg-green-100 text-green-800 font-bold px-3 py-2 rounded-lg text-sm">Ainda restam {remain} Vagas</span>;
+                      }
+                    })()}
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between bg-white px-4 py-2 rounded-xl shadow-sm border">
+                  <button onClick={() => navigateDate(-1)} className="p-2 hover:bg-secondary-100 rounded-full"><ChevronLeft /></button>
+                  <h3 className="text-lg font-bold text-primary-600 capitalize text-center w-48">
+                    {view === 'day' && formatDateBR(currentDate)}
+                    {view === 'month' && currentDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+                    {view === 'week' && `Semana de ${startOfWeek(currentDate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`}
+                  </h3>
+                  <button onClick={() => navigateDate(1)} className="p-2 hover:bg-secondary-100 rounded-full"><ChevronRight /></button>
+                </div>
+
                 {view === 'day' && (
                   getBookingsForDate(currentDate).length === 0 ?
                     <div className="text-center py-12 bg-white rounded-2xl border-2 border-dashed border-secondary-200 text-secondary-400">Nenhuma hospedagem.</div> :
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                      {getBookingsForDate(currentDate).map(b => <BookingCard key={b.id} booking={b} onEdit={() => { setEditingData(b); setModalMode('booking'); setIsModalOpen(true); }} onDelete={() => requestDeleteBooking(b.id)} />)}
+                      {getBookingsForDate(currentDate).map(b => (
+                        <BookingCard 
+                          key={b.id} 
+                          booking={b} 
+                          onEdit={() => { if (userRole === 'admin') { setEditingData(b); setModalMode('booking'); setIsModalOpen(true); } }} 
+                          onDelete={() => requestDeleteBooking(b.id)} 
+                          userRole={userRole}
+                          clientBreed={clients.find(c => c.id === b.clientId)?.dogBreed || 'SRD'}
+                        />
+                      ))}
                     </div>
                 )}
                 {view === 'week' && renderWeekView()}
@@ -536,7 +739,11 @@ export default function DogHotelApp() {
 
             {activeTab === 'clients' && <ClientList clients={clients} onEdit={(c) => { setEditingData(c); setModalMode(c ? 'client_edit' : 'client_new'); setIsModalOpen(true); }} onDelete={(id) => { if (confirm("Deletar?")) deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'clients', id)) }} />}
             {activeTab === 'financial' && <FinancialPanel bookings={bookings.map(b => ({ ...b, clientName: clients.find(c => c.id === b.clientId)?.dogName }))} onDelete={requestDeleteBooking} />}
+            {activeTab === 'requests' && userRole === 'admin' && <BookingRequestsPanel db={db} appId={appId} onAcceptRequest={handleAcceptRequest} />}
+            {activeTab === 'my_requests' && userRole === 'user' && <ClientRequestsPanel db={db} appId={appId} user={user} />}
             {activeTab === 'breed' && <BreedIdentifier />}
+            {activeTab === 'admin_panel' && userRole === 'admin' && <AdminPanel db={db} appId={appId} />}
+            {activeTab === 'my_profile' && userRole === 'user' && <MyProfile db={db} appId={appId} user={user} races={races} />}
           </div>
         </main>
 
@@ -587,6 +794,17 @@ export default function DogHotelApp() {
                 alert("Reserva original não encontrada no banco de dados.");
               }
             }}
+          />
+        )}
+
+        {isClientBookingModalOpen && (
+          <ClientBookingModal 
+            onClose={() => setIsClientBookingModalOpen(false)} 
+            user={user} 
+            clientDatabase={clients}
+            bookings={bookings}
+            maxCapacity={maxCapacity}
+            capacityOverrides={capacityOverrides}
           />
         )}
       </div>

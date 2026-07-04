@@ -6,27 +6,35 @@ service cloud.firestore {
     function isAuthenticated() {
       return request.auth != null;
     }
+    
+    // Função auxiliar para verificar se é admin
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.email == 'lyoni.berbert@gmail.com' ||
+        get(/databases/$(database)/documents/artifacts/doghotel-production/public/data/user_roles/$(request.auth.uid)).data.role == 'admin'
+      );
+    }
 
     // ARQUIVOS DO APP
     match /artifacts/doghotel-production/public/data {
       
-      // 1. Coleção LOGINS
-      match /logins/{loginId} {
-        allow read: if true;
-        allow write: if false; 
+      // Coleção de Perfis (User Roles)
+      match /user_roles/{userId} {
+        // Qualquer usuário pode ler qualquer role (necessário pro admin panel e verificação)
+        allow read: if isAuthenticated();
+        // Apenas Admins podem alterar as roles
+        allow write: if isAdmin() || (request.auth.uid == userId && !exists(/databases/$(database)/documents/artifacts/doghotel-production/public/data/user_roles/$(userId))); 
       }
 
-      // 2. Outras Coleções Públicas (Clients, Bookings...)
+      // Outras Coleções Públicas (Clients, Bookings...)
       match /{collectionName}/{docId} {
         allow read, write: if isAuthenticated();
       }
     }
 
-    // REGRA DE NOTIFICAÇÕES (NOVA)
-    // Permite que qualquer usuário autenticado (anônimo) salve seu token
+    // REGRA DE NOTIFICAÇÕES
     match /artifacts/doghotel-production/system/notification_devices {
-      allow read, write: if true; // Aberto para permitir cadastro sem login complexo
+      allow read, write: if true; 
     }
-
   }
 }

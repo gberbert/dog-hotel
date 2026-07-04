@@ -7,7 +7,7 @@ import { FaceRating } from './shared/RatingComponents.jsx';
 import ImageLightbox from './shared/ImageLightbox.jsx';
 import { downloadICS } from '../utils/calendarGenerator.js';
 
-export default function BookingCard({ booking, onEdit, onDelete }) {
+export default function BookingCard({ booking, onEdit, onDelete, userRole = 'admin', clientBreed = 'SRD' }) {
   const [lightboxIndex, setLightboxIndex] = useState(-1);
   const status = getBookingStatus(booking.checkIn, booking.checkOut);
   const totalNetValue = (parseFloat(booking.totalValue) || 0) - (parseFloat(booking.damageValue) || 0);
@@ -53,27 +53,30 @@ export default function BookingCard({ booking, onEdit, onDelete }) {
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <div
                 className="w-12 h-12 rounded-full bg-secondary-100 overflow-hidden border border-secondary-100 flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-primary-400 transition"
-                onClick={() => booking.clientPhoto && setLightboxIndex(0)}
+                onClick={() => userRole === 'admin' && booking.clientPhoto && setLightboxIndex(0)}
               >
-                {booking.clientPhoto ? (
+                {userRole === 'admin' && booking.clientPhoto ? (
                   <img src={booking.clientPhoto} alt={booking.dogName} className="w-full h-full object-cover" />
                 ) : (
                   <Dog className="w-full h-full p-2 text-secondary-300" />
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="font-bold text-secondary-900 text-lg leading-tight truncate">
-                  {booking.dogName}
+                <h3 className={`font-bold text-lg leading-tight truncate ${userRole === 'admin' ? 'text-secondary-900' : 'text-secondary-600'}`}>
+                  {userRole === 'admin' ? booking.dogName : clientBreed}
                 </h3>
-                <p className="text-xs text-secondary-500 flex items-center gap-1 mt-0.5 truncate">
-                  <User size={12} className="flex-shrink-0" />
-                  <span className="truncate">{booking.ownerName}</span>
-                </p>
-                {/* ORIGEM DO CLIENTE */}
-                <p className="text-[10px] text-primary-600 font-bold flex items-center gap-1 mt-0.5 uppercase tracking-wide">
-                  <MapPin size={10} />
-                  {booking.source || 'Particular'}
-                </p>
+                {userRole === 'admin' && (
+                  <>
+                    <p className="text-xs text-secondary-500 flex items-center gap-1 mt-0.5 truncate">
+                      <User size={12} className="flex-shrink-0" />
+                      <span className="truncate">{booking.ownerName}</span>
+                    </p>
+                    <p className="text-[10px] text-primary-600 font-bold flex items-center gap-1 mt-0.5 uppercase tracking-wide">
+                      <MapPin size={10} />
+                      {booking.source || 'Particular'}
+                    </p>
+                  </>
+                )}
               </div>
             </div>
 
@@ -113,47 +116,51 @@ export default function BookingCard({ booking, onEdit, onDelete }) {
             </div>
           </div>
 
-          {/* AVALIAÇÃO E PREJUÍZO */}
-          <div className="flex justify-between items-center mb-3">
-            <div className="flex items-center gap-1 bg-secondary-50 px-2 py-1 rounded">
-              <span className="text-[10px] text-secondary-500">Comp:</span>
-              <FaceRating rating={booking.clientDogBehaviorRating || 3} readonly size={14} />
-            </div>
-            {booking.damageValue > 0 && (
-              <div className="flex items-center gap-1 text-[10px] text-error bg-red-50 px-2 py-1 rounded font-bold border border-red-100">
-                <AlertTriangle size={10} /> - R$ {booking.damageValue}
+          {/* AVALIAÇÃO E PREJUÍZO (Só Admin) */}
+          {userRole === 'admin' && (
+            <div className="flex justify-between items-center mb-3">
+              <div className="flex items-center gap-1 bg-secondary-50 px-2 py-1 rounded">
+                <span className="text-[10px] text-secondary-500">Comp:</span>
+                <FaceRating rating={booking.clientDogBehaviorRating || 3} readonly size={14} />
               </div>
-            )}
-          </div>
+              {booking.damageValue > 0 && (
+                <div className="flex items-center gap-1 text-[10px] text-error bg-red-50 px-2 py-1 rounded font-bold border border-red-100">
+                  <AlertTriangle size={10} /> - R$ {booking.damageValue}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* RODAPÉ */}
-          <div className="flex items-end justify-between border-t pt-2 border-secondary-100">
-            <div className="min-w-0 pr-2">
-              <span className="text-xl font-bold text-primary-600 truncate block">{formatCurrency(totalNetValue)}</span>
-            </div>
-            <div className="flex items-center gap-1 flex-shrink-0">
-              {booking.medications && booking.medications.length > 0 && (
-                <button
-                  onClick={() => downloadICS(booking)}
-                  className="p-1.5 text-orange-500 hover:bg-orange-50 rounded-lg transition"
-                  title="Baixar Alarmes de Remédios"
-                >
-                  <BellRing size={18} />
+          {userRole === 'admin' && (
+            <div className="flex items-end justify-between border-t pt-2 border-secondary-100">
+              <div className="min-w-0 pr-2">
+                <span className="text-xl font-bold text-primary-600 truncate block">{formatCurrency(totalNetValue)}</span>
+              </div>
+              <div className="flex items-center gap-1 flex-shrink-0">
+                {booking.medications && booking.medications.length > 0 && (
+                  <button
+                    onClick={() => downloadICS(booking)}
+                    className="p-1.5 text-orange-500 hover:bg-orange-50 rounded-lg transition"
+                    title="Baixar Alarmes de Remédios"
+                  >
+                    <BellRing size={18} />
+                  </button>
+                )}
+                {waLink && (
+                  <a href={waLink} target="_blank" rel="noopener noreferrer" className="p-1.5 text-success hover:bg-green-50 rounded-lg transition" title="Whatsapp">
+                    <MessageCircle size={18} />
+                  </a>
+                )}
+                <button onClick={onEdit} className="p-1.5 text-secondary-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition" title="Editar">
+                  <Edit size={18} />
                 </button>
-              )}
-              {waLink && (
-                <a href={waLink} target="_blank" rel="noopener noreferrer" className="p-1.5 text-success hover:bg-green-50 rounded-lg transition" title="Whatsapp">
-                  <MessageCircle size={18} />
-                </a>
-              )}
-              <button onClick={onEdit} className="p-1.5 text-secondary-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition" title="Editar">
-                <Edit size={18} />
-              </button>
-              <button onClick={onDelete} className="p-1.5 text-secondary-400 hover:text-error hover:bg-red-50 rounded-lg transition" title="Excluir">
-                <Trash2 size={18} />
-              </button>
+                <button onClick={onDelete} className="p-1.5 text-secondary-400 hover:text-error hover:bg-red-50 rounded-lg transition" title="Excluir">
+                  <Trash2 size={18} />
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </>

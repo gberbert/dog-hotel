@@ -5,7 +5,8 @@ import { doc, updateDoc, arrayUnion, setDoc, getDoc } from 'firebase/firestore';
 import { messaging, db, appId, auth } from '../../utils/firebase';
 
 export default function NotificationManager() {
-    const [permissionState, setPermissionState] = useState(Notification.permission);
+    const isNotificationSupported = typeof window !== 'undefined' && 'Notification' in window;
+    const [permissionState, setPermissionState] = useState(isNotificationSupported ? Notification.permission : 'denied');
     const [loading, setLoading] = useState(false);
     const [fcmToken, setFcmToken] = useState(null);
 
@@ -34,7 +35,7 @@ export default function NotificationManager() {
                 // Nota: Navegadores NÃO mostram notificação nativa se a aba estiver focada por padrão.
                 // Temos que forçar ou mostrar um UI customizado.
                 // Mas podemos tentar invocar Notification() direto
-                if (Notification.permission === 'granted') {
+                if (isNotificationSupported && Notification.permission === 'granted') {
                     new Notification(title, {
                         body: body,
                         icon: '/icon-192.png'
@@ -52,6 +53,10 @@ export default function NotificationManager() {
     const requestPermission = async () => {
         setLoading(true);
         try {
+            if (!isNotificationSupported) {
+                alert("As notificações nativas não são suportadas neste navegador (iPhone/Safari sem estar adicionado à Tela de Início).");
+                return;
+            }
             const permission = await Notification.requestPermission();
             setPermissionState(permission);
             if (permission === 'granted') {
@@ -108,6 +113,17 @@ export default function NotificationManager() {
                 await updateDoc(deviceRef, {
                     tokens: arrayUnion(token)
                 });
+            }
+
+            // Associa ao cadastro do usuário se estiver logado
+            if (auth.currentUser) {
+                const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', auth.currentUser.uid);
+                const clientSnap = await getDoc(clientRef);
+                if (clientSnap.exists()) {
+                    await updateDoc(clientRef, {
+                        fcmTokens: arrayUnion(token)
+                    });
+                }
             }
         } catch (e) {
             console.error("Erro ao salvar token no Firestore:", e);

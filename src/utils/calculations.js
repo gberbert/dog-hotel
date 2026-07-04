@@ -54,3 +54,35 @@ export const isVaccineExpired = (dateStr) => {
 
   return today > expirationDate;
 };
+
+// Nova função para calcular vagas flexíveis / bloqueios
+export const getCapacityInfoForDate = (dateOrStr, defaultCapacity, overrides = []) => {
+  if (!dateOrStr) return { capacity: defaultCapacity, reason: null };
+  const d = new Date(dateOrStr);
+  const targetTime = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+
+  for (const block of overrides) {
+    if (!block.startDate || !block.endDate) continue;
+    
+    // Corrige offset de timezone: string 'YYYY-MM-DD' é interpretada como UTC pelo new Date().
+    // Isso causava recuo de 1 dia em timezones negativos (ex: Brasil).
+    const [sYear, sMonth, sDay] = block.startDate.split('-');
+    const start = new Date(sYear, sMonth - 1, sDay);
+    
+    const [eYear, eMonth, eDay] = block.endDate.split('-');
+    const end = new Date(eYear, eMonth - 1, eDay);
+    
+    // Zera horas
+    const startT = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+    const endT = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime();
+
+    if (targetTime >= startT && targetTime <= endT) {
+      return { 
+        capacity: Number(block.capacity) || 0, 
+        reason: block.reason || 'Bloqueado'
+      };
+    }
+  }
+
+  return { capacity: defaultCapacity, reason: null };
+};

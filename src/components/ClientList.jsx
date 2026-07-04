@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, Search, Plus, FileText, Trash2, History, Dog, X, Loader, MessageCircle, Syringe } from 'lucide-react';
+import { Users, Search, Plus, FileText, Trash2, History, Dog, X, Loader, MessageCircle, Syringe, Link2 } from 'lucide-react';
 import { FaceRating } from './shared/RatingComponents.jsx';
 import { useData } from '../context/DataContext.jsx';
 
@@ -158,6 +158,13 @@ export default function ClientList({ onEdit, onDelete, clients: propClients }) {
                                 <div className="flex gap-2 mt-auto">
                                     <button onClick={() => onEdit(client)} className="flex-1 bg-white border border-primary-200 text-primary-600 py-2 rounded-lg font-medium hover:bg-primary-50 flex items-center justify-center gap-2">
                                         <FileText size={16} /> Detalhes
+                                    </button>
+                                    <button onClick={() => {
+                                        const url = `${window.location.origin}/?vincular=${client.id}`;
+                                        navigator.clipboard.writeText(url);
+                                        alert("Link de vínculo copiado! Envie para o tutor no WhatsApp.");
+                                    }} className="p-2 text-secondary-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg border border-secondary-200" title="Copiar Link de Convite">
+                                        <Link2 size={20} />
                                     </button>
                                     {onDelete && (
                                         <button onClick={() => onDelete(client.id)} className="p-2 text-error hover:bg-red-50 rounded-lg" title="Excluir Cliente">

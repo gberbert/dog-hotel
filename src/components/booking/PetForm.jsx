@@ -4,7 +4,7 @@ import { FaceRating } from '../shared/RatingComponents';
 
 export default function PetForm({
     formData, handleChange, setFormData, showReadOnly,
-    races, onAddRace, onDeleteRace
+    races, onAddRace, onDeleteRace, isClientView = false
 }) {
     // Estados locais de UI (movidos do Modal Principal para cá)
     const [isRaceDropdownOpen, setIsRaceDropdownOpen] = useState(false);
@@ -203,8 +203,12 @@ export default function PetForm({
                                 )}
                             </div>
                             <div className="flex gap-2 w-full sm:w-auto">
-                                <input value={newRace} onChange={(e) => setNewRace(e.target.value)} placeholder="Nova" className="flex-1 sm:w-20 p-2 border rounded text-sm" />
-                                <button type="button" onClick={handleAddRaceClick} disabled={!newRace} className="bg-success text-white px-3 py-2 rounded font-bold hover:bg-green-700">+</button>
+                                {!isClientView && (
+                                    <>
+                                        <input value={newRace} onChange={(e) => setNewRace(e.target.value)} placeholder="Nova" className="flex-1 sm:w-20 p-2 border rounded text-sm" />
+                                        <button type="button" onClick={handleAddRaceClick} disabled={!newRace} className="bg-success text-white px-3 py-2 rounded font-bold hover:bg-green-700">+</button>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>
