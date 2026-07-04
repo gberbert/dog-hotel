@@ -7,8 +7,8 @@ import { getCapacityInfoForDate } from '../utils/calculations.js';
 export default function ClientBookingModal({ onClose, user, clientDatabase, bookings = [], maxCapacity = 6, capacityOverrides = [] }) {
   const [loading, setLoading] = useState(false);
   
-  // Buscar os dados completos do usuário no banco local
-  const currentClient = clientDatabase?.find(c => c.id === user.uid);
+  // Buscar os dados completos do usuário no banco local pelo email (o ID do Firestore não é igual ao UID do Auth)
+  const currentClient = clientDatabase?.find(c => c.ownerEmail === user?.email);
 
   // Validação: Perfil incompleto?
   const missingFields = [];
