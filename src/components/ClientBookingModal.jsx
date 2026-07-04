@@ -11,7 +11,22 @@ export default function ClientBookingModal({ onClose, user, clientDatabase, book
   const currentClient = clientDatabase?.find(c => c.id === user.uid);
 
   // Validação: Perfil incompleto?
-  const isProfileComplete = currentClient && currentClient.dogName && currentClient.ownerName && currentClient.whatsapp;
+  const missingFields = [];
+  if (currentClient) {
+    if (!currentClient.dogName) missingFields.push('Nome do Pet');
+    if (!currentClient.birthYear) missingFields.push('Ano de Nascimento');
+    if (!currentClient.dogSize) missingFields.push('Porte do Pet');
+    if (!currentClient.dogBreed) missingFields.push('Raça do Pet');
+    if (!currentClient.history) missingFields.push('Comportamento e Histórico');
+    if (!currentClient.lastAntiRabica || !currentClient.lastMultipla) missingFields.push('Datas de Vacinação (Anti-rábica e Múltipla)');
+    if (!currentClient.vaccineDocs || currentClient.vaccineDocs.length === 0) missingFields.push('Foto da Carteira de Vacinação');
+    if (!currentClient.ownerName) missingFields.push('Nome do Tutor');
+    if (!currentClient.whatsapp) missingFields.push('Telefone/WhatsApp');
+  } else {
+    missingFields.push('Ficha de Cadastro');
+  }
+
+  const isProfileComplete = currentClient && missingFields.length === 0;
 
   const [formData, setFormData] = useState({
     checkInDate: '',
@@ -150,9 +165,17 @@ export default function ClientBookingModal({ onClose, user, clientDatabase, book
                 <Info size={40} className="mx-auto mb-2" />
                 <h3 className="font-bold text-lg">Cadastro Incompleto</h3>
               </div>
-              <p className="text-secondary-600 mb-6">
-                Para solicitar uma hospedagem, você precisa preencher o <strong>Meu Cadastro</strong> primeiro, informando os dados básicos do seu cão e o seu contato.
+              <p className="text-secondary-600 mb-4">
+                Para solicitar uma hospedagem, você precisa preencher o <strong>Meu Cadastro</strong> primeiro. Faltam os seguintes dados obrigatórios:
               </p>
+              <ul className="text-left bg-secondary-50 border border-secondary-200 p-4 rounded-lg text-secondary-700 text-sm mb-6 space-y-2">
+                {missingFields.map((field, i) => (
+                  <li key={i} className="flex items-center gap-2 font-medium">
+                    <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                    {field}
+                  </li>
+                ))}
+              </ul>
               <button 
                 onClick={onClose}
                 className="w-full bg-primary-600 text-white font-bold py-3 rounded-xl hover:bg-primary-700 transition"
