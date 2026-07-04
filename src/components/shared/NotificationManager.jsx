@@ -27,22 +27,30 @@ export default function NotificationManager() {
             // É necessário importar onMessage dinamicamente ou do pacote
             const { onMessage } = await import('firebase/messaging');
 
-            onMessage(msg, (payload) => {
+            onMessage(msg, async (payload) => {
                 console.log('Mensagem recebida em Foreground:', payload);
                 const { title, body } = payload.notification;
 
-                // Exibe alerta visual (Toaster ou a própria notificação do sistema se permitido)
-                // Nota: Navegadores NÃO mostram notificação nativa se a aba estiver focada por padrão.
-                // Temos que forçar ou mostrar um UI customizado.
-                // Mas podemos tentar invocar Notification() direto
-                if (isNotificationSupported && Notification.permission === 'granted') {
-                    new Notification(title, {
-                        body: body,
-                        icon: '/icon-192.png'
-                    });
+                try {
+                    if (isNotificationSupported && Notification.permission === 'granted') {
+                        const registration = await navigator.serviceWorker.getRegistration();
+                        if (registration && registration.showNotification) {
+                            registration.showNotification(title, {
+                                body: body,
+                                icon: '/icon-192.png'
+                            });
+                        } else {
+                            new Notification(title, {
+                                body: body,
+                                icon: '/icon-192.png'
+                            });
+                        }
+                    }
+                } catch (e) {
+                    console.error("Erro ao mostrar notificação nativa em foreground:", e);
                 }
 
-                // Backup: Alerta sonoro / Visual no App
+                // Backup visual
                 alert(`🔔 ${title}\n${body}`);
             });
         };
@@ -148,6 +156,23 @@ export default function NotificationManager() {
                     className="text-[10px] text-secondary-400 underline hover:text-secondary-600"
                 >
                     Refazer
+                </button>
+                <button
+                    onClick={async () => {
+                        try {
+                            const reg = await navigator.serviceWorker.getRegistration();
+                            if (reg && reg.showNotification) {
+                                reg.showNotification('✅ Notificação Ativa!', { body: 'Se você viu isso, o sistema não está bloqueando o site.' });
+                            } else {
+                                new Notification('✅ Notificação Ativa!', { body: 'Via API Direta.' });
+                            }
+                        } catch(e) {
+                            alert('Erro ao exibir teste: ' + e.message);
+                        }
+                    }}
+                    className="text-[10px] text-blue-500 underline hover:text-blue-700 ml-1"
+                >
+                    Testar
                 </button>
             </div>
         );
