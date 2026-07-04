@@ -26,7 +26,7 @@ export default function BookingModal({ data, mode, bookings, clientDatabase, onS
     const [lightboxIndex, setLightboxIndex] = useState(-1);
     const [vaccineLightboxIndex, setVaccineLightboxIndex] = useState(-1);
 
-    const isBookingMode = mode === 'booking';
+    const isBookingMode = mode === 'booking' || mode === 'booking_request';
     const showReadOnly = isBookingMode;
 
     const [formData, setFormData] = useState({
@@ -46,9 +46,14 @@ export default function BookingModal({ data, mode, bookings, clientDatabase, onS
     useEffect(() => {
         // Se estiver em modo hospedagem, busca o cliente mais atual no banco de dados
         // para garantir que os dados mostrados (Nome, Remédios, Dono) sejam os mais recentes
-        const currentClient = (isBookingMode && data?.clientId && clientDatabase)
-            ? clientDatabase.find(c => c.id === data.clientId)
-            : null;
+        let currentClient = null;
+        if (isBookingMode && data && clientDatabase) {
+             currentClient = clientDatabase.find(c => c.id === data.clientId);
+             if (!currentClient) {
+                 // Fallback para solicitações antigas onde clientId era salvo como user.uid
+                 currentClient = clientDatabase.find(c => c.dogName === data.dogName && c.ownerName === data.ownerName);
+             }
+        }
 
         // Fonte da verdade para dados do PET/CLIENTE:
         // 1. CurrentClient (Cadastro Atualizado) - Prioridade Máxima
@@ -57,7 +62,7 @@ export default function BookingModal({ data, mode, bookings, clientDatabase, onS
 
         setFormData(prev => ({
             ...prev,
-            clientId: data?.clientId || (mode.startsWith('client') && data?.id ? data.id : '') || '',
+            clientId: currentClient?.id || data?.clientId || (mode.startsWith('client') && data?.id ? data.id : '') || '',
 
             // DADOS DO CADASTRO (Sempre puxar o mais recente se existir vínculo)
             dogName: sourceData?.dogName || '',
