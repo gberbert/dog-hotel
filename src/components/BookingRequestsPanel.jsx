@@ -78,7 +78,7 @@ export default function BookingRequestsPanel({ db, appId, onAcceptRequest, onEdi
                     </div>
                   </div>
                   <button 
-                    onClick={() => onEditClient(req.clientId)}
+                    onClick={() => onEditClient(req.clientId, req)}
                     className="text-primary-600 bg-primary-50 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 hover:bg-primary-100 border border-primary-200"
                   >
                     <User size={14}/> Ficha do Cão

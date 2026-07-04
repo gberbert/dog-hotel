@@ -401,8 +401,12 @@ export default function DogHotelApp() {
     setIsMobileMenuOpen(false);
   };
 
-  const handleEditClientFromRequest = (clientId) => {
-    const client = clients.find(c => c.id === clientId);
+  const handleEditClientFromRequest = (clientId, req) => {
+    let client = clients.find(c => c.id === clientId);
+    if (!client && req) {
+      // Fallback para solicitações antigas onde clientId era salvo como user.uid erroneamente
+      client = clients.find(c => c.dogName === req.dogName && c.ownerName === req.ownerName);
+    }
     if (client) {
       setEditingData(client);
       setModalMode('client_edit');

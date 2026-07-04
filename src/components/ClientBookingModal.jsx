@@ -126,7 +126,7 @@ export default function ClientBookingModal({ onClose, user, clientDatabase, book
       const checkOutISO = `${formData.checkOutDate}T${formData.checkOutTime}:00`;
 
       const requestPayload = {
-        clientId: user.uid,
+        clientId: currentClient.id,
         dogName: currentClient.dogName,
         ownerName: currentClient.ownerName,
         checkIn: checkInISO,
