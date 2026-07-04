@@ -64,12 +64,16 @@ export const getCapacityInfoForDate = (dateOrStr, defaultCapacity, overrides = [
   for (const block of overrides) {
     if (!block.startDate || !block.endDate) continue;
     
+    // Extrai apenas a parte da data (YYYY-MM-DD) para ignorar fusos e horas se houver
+    const cleanStart = block.startDate.split('T')[0].trim();
+    const cleanEnd = block.endDate.split('T')[0].trim();
+    
     // Corrige offset de timezone: string 'YYYY-MM-DD' é interpretada como UTC pelo new Date().
     // Isso causava recuo de 1 dia em timezones negativos (ex: Brasil).
-    const [sYear, sMonth, sDay] = block.startDate.split('-');
+    const [sYear, sMonth, sDay] = cleanStart.split('-');
     const start = new Date(sYear, sMonth - 1, sDay);
     
-    const [eYear, eMonth, eDay] = block.endDate.split('-');
+    const [eYear, eMonth, eDay] = cleanEnd.split('-');
     const end = new Date(eYear, eMonth - 1, eDay);
     
     // Zera horas
