@@ -15,7 +15,7 @@ import BookingVariablesForm from './booking/BookingVariablesForm';
 import PDFHeader from './shared/PDFHeader';
 import CustomAlert from './shared/CustomAlert';
 
-export default function BookingModal({ data, mode, bookings, clientDatabase, onSave, onClose, races, onAddRace, onDeleteRace, onCreateClient, onOpenBooking }) {
+export default function BookingModal({ data, mode, bookings, clientDatabase, onSave, onClose, races, defaultRates = { particular: 80, doghero: 70 }, onAddRace, onDeleteRace, onCreateClient, onOpenBooking }) {
     const [alertState, setAlertState] = useState({ isOpen: false, type: 'warning', title: '', message: '', onConfirm: null });
     const [searchQuery, setSearchQuery] = useState('');
     const [showSearchResults, setShowSearchResults] = useState(false);
@@ -93,7 +93,7 @@ export default function BookingModal({ data, mode, bookings, clientDatabase, onS
             checkIn: data?.checkIn || '',
             checkOut: data?.checkOut || '',
             rating: data?.rating || 5,
-            dailyRate: data?.dailyRate || 80,
+            dailyRate: data?.dailyRate || (sourceData?.source === 'DogHero' ? defaultRates.doghero : defaultRates.particular),
             dogBehaviorRating: data?.dogBehaviorRating || 3,
             totalValue: data?.totalValue || 0,
             damageValue: data?.damageValue || '',
@@ -130,6 +130,9 @@ export default function BookingModal({ data, mode, bookings, clientDatabase, onS
                 if (newData.checkIn && value < newData.checkIn) {
                     newData.checkOut = newData.checkIn;
                 }
+            }
+            if (name === 'source') {
+                newData.dailyRate = value === 'DogHero' ? defaultRates.doghero : defaultRates.particular;
             }
             return newData;
         });

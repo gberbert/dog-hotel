@@ -55,6 +55,7 @@ export default function DogHotelApp() {
   const [races, setRaces] = useState([]);
   const [maxCapacity, setMaxCapacity] = useState(6);
   const [capacityOverrides, setCapacityOverrides] = useState([]);
+  const [defaultRates, setDefaultRates] = useState({ particular: 80, doghero: 70 });
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -135,6 +136,10 @@ export default function DogHotelApp() {
           const data = d.data();
           setMaxCapacity(data.maxCapacity || 6);
           setCapacityOverrides(data.capacityOverrides || []);
+          setDefaultRates({
+            particular: data.defaultRateParticular || 80,
+            doghero: data.defaultRateDogHero || 70
+          });
         }
       });
       return () => { unsubClients(); unsubBookings(); unsubRaces(); unsubSettings(); };
@@ -597,7 +602,7 @@ export default function DogHotelApp() {
 
             <div className="flex items-center gap-3">
               <span className="text-sm text-secondary-500 hidden md:block">Olá, {userName}</span>
-              <NotificationBell />
+              <NotificationBell userRole={userRole} userId={user?.uid} />
               {userRole === 'admin' && (
                 <button onClick={() => { setEditingData(null); setModalMode('booking'); setIsModalOpen(true); }} className="bg-accent-500 text-white px-3 py-2 md:px-4 md:py-2 rounded-lg font-bold flex items-center gap-2 shadow hover:bg-accent-600 text-sm md:text-base">
                   <Plus size={20} /> <span className="hidden sm:inline">Nova Reserva</span><span className="sm:hidden">Nova</span>
@@ -636,7 +641,7 @@ export default function DogHotelApp() {
               <div className="h-px bg-secondary-100 my-2"></div>
 
               <div className="flex justify-center py-2 border-b border-secondary-100 mb-2">
-                <NotificationBell />
+                <NotificationBell userRole={userRole} userId={user?.uid} />
               </div>
 
               <div className="text-center text-xs text-secondary-400 py-2">v{appVersion}</div>
@@ -771,6 +776,9 @@ export default function DogHotelApp() {
             onSave={handleSave}
             onClose={() => setIsModalOpen(false)}
             races={races}
+            defaultRates={defaultRates}
+            maxCapacity={maxCapacity}
+            capacityOverrides={capacityOverrides}
             onAddRace={(name) => addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'races'), { name })}
             onDeleteRace={async (id) => {
               try {
@@ -820,6 +828,7 @@ export default function DogHotelApp() {
             bookings={bookings}
             maxCapacity={maxCapacity}
             capacityOverrides={capacityOverrides}
+            defaultRate={defaultRates.particular}
           />
         )}
       </div>

@@ -3,7 +3,7 @@ import { Bell, Check, Trash2, X } from 'lucide-react';
 import { db, appId } from '../../utils/firebase';
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 
-export default function NotificationBell() {
+export default function NotificationBell({ userRole, userId }) {
     const [notifications, setNotifications] = useState([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
@@ -16,7 +16,15 @@ export default function NotificationBell() {
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            let data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            
+            // Filtra notificações localmente para exibir apenas as relevantes para o usuário logado
+            if (userRole === 'admin') {
+                data = data.filter(n => n.targetRole === 'admin' || !n.targetRole); // O !n.targetRole mantém compatibilidade com notificações antigas
+            } else {
+                data = data.filter(n => n.targetUserId === userId || n.clientId === userId || (!n.targetRole && !n.targetUserId));
+            }
+
             setNotifications(data);
 
             const unread = data.filter(n => !n.read).length;

@@ -2,11 +2,49 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const { isSameDay, addDays, getMinutes, getHours, parseISO, isWithinInterval, startOfDay, endOfDay, format } = require('date-fns');
 const { onDocumentUpdated, onDocumentCreated } = require('firebase-functions/v2/firestore');
+const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { toZonedTime } = require('date-fns-tz');
 
 admin.initializeApp();
 
-exports.checkScheduledAlerts = functions.https.onRequest(async (req, res) => {
+exports.migrateUsers = functions.https.onRequest(async (req, res) => {
+    try {
+        const db = admin.firestore();
+        const appId = 'doghotel-production';
+        
+        let nextPageToken;
+        let count = 0;
+        
+        do {
+            const listUsersResult = await admin.auth().listUsers(1000, nextPageToken);
+            const batch = db.batch();
+            
+            listUsersResult.users.forEach((userRecord) => {
+                if (userRecord.email) {
+                    const role = userRecord.email.toLowerCase() === 'lyoni.berbert@gmail.com' ? 'admin' : 'user';
+                    const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('user_roles').doc(userRecord.uid);
+                    batch.set(docRef, {
+                        email: userRecord.email.toLowerCase(),
+                        name: userRecord.displayName || userRecord.email.split('@')[0],
+                        role: role,
+                        createdAt: userRecord.metadata.creationTime || new Date().toISOString()
+                    }, { merge: true });
+                    count++;
+                }
+            });
+            
+            await batch.commit();
+            nextPageToken = listUsersResult.pageToken;
+        } while (nextPageToken);
+
+        res.status(200).send(`Migração concluída: ${count} usuários sincronizados.`);
+    } catch (error) {
+        console.error("Erro na migração:", error);
+        res.status(500).send("Erro: " + error.message);
+    }
+});
+
+exports.scheduledAlerts = onSchedule("every 10 minutes", async (event) => {
     try {
         const db = admin.firestore();
         const messaging = admin.messaging();
@@ -62,6 +100,7 @@ exports.checkScheduledAlerts = functions.https.onRequest(async (req, res) => {
                         type: 'checkin',
                         dogName: client.dogName,
                         clientId: client.id,
+                        targetRole: 'admin',
                         bookingId: bookingId,
                         timestamp: admin.firestore.FieldValue.serverTimestamp()
                     });
@@ -74,6 +113,7 @@ exports.checkScheduledAlerts = functions.https.onRequest(async (req, res) => {
                         type: 'checkout',
                         dogName: client.dogName,
                         clientId: client.id,
+                        targetRole: 'admin',
                         bookingId: bookingId,
                         timestamp: admin.firestore.FieldValue.serverTimestamp()
                     });
@@ -119,6 +159,7 @@ exports.checkScheduledAlerts = functions.https.onRequest(async (req, res) => {
                                 type: 'medication',
                                 dogName: client.dogName,
                                 clientId: client.id,
+                                targetRole: 'admin',
                                 medicationName: med.name,
                                 timestamp: admin.firestore.FieldValue.serverTimestamp()
                             });
@@ -208,11 +249,12 @@ exports.checkScheduledAlerts = functions.https.onRequest(async (req, res) => {
             console.log("[Cron] Nenhuma notificação necessária neste ciclo.");
         }
 
-        res.status(200).send(`Ciclo OK. Alertas: ${notificationsToSend.length}`);
+        console.log(`[Cron] Ciclo OK. Alertas gerados: ${notificationsToSend.length}`);
+        return null;
 
     } catch (error) {
         console.error("[Cron] Erro Fatal:", error);
-        res.status(500).send("Erro: " + error.message);
+        return null;
     }
 });
 
@@ -230,6 +272,21 @@ exports.onBookingRequestUpdated = onDocumentUpdated(
             if (!clientId) return null;
 
             try {
+                // 1. Salvar no Inbox do App (Sininho)
+                const notificationRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('notifications').doc();
+                await notificationRef.set({
+                    title: `✅ Hospedagem Aprovada!`,
+                    body: `Sua solicitação de hospedagem para ${newValue.dogName} foi confirmada na agenda.`,
+                    type: 'booking_approved',
+                    dogName: newValue.dogName,
+                    clientId: clientId,
+                    targetUserId: clientId,
+                    requestId: event.params.requestId,
+                    read: false,
+                    createdAt: new Date().toISOString()
+                });
+
+                // 2. Notificar via Push Notification
                 const clientSnap = await db.collection('artifacts').doc(appId)
                     .collection('public').doc('data')
                     .collection('clients').doc(clientId).get();
@@ -243,6 +300,19 @@ exports.onBookingRequestUpdated = onDocumentUpdated(
                             notification: {
                                 title: `✅ Hospedagem Aprovada!`,
                                 body: `Sua solicitação de hospedagem para ${newValue.dogName} foi confirmada na agenda.`,
+                            },
+                            android: {
+                                notification: {
+                                    sound: 'default'
+                                }
+                            },
+                            apns: {
+                                payload: {
+                                    aps: {
+                                        sound: 'default',
+                                        badge: 1
+                                    }
+                                }
                             },
                             webpush: {
                                 notification: {
@@ -277,7 +347,21 @@ exports.onBookingRequestCreated = onDocumentCreated(
 
         if (newValue.status === 'pending') {
             try {
-                // Notificar o admin
+                // 1. Salvar no Inbox do App (Sininho)
+                const notificationRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('notifications').doc();
+                await notificationRef.set({
+                    title: `🐶 Nova Solicitação de Hospedagem!`,
+                    body: `${newValue.ownerName} solicitou uma vaga para ${newValue.dogName}.`,
+                    type: 'booking_request',
+                    dogName: newValue.dogName,
+                    clientId: newValue.clientId || '',
+                    targetRole: 'admin',
+                    requestId: event.params.requestId,
+                    read: false,
+                    createdAt: new Date().toISOString()
+                });
+
+                // 2. Notificar o admin via Push Notification
                 const devicesRef = db.collection('artifacts').doc(appId).collection('system').doc('notification_devices');
                 const devicesSnap = await devicesRef.get();
 
@@ -290,6 +374,19 @@ exports.onBookingRequestCreated = onDocumentCreated(
                             notification: {
                                 title: `🐶 Nova Solicitação de Hospedagem!`,
                                 body: `${newValue.ownerName} solicitou uma vaga para ${newValue.dogName}.`,
+                            },
+                            android: {
+                                notification: {
+                                    sound: 'default'
+                                }
+                            },
+                            apns: {
+                                payload: {
+                                    aps: {
+                                        sound: 'default',
+                                        badge: 1
+                                    }
+                                }
                             },
                             webpush: {
                                 notification: {

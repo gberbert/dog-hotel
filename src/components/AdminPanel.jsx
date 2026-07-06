@@ -10,7 +10,7 @@ const AdminPanel = ({ db, appId }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [processingId, setProcessingId] = useState(null);
 
-  const [settings, setSettings] = useState({ maxCapacity: 6, capacityOverrides: [] });
+  const [settings, setSettings] = useState({ maxCapacity: 6, capacityOverrides: [], defaultRateParticular: 80, defaultRateDogHero: 70 });
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [savingSettings, setSavingSettings] = useState(false);
 
@@ -45,7 +45,9 @@ const AdminPanel = ({ db, appId }) => {
         const data = snap.data();
         setSettings({ 
           maxCapacity: data.maxCapacity || 6,
-          capacityOverrides: data.capacityOverrides || []
+          capacityOverrides: data.capacityOverrides || [],
+          defaultRateParticular: data.defaultRateParticular || 80,
+          defaultRateDogHero: data.defaultRateDogHero || 70
         });
       }
     } catch (e) {
@@ -241,6 +243,41 @@ const AdminPanel = ({ db, appId }) => {
                       required 
                       className="w-32 px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-lg font-bold text-center" 
                     />
+                  </div>
+                </div>
+
+                <div className="bg-secondary-50 p-6 rounded-lg border border-secondary-200">
+                  <h3 className="font-bold text-secondary-800 border-b pb-2 mb-4">Valores Padrão de Diárias</h3>
+                  
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-bold text-secondary-700 mb-1">
+                        Valor Particular (R$)
+                      </label>
+                      <p className="text-xs text-secondary-500 mb-2">Usado como base para reservas feitas pelo próprio app ou direto com você.</p>
+                      <input 
+                        type="number" 
+                        min="0"
+                        value={settings.defaultRateParticular} 
+                        onChange={(e) => setSettings(prev => ({ ...prev, defaultRateParticular: Number(e.target.value) }))}
+                        required 
+                        className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-lg font-bold" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-secondary-700 mb-1">
+                        Valor DogHero (R$)
+                      </label>
+                      <p className="text-xs text-secondary-500 mb-2">Usado como base para reservas vindas da plataforma DogHero.</p>
+                      <input 
+                        type="number" 
+                        min="0"
+                        value={settings.defaultRateDogHero} 
+                        onChange={(e) => setSettings(prev => ({ ...prev, defaultRateDogHero: Number(e.target.value) }))}
+                        required 
+                        className="w-full px-3 py-2 border border-secondary-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-lg font-bold" 
+                      />
+                    </div>
                   </div>
                 </div>
 

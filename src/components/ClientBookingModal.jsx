@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { X, Calendar as CalendarIcon, Clock, MessageSquare, Loader2, Info } from 'lucide-react';
 import { collection, addDoc } from 'firebase/firestore';
 import { db, appId } from '../utils/firebase';
-import { getCapacityInfoForDate } from '../utils/calculations.js';
+import { getCapacityInfoForDate, calculateTotalDays, formatCurrency } from '../utils/calculations.js';
+import DateRangePicker from './shared/DateRangePicker.jsx';
 
-export default function ClientBookingModal({ onClose, user, clientDatabase, bookings = [], maxCapacity = 6, capacityOverrides = [] }) {
+export default function ClientBookingModal({ onClose, user, clientDatabase, bookings = [], maxCapacity = 6, capacityOverrides = [], defaultRate = 80 }) {
   const [loading, setLoading] = useState(false);
   
   // Buscar os dados completos do usuário no banco local pelo email (o ID do Firestore não é igual ao UID do Auth)
@@ -71,6 +72,9 @@ export default function ClientBookingModal({ onClose, user, clientDatabase, book
     }
   }
 
+  const totalDays = (formData.checkInDate && formData.checkOutDate) ? calculateTotalDays(formData.checkInDate, formData.checkOutDate) : 0;
+  const totalCost = totalDays * defaultRate;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isProfileComplete) return;
@@ -132,6 +136,7 @@ export default function ClientBookingModal({ onClose, user, clientDatabase, book
         checkIn: checkInISO,
         checkOut: checkOutISO,
         notes: formData.notes,
+        dailyRate: defaultRate, // Passa a diária que estava vigente
         status: 'pending',
         createdAt: new Date().toISOString()
       };
@@ -191,25 +196,25 @@ export default function ClientBookingModal({ onClose, user, clientDatabase, book
                 <div className="font-bold text-lg text-primary-700">{currentClient.dogName}</div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-bold text-secondary-700 mb-1 flex items-center gap-1"><CalendarIcon size={14}/> Entrada</label>
-                  <input type="date" required value={formData.checkInDate} onChange={(e) => setFormData({...formData, checkInDate: e.target.value})} className="w-full p-2.5 bg-secondary-50 border border-secondary-300 rounded-lg outline-none focus:ring-2 focus:ring-primary-500" />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-secondary-700 mb-1 flex items-center gap-1"><Clock size={14}/> Horário</label>
-                  <input type="time" required value={formData.checkInTime} onChange={(e) => setFormData({...formData, checkInTime: e.target.value})} className="w-full p-2.5 bg-secondary-50 border border-secondary-300 rounded-lg outline-none focus:ring-2 focus:ring-primary-500" />
-                </div>
+              <div className="mb-4">
+                <DateRangePicker 
+                    checkInDate={formData.checkInDate}
+                    checkOutDate={formData.checkOutDate}
+                    bookings={bookings}
+                    maxCapacity={maxCapacity}
+                    capacityOverrides={capacityOverrides}
+                    onChange={(inD, outD) => setFormData({...formData, checkInDate: inD, checkOutDate: outD})}
+                />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4 bg-secondary-50 p-4 rounded-xl border border-secondary-200">
                 <div>
-                  <label className="block text-sm font-bold text-secondary-700 mb-1 flex items-center gap-1"><CalendarIcon size={14}/> Saída</label>
-                  <input type="date" required min={formData.checkInDate} value={formData.checkOutDate} onChange={(e) => setFormData({...formData, checkOutDate: e.target.value})} className="w-full p-2.5 bg-secondary-50 border border-secondary-300 rounded-lg outline-none focus:ring-2 focus:ring-primary-500" />
+                  <label className="block text-sm font-bold text-secondary-700 mb-1 flex items-center gap-1"><Clock size={14}/> Chegada</label>
+                  <input type="time" required value={formData.checkInTime} onChange={(e) => setFormData({...formData, checkInTime: e.target.value})} className="w-full p-2.5 bg-white border border-secondary-300 rounded-lg outline-none focus:ring-2 focus:ring-primary-500" />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-secondary-700 mb-1 flex items-center gap-1"><Clock size={14}/> Horário</label>
-                  <input type="time" required value={formData.checkOutTime} onChange={(e) => setFormData({...formData, checkOutTime: e.target.value})} className="w-full p-2.5 bg-secondary-50 border border-secondary-300 rounded-lg outline-none focus:ring-2 focus:ring-primary-500" />
+                  <label className="block text-sm font-bold text-secondary-700 mb-1 flex items-center gap-1"><Clock size={14}/> Saída</label>
+                  <input type="time" required value={formData.checkOutTime} onChange={(e) => setFormData({...formData, checkOutTime: e.target.value})} className="w-full p-2.5 bg-white border border-secondary-300 rounded-lg outline-none focus:ring-2 focus:ring-primary-500" />
                 </div>
               </div>
 
@@ -227,6 +232,18 @@ export default function ClientBookingModal({ onClose, user, clientDatabase, book
               {dynamicError && (
                 <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded-lg text-sm mt-4 text-center font-medium">
                   {dynamicError}
+                </div>
+              )}
+
+              {totalDays > 0 && !dynamicError && (
+                <div className="bg-green-50 border border-green-200 p-4 rounded-xl mt-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-bold text-green-800">{totalDays} diária{totalDays > 1 ? 's' : ''} x {formatCurrency(defaultRate)}</span>
+                    <span className="text-sm text-green-700 font-medium">Estimativa:</span>
+                  </div>
+                  <div className="text-right text-2xl font-black text-green-900 mt-1">
+                    {formatCurrency(totalCost)}
+                  </div>
                 </div>
               )}
 
